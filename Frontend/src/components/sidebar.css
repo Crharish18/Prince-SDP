@@ -1,0 +1,112 @@
+/* Sidebar styles */
+.sidebar {
+    width: 250px;
+    background-color: #121220;
+    color: white;
+    height: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    padding-top: 30px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* Vertically center the content */
+    transition: all 0.3s ease;
+    font-family: 'Open Sans', sans-serif;  /* Apply Open Sans font */
+  }
+  
+  /* Sidebar logo and menu items */
+  .logodash-container {
+    display: flex;
+    justify-content: center;
+    margin-top: -80px;
+    margin-bottom: 20px; /* Adjusted space below logo */
+  }
+  
+  .logodash {
+    width: 95%;
+    height: auto;
+  }
+  
+  /* Sidebar item styling */
+  .sidebar-item {
+    margin-bottom: 13px;  /* Reduced space between items */
+  }
+  
+  /* Button styles */
+  .sidebar-item button {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+    font-size: 18px;  /* Increased font size slightly */
+    font-weight: 600;
+    padding: 12px 15px;
+    background: none;
+    border: none;
+    color: #e0e0e0;  /* Darker text color (light gray) */
+    text-align: left;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border-radius: 8px;
+  }
+  
+  .sidebar-item button:hover {
+    background-color: #68686a; /* Slightly darker on hover */
+    transform: scale(1.05);  /* Slight zoom on hover */
+  }
+  
+  .sidebar-item button svg {
+    margin-right: 15px;
+    font-size: 20px;  /* Larger icons */
+    transition: all 0.3s ease;
+  }
+  
+  .sidebar-item button:hover svg {
+    color: #f5f5f5;
+    transform: scale(1.2);  /* Enlarge icons on hover */
+  }
+  
+  /* Remove bullet points and reset margins/paddings for the list */
+  ul.list-unstyled {
+    padding-left: 0;
+    margin: 0;
+    margin-top: -30px;
+  }
+  
+  /* Move the list to the center of the sidebar */
+  /* Ensure sidebar item list is spaced correctly */
+.sidebar-item a {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  font-size: 18px;
+  font-weight: 600;
+  padding: 12px 15px;
+  text-decoration: none;
+  color: #e0e0e0;
+  transition: all 0.3s ease;
+}
+
+.sidebar-item a:hover {
+  background-color: #68686a;
+  transform: scale(1.05);
+}
+
+/* Sidebar links should inherit the button's hover effects */
+.sidebar-item a svg {
+  margin-right: 15px;
+  font-size: 20px;
+}
+
+.sidebar-item a:hover svg {
+  color: #f5f5f5;
+  transform: scale(1.2);  /* Enlarge icons on hover */
+}
+
+/* Ensure sidebar item list is correctly aligned */
+.sidebar {
+  padding-top: 30px; /* Keeps items aligned properly */
+  justify-content: flex-start;  /* Align items from the top */
+}
+  

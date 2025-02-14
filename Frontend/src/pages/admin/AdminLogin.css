@@ -1,0 +1,101 @@
+.header-bar {
+    width: 100%;
+    height: 60px;   /* Set the height of the header */
+    position: fixed; /* Keep the header fixed at the top of the page */
+    top: 20px;
+    left: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center; /* Vertically center the logo */
+    padding-left: 20px;  /* Add some space from the left edge */
+    z-index: 1000; /* Ensure the header is above other elements */
+  }
+  
+  .logo {
+   
+    max-height: 200px; /* Adjust logo size */
+    width: auto;
+  }
+  
+  /* Login Container */
+  .login-container {
+    display: flex;
+    justify-content: center;  /* Horizontally centers the form */
+    align-items: center; 
+    width: 100vw; /* Full width of the viewport */     /* Vertically centers the form */
+    height: 100vh;            /* Make the container take the full viewport height */
+    background: url('../../assets/PicturesAdmin/LoginBg.jpg') no-repeat center center/cover; /* Set your background image path here */
+    background-size: cover;   /* Ensure background covers the full screen */
+    
+  }
+  
+  /* Login Box */
+  .login-box {
+    background-color: rgba(255, 255, 255, 0.304); /* Light background for the form */
+    padding: 40px;
+    border-radius: 15px;
+    width: 350px;              /* Adjust the width as needed */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    text-align: center;
+    backdrop-filter: blur(0.5px);
+  }
+  
+  
+  /* Title */
+  h2 {
+    margin-bottom: 30px;
+    font-family: Arial, sans-serif;
+    font-size: 30px;
+    color: #333;
+    font-weight: bold;
+  }
+  
+  /* Input Group */
+  .input-group {
+    margin-bottom: 20px;
+  }
+  
+  .input-group label {
+    font-size: 14px;
+    font-weight: bold;
+    display: block;
+    color: #333;
+  }
+  
+  .input-group input {
+    width: 100%;
+    padding: 10px;
+    margin-top: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+  }
+  
+  /* Radio Button Styling */
+  .role-selection {
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: center;
+  }
+  
+  .role-selection label {
+    margin-right: 20px;
+    font-size: 14px;
+    color: #333;
+  }
+  
+  /* Button */
+  .login-btn {
+    width: 60%;
+    padding: 12px;
+    background-color: #1b4fae;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  
+  .login-btn:hover {
+    background-color: #45a049;
+  }
+  

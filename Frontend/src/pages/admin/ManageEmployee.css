@@ -1,0 +1,15 @@
+/* Dashboard.css */
+/* Ensure the body and html elements have a background color */
+html, body {
+    height: 100%; /* Make sure the body takes up the full height */
+    margin: 0; /* Remove default margin */
+    background-color: rgba(186, 184, 193, 0.219); /* Set background to pink */
+  }
+  
+  .ManageEmployee-container {
+    height: 100vh; /* Ensure it covers the full viewport height */
+    display: flex;
+    flex-direction: column;
+  }
+  
+  
