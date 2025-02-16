@@ -1,15 +1,29 @@
-/* Dashboard.css */
-/* Ensure the body and html elements have a background color */
+/* Prevent scrolling */
 html, body {
-    height: 100%; /* Make sure the body takes up the full height */
-    margin: 0; /* Remove default margin */
-    background-color: pink; /* Set background to pink */
-  }
-  
-  .dashboard-container {
-    height: 100vh; /* Ensure it covers the full viewport height */
-    display: flex;
-    flex-direction: column;
-  }
-  
-  
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* Hides both horizontal & vertical scroll */
+  display: flex;
+  flex-direction: column;
+}
+
+/* Ensure no extra width */
+.dashboard-container {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden; /* Prevents overflow */
+}
+
+/* Ensure no extra scrolling inside the content */
+.dashboard-content {
+  flex-grow: 1;
+  padding: 20px;
+  background-color: #336890;
+  height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: auto; /* Allows internal scrolling only if necessary */
+}

@@ -1,15 +1,141 @@
-/* Dashboard.css */
-/* Ensure the body and html elements have a background color */
+/* Ensure full height and width */
 html, body {
-    height: 100%; /* Make sure the body takes up the full height */
-    margin: 0; /* Remove default margin */
-    background-color: rgba(186, 184, 193, 0.219); /* Set background to pink */
-  }
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: #e0e0e0; /* Light gray background */
+  display: flex;
+  flex-direction: column;
+}
+
+/* Main Container */
+.ManageEmployee-container {
+  display: flex;
+  height: 100vh; /* Full viewport height */
+  width: 100vw; /* Full viewport width */
+}
+
+/* Sidebar */
+.sidebar {
+  width: 250px; /* Fixed width for sidebar */
+  height: 100vh; /* Full height */
+}
+
+/* Content should take full available space */
+.ManageEmployee-content {
+  flex-grow: 1; /* Expands to fill the remaining space */
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Centers content horizontally */
+  justify-content: flex-start; /* Aligns content at the top */
+  background-color: #cbcfd1; /* Light gray background */
+  min-height: 100vh; /* Ensures full height */
+  padding: 40px 20px; /* More padding for spacing */
+  width: 100%;
+  overflow: auto; /* Internal scrolling if necessary */
+}
+
+/* Centering the inner container */
+.inner-container {
+ 
+}
+
+/* Search Bar and Buttons Section */
+.top-section {
+  width: 80vw; /* Makes it full width of the viewport */
+  max-width: none; /* Removes any max-width restriction */
+  background: white;
+  padding: 25px 40px; /* More padding for a spacious look */
+  border-radius: 10px; /* Removes rounded corners to stretch fully */
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  display: flex;
   
-  .ManageEmployee-container {
-    height: 100vh; /* Ensure it covers the full viewport height */
-    display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  flex-direction: column;
+  flex-wrap: wrap;
+}
+
+
+
+
+
+/* Search Bar */
+.search-bar {
+  flex: 1;
+  margin-right: 15px;
+  height: 45px;
+  font-size: 18px;
+  padding: 10px;
+  border-radius: 5px;
+  border: 2px solid #ddd;
+}
+
+/* Buttons */
+.btn-container {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-container .btn {
+  font-size: 16px;
+  padding: 12px 20px;
+  height: 45px;
+  border-radius: 8px;
+  background-color: #2770b4; /* Dark red button */
+  color: white;
+  border: none;
+}
+
+.btn-container .btn:hover {
+  background-color: #5a1414;
+}
+
+/* Table Section */
+.table-container {
+  width: 80vw;
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  margin-right:70px ;
+}
+
+/* Table Styling */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 15px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+  font-size: 16px;
+}
+
+th {
+  background-color: #781c1c; /* Dark red header */
+  color: white;
+  font-weight: bold;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .top-section {
     flex-direction: column;
+    align-items: stretch;
   }
   
+  .search-bar {
+    width: 100%;
+    margin-bottom: 10px;
+  }
   
+  .btn-container {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+  }
+}
