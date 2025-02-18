@@ -37,7 +37,8 @@ html, body {
 
 /* Centering the inner container */
 .inner-container {
- 
+  margin-left: 320px;
+  margin-top: 30px;
 }
 
 /* Search Bar and Buttons Section */
@@ -49,27 +50,33 @@ html, body {
   border-radius: 10px; /* Removes rounded corners to stretch fully */
   box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
   display: flex;
-  
-  justify-content: space-between;
+  flex-direction: column; /* Ensures heading is above */
+  align-items: flex-start; /* Align elements to the left */
   margin-top: 20px;
   margin-bottom: 20px;
-  flex-direction: column;
   flex-wrap: wrap;
 }
 
-
-
-
+/* Ensure Heading is on top */
+h1.section-title {
+  font-size: 25px;
+  margin-bottom: 15px;
+}
 
 /* Search Bar */
+.search-wrapper {
+  display: flex; /* Aligns search bar and buttons horizontally */
+  width: 100%;
+}
+
 .search-bar {
-  flex: 1;
-  margin-right: 15px;
+  flex: 1; /* Takes full width minus button space */
   height: 45px;
   font-size: 18px;
   padding: 10px;
   border-radius: 5px;
   border: 2px solid #ddd;
+  margin-right: 20px;
 }
 
 /* Buttons */
@@ -83,13 +90,13 @@ html, body {
   padding: 12px 20px;
   height: 45px;
   border-radius: 8px;
-  background-color: #2770b4; /* Dark red button */
+  background-color: #2770b4; /* Blue button */
   color: white;
   border: none;
 }
 
 .btn-container .btn:hover {
-  background-color: #5a1414;
+  background-color: #06325e; /* Darker hover color */
 }
 
 /* Table Section */
@@ -99,7 +106,7 @@ html, body {
   padding: 20px;
   border-radius: 10px;
   box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-  margin-right:70px ;
+  margin-right: 70px;
 }
 
 /* Table Styling */
@@ -138,4 +145,102 @@ th {
     display: flex;
     justify-content: space-between;
   }
+}
+
+/* Modal Overlay */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5); /* Dim background */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+/* Modal Content */
+.modal-content {
+  background: #ffffff !important; /* Solid white background */
+  padding: 20px 25px; /* Reduce padding for smaller size */
+  border-radius: 15px; /* More rounded corners */
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15); /* Soft shadow for depth */
+  width: 60%; /* Reduce the width */
+  max-width: 500px; /* Max width */
+  z-index: 1000;
+  opacity: 1 !important;  /* Ensure no transparency */
+  transition: all 0.3s ease; /* Smooth transition for hover */
+}
+
+/* Form Inputs */
+.modal-content .form-group {
+  margin-bottom: 20px; /* Add spacing between form fields */
+}
+
+.modal-content .form-group label {
+  font-weight: bold;
+  font-size: 16px; /* Slightly larger label font */
+  margin-bottom: 5px;
+}
+
+.modal-content .form-group input {
+  width: 100%;
+  padding: 12px 15px;
+  border-radius: 12px; /* Rounded corners for inputs */
+  border: 2px solid #ddd;
+  font-size: 16px;
+  transition: border 0.3s ease;
+}
+
+.modal-content .form-group input:focus {
+  border-color: #2770b4; /* Blue border on focus */
+  box-shadow: 0 0 5px rgba(39, 112, 180, 0.5); /* Glow effect on focus */
+}
+
+/* Buttons */
+.modal-content .btn {
+  margin-top: 20px;
+  width: 48%;
+  padding: 12px;
+  border-radius: 12px; /* Rounded corners for buttons */
+  font-size: 16px;
+  transition: background 0.3s ease, transform 0.3s ease;
+}
+
+.modal-content .btn-secondary {
+  background-color: #f0f0f0;
+  border: 2px solid #ddd;
+}
+
+.modal-content .btn-primary {
+  background-color: #2770b4;
+  color: white;
+  border: none;
+}
+
+.modal-content .btn:hover {
+  transform: scale(1.05); /* Slight zoom effect on hover */
+}
+
+.modal-content .btn-primary:hover {
+  background-color: #5a1414; /* Darker blue on hover */
+}
+
+.modal-content .btn-secondary:hover {
+  background-color: #ddd; /* Lighter gray on hover */
+}
+
+/* Close Button */
+.modal-content .btn-close {
+  background-color: #2770b4;
+  color: white;
+  font-size: 14px;
+  padding: 8px 12px;
+  border-radius: 8px;
+}
+
+.modal-content .btn-close:hover {
+  background-color: #5a1414;
 }
