@@ -99,7 +99,8 @@ h1.section-title {
   background-color: #06325e; /* Darker hover color */
 }
 
-/* Table Section */
+/* Table Container - Add Scrolling */
+/* Table Container - Add Scrolling */
 .table-container {
   width: 80vw;
   background: white;
@@ -107,6 +108,20 @@ h1.section-title {
   border-radius: 10px;
   box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
   margin-right: 70px;
+  height: 400px; /* Set fixed height for the scrollable area */
+  overflow-y: scroll; /* Enable vertical scrolling */
+  position: relative; /* Ensure stacking context for z-index */
+}
+
+/* Table Header - Keep Fixed */
+.table-container thead {
+  position: sticky;
+  top: 0;
+  background: #781c1c; /* Keep header background */
+  color: white;
+  z-index: 2; /* Ensure header stays on top */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Add shadow to separate header from rows */
+ 
 }
 
 /* Table Styling */
@@ -128,24 +143,6 @@ th {
   font-weight: bold;
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
-  .top-section {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  
-  .search-bar {
-    width: 100%;
-    margin-bottom: 10px;
-  }
-  
-  .btn-container {
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-  }
-}
 
 /* Modal Overlay */
 .modal-overlay {
@@ -210,7 +207,7 @@ th {
 }
 
 .modal-content .btn-secondary {
-  background-color: #f0f0f0;
+  background-color: #2770b4;
   border: 2px solid #ddd;
 }
 
@@ -225,11 +222,11 @@ th {
 }
 
 .modal-content .btn-primary:hover {
-  background-color: #5a1414; /* Darker blue on hover */
+  background-color: #131b6e; /* Darker blue on hover */
 }
 
 .modal-content .btn-secondary:hover {
-  background-color: #ddd; /* Lighter gray on hover */
+  background-color: #131b6e; /* Lighter gray on hover */
 }
 
 /* Close Button */

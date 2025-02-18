@@ -54,17 +54,18 @@ function ManageEmployee() {
                 </tr>
               </thead>
               <tbody>
-                {/* Example Employee Data */}
-                <tr>
-                  <td>1</td>
-                  <td>John Doe</td>
-                  <td>123 Main St, City</td>
-                  <td>1990-01-01</td>
-                  <td>123-456-7890</td>
-                  <td>123456789V</td>
-                  <td>johndoe@email.com</td>
-                </tr>
-                {/* More rows as needed */}
+                {/* Example Employee Data - Dynamically generated rows */}
+                {[...Array(20)].map((_, index) => (
+                  <tr key={index}>
+                    <td>{index + 1}</td>
+                    <td>John Doe</td>
+                    <td>123 Main St, City</td>
+                    <td>1990-01-01</td>
+                    <td>123-456-7890</td>
+                    <td>123456789V</td>
+                    <td>johndoe@email.com</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
