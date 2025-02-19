@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import "./AdminLogin.css";  // Import the CSS file for styling
-import logo from "../../assets/PicturesAdmin/logoBlack.png";  // Import the logo image
+import "./AdminLogin.css";  
+import logo from "../../assets/PicturesAdmin/logoBlack.png"; 
 import { FaUser } from 'react-icons/fa';  // Import FaUser from react-icons
 import { FaLock } from 'react-icons/fa';  // Import FaLock from react-icons
 

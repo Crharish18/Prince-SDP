@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import Sidebar from "../../components/sidebar";
 import Header from "../../components/Header";
 import './ManageEmployee.css';
-import 'bootstrap/dist/css/bootstrap.min.css'; // Import Bootstrap CSS
+import 'bootstrap/dist/css/bootstrap.min.css'; // bootstrap
 
 function ManageEmployee() {
   const [showModal, setShowModal] = useState(false);
@@ -54,7 +54,7 @@ function ManageEmployee() {
                 </tr>
               </thead>
               <tbody>
-                {/* Example Employee Data - Dynamically generated rows */}
+                {/* just some rows of entries */}
                 {[...Array(20)].map((_, index) => (
                   <tr key={index}>
                     <td>{index + 1}</td>
