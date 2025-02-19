@@ -1,101 +1,105 @@
-.header-bar {
-    width: 100%;
-    height: 60px;   /* Set the height of the header */
-    position: fixed; /* Keep the header fixed at the top of the page */
-    top: 20px;
-    left: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center; /* Vertically center the logo */
-    padding-left: 20px;  /* Add some space from the left edge */
-    z-index: 1000; /* Ensure the header is above other elements */
-  }
+.login-container {
   
-  .logo {
-   
-    max-height: 200px; /* Adjust logo size */
-    width: auto;
-  }
+  display: flex;
+  align-items: center;  /* Vertically center */
+  justify-content: center;  /* Horizontally center */
+  padding-right: 140px;
+  padding-bottom: 30px;
+  height: 100vh; /* Full height of the viewport */
+  width: 100vw; /* Full width of the viewport */
+  box-sizing: border-box; /* Prevents unwanted padding/margins */
   
-  /* Login Container */
-  .login-container {
-    display: flex;
-    justify-content: center;  /* Horizontally centers the form */
-    align-items: center; 
-    width: 100vw; /* Full width of the viewport */     /* Vertically centers the form */
-    height: 100vh;            /* Make the container take the full viewport height */
-    background: url('../../assets/PicturesAdmin/LoginBg.jpg') no-repeat center center/cover; /* Set your background image path here */
-    background-size: cover;   /* Ensure background covers the full screen */
-    
-  }
-  
-  /* Login Box */
-  .login-box {
-    background-color: rgba(255, 255, 255, 0.304); /* Light background for the form */
-    padding: 40px;
-    border-radius: 15px;
-    width: 350px;              /* Adjust the width as needed */
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    text-align: center;
-    backdrop-filter: blur(0.5px);
-  }
-  
-  
-  /* Title */
-  h2 {
-    margin-bottom: 30px;
-    font-family: Arial, sans-serif;
-    font-size: 30px;
-    color: #333;
-    font-weight: bold;
-  }
-  
-  /* Input Group */
-  .input-group {
-    margin-bottom: 20px;
-  }
-  
-  .input-group label {
-    font-size: 14px;
-    font-weight: bold;
-    display: block;
-    color: #333;
-  }
-  
-  .input-group input {
-    width: 100%;
-    padding: 10px;
-    margin-top: 5px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-  }
-  
-  /* Radio Button Styling */
-  .role-selection {
-    margin-bottom: 15px;
-    display: flex;
-    justify-content: center;
-  }
-  
-  .role-selection label {
-    margin-right: 20px;
-    font-size: 14px;
-    color: #333;
-  }
-  
-  /* Button */
-  .login-btn {
-    width: 60%;
-    padding: 12px;
-    background-color: #1b4fae;
-    color: white;
-    border: none;
-    border-radius: 20px;
-    font-size: 16px;
-    cursor: pointer;
-  }
-  
-  .login-btn:hover {
-    background-color: #45a049;
-  }
-  
+  background: url("../../assets//PicturesAdmin/LoginBg.jpg") no-repeat center center / cover;
+}
+
+.logo-container {
+  position: absolute;
+  top: -80px;
+  left: 620px;
+}
+
+.logo {
+  width: 100px; /* Adjust the size of your logo */
+  height: auto;
+}
+
+
+.login-box {
+  margin-top: 70px;
+  background-color: rgba(255, 255, 255, 0.4); /* White with 80% opacity */
+  color: white;
+  padding: 2.1rem;
+  border-radius: 10px;
+  width: 410px;
+  height: 520px;
+  text-align: center;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(100px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  margin-left:160px;
+}
+
+.login-box h2 {
+  text-align: center;
+  margin-bottom: 2.6rem;
+  margin-top: 1.4rem;
+  font-size: 2rem;
+}
+
+.input-group {
+  margin-bottom: 2.3rem;
+  text-align: left;
+}
+
+.input-group label {
+  display: block;
+  margin-bottom: 0.1rem;
+  color: white;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #272930;
+  border-radius: 5px;
+  font-size: 1rem;
+  margin-top: 0.1rem;
+  color: black;
+}
+
+.form-label{
+  display: block;
+  text-align: left;
+}
+
+.login-button {
+  background-color: #1b4fae;
+  color: white;
+  padding: 0.7rem;
+  border: none;
+  width: 100%;
+  border-radius: 5px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-top: 27px;
+}
+
+.login-button:hover {
+  background-color: #09063d;
+}
+
+.signup-text {
+  text-align: center;
+  font-size: 0.9rem;
+  margin-top: 1rem;
+}
+
+.signup-text a {
+  color: #f1c40f;
+  text-decoration: none;
+}
+
+.signup-text a:hover {
+  color: #1547e6;
+}
