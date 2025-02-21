@@ -1,80 +1,103 @@
 import React, { useState } from "react";
 import "./AdminLogin.css";  
 import logo from "../../assets/PicturesAdmin/logoBlack.png"; 
-import { FaUser } from 'react-icons/fa';  // Import FaUser from react-icons
-import { FaLock } from 'react-icons/fa';  // Import FaLock from react-icons
+import { FaUser, FaLock } from 'react-icons/fa';  
+import axios from "axios"; 
 
 function Login() {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");  
   const [password, setPassword] = useState("");
+  const [error, setError] = useState(null);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Here you can handle form submission (e.g., authentication)
-    console.log("Username:", username);
-    console.log("Password:", password);
+
+    console.log("Attempting login with:", { email, password });  // Debugging
+
+    try {
+      const response = await axios.post(
+        'http://localhost:5000/api/auth/login',
+        { email, password }, 
+        { headers: { "Content-Type": "application/json" } } // Ensure correct format
+      );
+
+      console.log("Response received:", response.data);  // Debugging
+
+      // Store token and role
+      localStorage.setItem('token', response.data.token);  
+      localStorage.setItem('role', response.data.role);    
+
+      if (response.data.role === 'admin') {
+        window.location.href = '/admin-dashboard';  
+      } else if (response.data.role === 'employee') {
+        window.location.href = '/employee-dashboard';  
+      }
+
+    } catch (error) {
+      console.error("Error response:", error.response?.data);  // Debugging
+      setError(error.response?.data?.message || 'An error occurred');
+    }
   };
 
   return (
     <div className="login-container">
-  {/* Logo */}
-  <div className="logo-container">
-    <img src={logo} alt="Logo" className="logo" />
-  </div>
-
-  <div className="login-box">
-    <h2>Login</h2>
-    <form onSubmit={handleSubmit}>
-      <div className="mb-3">
-        <label htmlFor="username" className="form-label">
-          User Name
-        </label>
-        <div className="input-group">
-          <span className="input-group-text">
-            <FaUser />
-          </span>
-          <input
-            type="text"
-            id="username"
-            className="form-control"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            placeholder="Enter your username"
-            required
-          />
-        </div>
+      <div className="logo-container">
+        <img src={logo} alt="Logo" className="logo" />
       </div>
 
-      <div className="mb-3">
-        <label htmlFor="password" className="form-label">
-          Password
-        </label>
-        <div className="input-group">
-          <span className="input-group-text">
-            <FaLock />
-          </span>
-          <input
-            type="password"
-            id="password"
-            className="form-control"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Enter your password"
-            required
-          />
-        </div>
-      </div>
-      <button type="submit" className="login-button">
-        Login
-      </button>
-    </form>
-    <p className="signup-text">
-      Forgot your paasword?{" "}
-      <a href="#">Reset Password</a>
-    </p>
-  </div>
-</div>
+      <div className="login-box">
+        <h2>Login</h2>
+        <form onSubmit={handleSubmit}>
+          <div className="mb-3">
+            <label htmlFor="email" className="form-label">
+              Email
+            </label>
+            <div className="input-group">
+              <span className="input-group-text">
+                <FaUser />
+              </span>
+              <input
+                type="email"
+                id="email"  
+                className="form-control"
+                value={email}   
+                onChange={(e) => setEmail(e.target.value)}  
+                placeholder="Enter your email"
+                required
+              />
+            </div>
+          </div>
 
+          <div className="mb-3">
+            <label htmlFor="password" className="form-label">
+              Password
+            </label>
+            <div className="input-group">
+              <span className="input-group-text">
+                <FaLock />
+              </span>
+              <input
+                type="password"
+                id="password"
+                className="form-control"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter your password"
+                required
+              />
+            </div>
+          </div>
+          <button type="submit" className="login-button">
+            Login
+          </button>
+        </form>
+        {error && <p className="error-message">{error}</p>} {/* Display error message */}
+        <p className="signup-text">
+          Forgot your password?{" "}
+          <a href="#">Reset Password</a>
+        </p>
+      </div>
+    </div>
   );
 }
 
