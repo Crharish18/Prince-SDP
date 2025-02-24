@@ -4,6 +4,7 @@ const { loginUser } = require('../controllers/authControllers');  // Ensure this
 const router = express.Router();
 
 // POST route for login
-router.post('/login', loginUser);  // This should handle POST requests to /api/auth/login
+router.post('/login', loginUser);  // This should handle POST requests to /api/auth/login 
+
 
 module.exports = router;

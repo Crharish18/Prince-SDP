@@ -1,19 +1,81 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { FaEye, FaEdit, FaTrash } from "react-icons/fa"; 
 import Sidebar from "../../components/sidebar";
 import Header from "../../components/Header";
 import './ManageEmployee.css';
-import 'bootstrap/dist/css/bootstrap.min.css'; // bootstrap
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 function ManageEmployee() {
+  const [employees, setEmployees] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [searchText, setSearchText] = useState("");
+  const [searchColumn, setSearchColumn] = useState("id");
 
+  // Fetch employees from the backend
+  useEffect(() => {
+    axios
+      .get('http://localhost:5000/api/employees')
+      .then((response) => {
+        console.log('Employee data:', response.data);
+        setEmployees(response.data);  // Update state
+        console.log('Updated employees state:', employees);  // Check if state updated
+      })
+      .catch((error) => {
+        console.error('Error fetching employees:', error);
+      });
+  }, []);
+  
+  
+  
   const handleAddEmployeeClick = () => {
-    setShowModal(true); // Show modal when "Add Employee" is clicked
+    setShowModal(true);
   };
 
   const handleCloseModal = () => {
-    setShowModal(false); // Close modal
+    setShowModal(false);
   };
+
+  const handleEditClick = (employee) => {
+    setSelectedEmployee(employee);
+    setShowEditModal(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setShowEditModal(false);
+  };
+
+  const handleViewClick = (employee) => {
+    setSelectedEmployee(employee);
+    setShowViewModal(true);
+  };
+
+  const handleCloseViewModal = () => {
+    setShowViewModal(false);
+  };
+
+  const handleDeleteClick = (employeeId) => {
+    const updatedEmployees = employees.filter((emp) => emp.id !== employeeId);
+    setEmployees(updatedEmployees);
+  };
+
+  const handleSearchChange = (e) => {
+    setSearchText(e.target.value);
+  };
+
+  const handleSearchColumnChange = (e) => {
+    setSearchColumn(e.target.value);
+  };
+
+  const filteredEmployees = employees.filter((emp) => {
+    const value = emp[searchColumn];  // Get the value of the search column
+    return value && value.toString().toLowerCase().includes(searchText.toLowerCase());
+     // Check if it's not undefined or null
+  });
+  
 
   return (
     <div className="ManageEmployee-container">
@@ -25,12 +87,31 @@ function ManageEmployee() {
           <div className="top-section">
             <h1 className="section-title">Manage Employees</h1>
             <div className="search-wrapper">
+              <select
+                className="form-control"
+                value={searchColumn}
+                onChange={handleSearchColumnChange}
+                style={{ marginRight: "10px", width: "200px" }}
+              >
+                <option value="id">USERID</option>
+                <option value="firstName">FIRSTNAME</option>
+                <option value="lastName">LASTNAME</option>
+                <option value="email">EMAIL</option>
+                <option value="phoneNum">PHONENUM</option>
+                <option value="role">ROLE</option>
+                <option value="username">USERNAME</option>
+                <option value="dob">DATE OF BIRTH</option>
+                <option value="natId">NATIONAL ID</option>
+                <option value="address">ADDRESS</option>
+              </select>
               <input
                 type="text"
                 className="form-control search-bar"
-                placeholder="Search employees..."
+                value={searchText}
+                onChange={handleSearchChange}
+                placeholder={`Search by ${searchColumn}...`}
               />
-              <div className="btn-container">
+              <div className="btn-container" style={{ marginTop: "-0px" }}>
                 <button className="btn btn-primary" onClick={handleAddEmployeeClick}>
                   Add Employee
                 </button>
@@ -39,76 +120,56 @@ function ManageEmployee() {
             </div>
           </div>
 
-          {/* Employee Table */}
           <div className="table-container">
             <table className="table table-striped">
               <thead>
                 <tr>
-                  <th>Employee ID</th>
-                  <th>Name</th>
-                  <th>Address</th>
-                  <th>DOB</th>
-                  <th>Mobile</th>
-                  <th>National ID</th>
-                  <th>Email</th>
+                  <th>USERID</th>
+                  <th>FIRSTNAME</th>
+                  <th>LASTNAME</th>
+                  <th>EMAIL</th>
+                  <th>PHONENUM</th>
+                  <th>ROLE</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {/* just some rows of entries */}
-                {[...Array(20)].map((_, index) => (
-                  <tr key={index}>
-                    <td>{index + 1}</td>
-                    <td>John Doe</td>
-                    <td>123 Main St, City</td>
-                    <td>1990-01-01</td>
-                    <td>123-456-7890</td>
-                    <td>123456789V</td>
-                    <td>johndoe@email.com</td>
-                  </tr>
-                ))}
-              </tbody>
+  {employees.length > 0 ? (
+    employees.map((emp) => (
+      <tr key={emp.userid}>
+        <td>{emp.userid}</td>
+        <td>{emp.first_name}</td>
+        <td>{emp.last_name}</td>
+        <td>{emp.email}</td>
+        <td>{emp.phone_num}</td>
+        <td>{emp.role}</td>
+        <td>
+          <FaEye
+            style={{ marginRight: "10px", cursor: "pointer", color: "#2770b4" }}
+            onClick={() => handleViewClick(emp)} // View action
+          />
+          <FaEdit
+            style={{ marginRight: "10px", cursor: "pointer", color: "#f0ad4e" }}
+            onClick={() => handleEditClick(emp)} // Edit action
+          />
+          <FaTrash
+            style={{ cursor: "pointer", color: "#d9534f" }}
+            onClick={() => handleDeleteClick(emp.userid)} // Delete action
+          />
+        </td>
+      </tr>
+    ))
+  ) : (
+    <tr>
+      <td colSpan="7">No employees found</td>
+    </tr>
+  )}
+</tbody>
+
+
             </table>
           </div>
         </div>
-
-        {/* Modal for Adding Employee */}
-        {showModal && (
-          <div className="modal-overlay">
-            <div className="modal-content">
-              <h2>Add Employee</h2>
-              <form>
-                <div className="form-group">
-                  <label>Name</label>
-                  <input type="text" className="form-control" placeholder="Enter name" />
-                </div>
-                <div className="form-group">
-                  <label>Address</label>
-                  <input type="text" className="form-control" placeholder="Enter address" />
-                </div>
-                <div className="form-group">
-                  <label>Date of Birth</label>
-                  <input type="date" className="form-control" />
-                </div>
-                <div className="form-group">
-                  <label>Mobile</label>
-                  <input type="text" className="form-control" placeholder="Enter mobile number" />
-                </div>
-                <div className="form-group">
-                  <label>National ID</label>
-                  <input type="text" className="form-control" placeholder="Enter National ID" />
-                </div>
-                <div className="form-group">
-                  <label>Email</label>
-                  <input type="email" className="form-control" placeholder="Enter email" />
-                </div>
-                <div className="btn-container">
-                  <button type="button" className="btn btn-primary">Save Employee</button>
-                  <button type="button" className="btn btn-secondary" onClick={handleCloseModal}>Close</button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

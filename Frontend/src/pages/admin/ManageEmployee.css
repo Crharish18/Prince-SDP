@@ -6,6 +6,7 @@ html, body {
   background-color: #e0e0e0; /* Light gray background */
   display: flex;
   flex-direction: column;
+  overflow-x: hidden !important;
 }
 
 
@@ -13,6 +14,8 @@ html, body {
   display: flex;
   height: 100vh; /* Full viewport height */
   width: 100vw; /* Full viewport width */
+  overflow-x: hidden;
+  
 }
 
 
@@ -32,13 +35,14 @@ html, body {
   min-height: 100vh; /* Ensures full height */
   padding: 40px 20px; /* More padding for spacing */
   width: 100%;
-  overflow: auto; /* Internal scrolling if necessary */
+  /* Internal scrolling if necessary */
 }
 
 /* Centering the inner container */
 .inner-container {
   margin-left: 320px;
   margin-top: 30px;
+  overflow-x: hidden;
 }
 
 /* Search Bar and Buttons Section */
@@ -111,6 +115,7 @@ h1.section-title {
   height: 400px; /* Set fixed height for the scrollable area */
   overflow-y: scroll; /* Enable vertical scrolling */
   position: relative; /* Ensure stacking context for z-index */
+  overflow-x: hidden;
 }
 
 /* Table Header - Keep Fixed */
@@ -144,100 +149,195 @@ th {
 }
 
 
+/* edit form */
 /* Modal Overlay */
-.modal-overlay {
+/* Modal Overlay */
+.modal-overlay1 {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.5); /* Dim background */
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 999;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease-out; /* Smooth fade-in effect */
 }
 
 /* Modal Content */
-.modal-content {
-  background: #ffffff !important; /* Solid white background */
-  padding: 20px 25px; /* Reduce padding for smaller size */
-  border-radius: 15px; /* More rounded corners */
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15); /* Soft shadow for depth */
-  width: 60%; /* Reduce the width */
-  max-width: 500px; /* Max width */
-  z-index: 1000;
-  opacity: 1 !important;  /* Ensure no transparency */
-  transition: all 0.3s ease; /* Smooth transition for hover */
+.modal-content1 {
+  background: #ffffff;
+  padding: 40px;
+  border-radius: 12px; /* Rounded corners for a modern look */
+  width: 600px;
+  max-width: 100%;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2); /* Soft shadow for depth */
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  animation: slideIn 0.4s ease-out; /* Animation for modal entry */
 }
 
-/* Form Inputs */
-.modal-content .form-group {
-  margin-bottom: 20px; /* Add spacing between form fields */
+/* Modal Title */
+.modal-title1 {
+  text-align: center;
+  font-size: 32px;
+  font-weight: 700;
+  color: #2c3e50;
+  margin-bottom: 20px;
 }
 
-.modal-content .form-group label {
-  font-weight: bold;
-  font-size: 16px; /* Slightly larger label font */
-  margin-bottom: 5px;
+/* Form */
+.modal-form1 {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
-.modal-content .form-group input {
+/* Button Container - Center buttons */
+.modal-content1 .btn-container {
+  display: flex;
+  justify-content: center; /* Align buttons to the center */
+  gap: 20px;
   width: 100%;
-  padding: 12px 15px;
-  border-radius: 12px; /* Rounded corners for inputs */
-  border: 2px solid #ddd;
-  font-size: 16px;
-  transition: border 0.3s ease;
+  margin-top: 20px;
 }
 
-.modal-content .form-group input:focus {
-  border-color: #2770b4; /* Blue border on focus */
-  box-shadow: 0 0 5px rgba(39, 112, 180, 0.5); /* Glow effect on focus */
+/* Buttons in the Edit Employee Modal */
+.modal-content1 .btn {
+  padding: 12px 35px; /* Increase padding to make it feel larger */
+  font-size: 16px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease-in-out;
+  width: 150px; /* Set button width for consistency */
+}
+
+/* Primary Button */
+.modal-content1 .btn-primary {
+  background-color: #3498db;
+  color: white;
+}
+
+.modal-content1 .btn-primary:hover {
+  background-color: #2980b9;
+}
+
+/* Secondary Button */
+.modal-content1 .btn-secondary {
+  background-color: #95a5a6;
+  color: white;
+}
+
+.modal-content1 .btn-secondary:hover {
+  background-color: #7f8c8d;
+}
+
+/* Center the Close Button in View Employee Modal */
+
+
+/* Form Group */
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Labels */
+.form-group label {
+  font-size: 16px;
+  font-weight: 600;
+  color: #34495e;
+  margin-bottom: 8px;
+}
+
+/* Inputs */
+.form-group input {
+  padding: 12px;
+  font-size: 16px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  background-color: #f7f9fc;
+  transition: border-color 0.3s ease-in-out;
+}
+
+.form-group input:focus {
+  border-color: #3498db;
+  outline: none;
+}
+
+/* Grid Layout */
+.grid-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 25px;
+  row-gap: 20px;
+}
+
+/* Button Container */
+.btn-container {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
 }
 
 /* Buttons */
-.modal-content .btn {
-  margin-top: 20px;
-  width: 48%;
-  padding: 12px;
-  border-radius: 12px; /* Rounded corners for buttons */
+.btn {
+  padding: 12px 25px;
   font-size: 16px;
-  transition: background 0.3s ease, transform 0.3s ease;
-}
-
-.modal-content .btn-secondary {
-  background-color: #2770b4;
-  border: 2px solid #ddd;
-}
-
-.modal-content .btn-primary {
-  background-color: #2770b4;
-  color: white;
-  border: none;
-}
-
-.modal-content .btn:hover {
-  transform: scale(1.05); /* Slight zoom effect on hover */
-}
-
-.modal-content .btn-primary:hover {
-  background-color: #131b6e; /* Darker blue on hover */
-}
-
-.modal-content .btn-secondary:hover {
-  background-color: #131b6e; /* Lighter gray on hover */
-}
-
-/* Close Button */
-.modal-content .btn-close {
-  background-color: #2770b4;
-  color: white;
-  font-size: 14px;
-  padding: 8px 12px;
   border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease-in-out;
 }
 
-.modal-content .btn-close:hover {
-  background-color: #5a1414;
+.btn-primary {
+  background-color: #3498db;
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: #2980b9;
+}
+
+.btn-secondary {
+  background-color: #95a5a6;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background-color: #7f8c8d;
+}
+
+/* Close Button (if you want to add one) */
+.btn-close {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.btn-close:hover {
+  background-color: #c0392b;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }

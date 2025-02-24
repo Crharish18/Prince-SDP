@@ -2,7 +2,7 @@ const express = require('express');
 require('dotenv').config();
 const cors = require('cors');
 const authRoutes = require('./routes/auth');
-
+const employeesRoutes = require('./routes/employees'); // Import the employees route
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -23,7 +23,10 @@ app.use((req, res, next) => {
 });
 
 // ✅ API Routes
+
 app.use('/api/auth', authRoutes);
+app.use('/api/employees', employeesRoutes); 
+
 
 // ✅ 404 Handler
 app.all('*', (req, res) => {
@@ -35,3 +38,7 @@ app.all('*', (req, res) => {
 app.listen(port, () => {
   console.log(`🚀 Server running on port ${port}`);
 });
+
+
+
+
