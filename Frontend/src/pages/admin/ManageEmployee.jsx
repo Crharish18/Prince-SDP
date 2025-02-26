@@ -9,9 +9,18 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 function ManageEmployee() {
   const [employees, setEmployees] = useState([]);
   const [showModal, setShowModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showViewModal, setShowViewModal] = useState(false);
-  const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [newEmployee, setNewEmployee] = useState({
+    username: '',
+    firstName: '',
+    lastName: '',
+    email: '',
+    phoneNum: '',
+    role: '',
+    dob: '',
+    nationalId: '',
+    address: '',
+    password: '' 
+  });
   const [searchText, setSearchText] = useState("");
   const [searchColumn, setSearchColumn] = useState("id");
 
@@ -20,16 +29,21 @@ function ManageEmployee() {
     axios
       .get('http://localhost:5000/api/employees')
       .then((response) => {
-        console.log('Employee data:', response.data);
-        setEmployees(response.data);  // Update state
-        console.log('Updated employees state:', employees);  // Check if state updated
+        setEmployees(response.data);
       })
       .catch((error) => {
         console.error('Error fetching employees:', error);
       });
   }, []);
+
   
+  const handleSearchColumnChange = (e) => {
+    setSearchColumn(e.target.value);  // Updates the search column based on user selection
+  };
   
+  const handleSearchChange = (e) => {
+    setSearchText(e.target.value);  // Update the searchText state when the user types in the search input
+  };
   
   const handleAddEmployeeClick = () => {
     setShowModal(true);
@@ -39,44 +53,32 @@ function ManageEmployee() {
     setShowModal(false);
   };
 
-  const handleEditClick = (employee) => {
-    setSelectedEmployee(employee);
-    setShowEditModal(true);
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewEmployee({
+      ...newEmployee,
+      [name]: value
+    });
   };
 
-  const handleCloseEditModal = () => {
-    setShowEditModal(false);
-  };
-
-  const handleViewClick = (employee) => {
-    setSelectedEmployee(employee);
-    setShowViewModal(true);
-  };
-
-  const handleCloseViewModal = () => {
-    setShowViewModal(false);
-  };
-
-  const handleDeleteClick = (employeeId) => {
-    const updatedEmployees = employees.filter((emp) => emp.id !== employeeId);
-    setEmployees(updatedEmployees);
-  };
-
-  const handleSearchChange = (e) => {
-    setSearchText(e.target.value);
-  };
-
-  const handleSearchColumnChange = (e) => {
-    setSearchColumn(e.target.value);
-  };
-
-  const filteredEmployees = employees.filter((emp) => {
-    const value = emp[searchColumn];  // Get the value of the search column
-    return value && value.toString().toLowerCase().includes(searchText.toLowerCase());
-     // Check if it's not undefined or null
-  });
+  const handleSaveNewEmployee = () => {
+    if (!newEmployee.username || !newEmployee.firstName || !newEmployee.lastName || !newEmployee.email || !newEmployee.phoneNum || !newEmployee.password) {
+      alert("All fields are required!");
+      return;
+    }
   
-
+    axios
+      .post('http://localhost:5000/api/employees', newEmployee)
+      .then((response) => {
+        console.log("Employee added:", response.data);
+        setEmployees([...employees, response.data]);
+        setShowModal(false);
+      })
+      .catch((error) => {
+        console.error('Error adding employee:', error);
+      });
+  };
+  
   return (
     <div className="ManageEmployee-container">
       <Sidebar />
@@ -134,42 +136,178 @@ function ManageEmployee() {
                 </tr>
               </thead>
               <tbody>
-  {employees.length > 0 ? (
-    employees.map((emp) => (
-      <tr key={emp.userid}>
-        <td>{emp.userid}</td>
-        <td>{emp.first_name}</td>
-        <td>{emp.last_name}</td>
-        <td>{emp.email}</td>
-        <td>{emp.phone_num}</td>
-        <td>{emp.role}</td>
-        <td>
-          <FaEye
-            style={{ marginRight: "10px", cursor: "pointer", color: "#2770b4" }}
-            onClick={() => handleViewClick(emp)} // View action
-          />
-          <FaEdit
-            style={{ marginRight: "10px", cursor: "pointer", color: "#f0ad4e" }}
-            onClick={() => handleEditClick(emp)} // Edit action
-          />
-          <FaTrash
-            style={{ cursor: "pointer", color: "#d9534f" }}
-            onClick={() => handleDeleteClick(emp.userid)} // Delete action
-          />
-        </td>
-      </tr>
-    ))
-  ) : (
-    <tr>
-      <td colSpan="7">No employees found</td>
-    </tr>
-  )}
-</tbody>
-
-
+                {employees.length > 0 ? (
+                  employees.map((emp) => (
+                    <tr key={emp.userid}>
+                      <td>{emp.userid}</td>
+                      <td>{emp.first_name}</td>
+                      <td>{emp.last_name}</td>
+                      <td>{emp.email}</td>
+                      <td>{emp.phonenum}</td>
+                      <td>{emp.role}</td>
+                      <td>
+                        <FaEye
+                          style={{ marginRight: "10px", cursor: "pointer", color: "#2770b4" }}
+                        />
+                        <FaEdit
+                          style={{ marginRight: "10px", cursor: "pointer", color: "#f0ad4e" }}
+                        />
+                        <FaTrash
+                          style={{ cursor: "pointer", color: "#d9534f" }}
+                        />
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="7">No employees found</td>
+                  </tr>
+                )}
+              </tbody>
             </table>
           </div>
         </div>
+
+        {/* Add Employee Modal */}
+        {showModal && (
+          <div className="modal-overlay1">
+            <div className="modal-content1">
+              <h2>Add Employee</h2>
+              <form className="modal-form1">
+                <div className="grid-container">
+                  <div className="form-group">
+                    <label style={{ fontWeight: "bold" }}>Username</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Enter Username"
+                      name="username"
+                      value={newEmployee.username}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label style={{ fontWeight: "bold" }}>First Name</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Enter first name"
+                      name="firstName"
+                      value={newEmployee.firstName}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label style={{ fontWeight: "bold" }}>Last Name</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Enter last name"
+                      name="lastName"
+                      value={newEmployee.lastName}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label style={{ fontWeight: "bold" }}>Email</label>
+                    <input
+                      type="email"
+                      className="form-control"
+                      placeholder="Enter email"
+                      name="email"
+                      value={newEmployee.email}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label style={{ fontWeight: "bold" }}>Phone Number</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Enter phone number"
+                      name="phoneNum"
+                      value={newEmployee.phoneNum}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label style={{ fontWeight: "bold" }}>Role</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Enter role"
+                      name="role"
+                      value={newEmployee.role}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label style={{ fontWeight: "bold" }}>Date of Birth</label>
+                    <input
+                      type="date"
+                      className="form-control"
+                      placeholder="Enter DOB"
+                      name="dob"
+                      value={newEmployee.dob}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label style={{ fontWeight: "bold" }}>National ID</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Enter NationalID"
+                      name="nationalId"
+                      value={newEmployee.nationalId}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label style={{ fontWeight: "bold" }}>Address</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Enter Address"
+                      name="address"
+                      value={newEmployee.address}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  <div className="form-group">
+                  <label style={{ fontWeight: "bold" }}>Password</label>
+                  <input
+                    type="password"
+                    className="form-control"
+                    placeholder="Enter password"
+                    name="password"
+                    value={newEmployee.password}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                </div>
+                <div className="btn-container">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={handleCloseModal}
+                    style={{ marginLeft: "200px", width: "150px" }}
+                  >
+                    Close
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    style={{ marginRight: "210px" }}
+                    onClick={handleSaveNewEmployee}
+                  >
+                    Save
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
