@@ -153,6 +153,22 @@ function ManageEmployee() {
     console.log("View Employee clicked:", employee);  // Check if this logs when clicking View button
   };
   
+  const handleDeleteEmployee = (employeeId) => {
+    // Send a DELETE request to your backend API
+    axios
+      .delete(`http://localhost:5000/api/employees/${employeeId}`)
+      .then((response) => {
+        console.log("Employee deleted:", response.data);
+  
+        // Update the state to remove the deleted employee from the table
+        setEmployees((prevEmployees) =>
+          prevEmployees.filter((employee) => employee.userid !== employeeId)
+        );
+      })
+      .catch((error) => {
+        console.error("Error deleting employee:", error);
+      });
+  };
   
   return (
     <div className="ManageEmployee-container">
@@ -230,6 +246,7 @@ function ManageEmployee() {
                         />
                         <FaTrash
                           style={{ cursor: "pointer", color: "#d9534f" }}
+                          onClick={() => handleDeleteEmployee(emp.userid)} // Delete employee
                         />
                       </td>
                     </tr>

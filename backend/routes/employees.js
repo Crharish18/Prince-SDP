@@ -63,5 +63,20 @@ router.post('/', async (req, res) => {
 });
 
 
+// Delete an employee by ID
+router.delete('/:userid', (req, res) => {
+  const { userid } = req.params;
+
+  const query = 'DELETE FROM users WHERE userid = ?';
+  connection.query(query, [userid], (err, results) => {
+    if (err) {
+      console.error('Error deleting employee:', err);
+      res.status(500).send('Error deleting employee');
+    } else {
+      res.status(200).send({ message: 'Employee deleted successfully' });
+    }
+  });
+});
+
 
 module.exports = router;
