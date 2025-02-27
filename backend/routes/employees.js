@@ -17,17 +17,20 @@ router.get('/', (req, res) => {
   });
 });
 
+
+
 router.post('/', async (req, res) => {
   const { username, firstName, lastName, email, phoneNum, role, dob, nationalId, address, password } = req.body;
 
-
-  try {
   
+  try {
     // Hash the password using bcryptjs
     const hashedPassword = await bcrypt.hash(password, 10); // Await the hashing function to ensure it completes before moving forward
+
 // Now use the hashed password in your SQL query
     const query = `INSERT INTO users (username, first_name, last_name, email, phonenum, role, dob, natID, address, password) 
                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+                   
  // Insert the data with the hashed password into the database
     connection.query(query, [username, firstName, lastName, email, phoneNum, role, dob, nationalId, address, hashedPassword], (err, results) => {
       if (err) {
@@ -58,5 +61,7 @@ router.post('/', async (req, res) => {
     res.status(500).send('Error hashing password');
   }
 });
+
+
 
 module.exports = router;

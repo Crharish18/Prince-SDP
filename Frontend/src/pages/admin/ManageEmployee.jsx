@@ -23,6 +23,9 @@ function ManageEmployee() {
   });
   const [searchText, setSearchText] = useState("");
   const [searchColumn, setSearchColumn] = useState("id");
+  const [showViewModal, setShowViewModal] = useState(false); // To show/hide the view modal
+  const [selectedEmployee, setSelectedEmployee] = useState(null); // To store the selected employee
+
 
   // Fetch employees from the backend
   useEffect(() => {
@@ -36,6 +39,15 @@ function ManageEmployee() {
       });
   }, []);
 
+  
+  //to view the dob in my employee view mdel
+  const formatDate = (dob) => {
+    const date = new Date(dob);
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0'); // Month is 0-indexed
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
   
   const handleSearchColumnChange = (e) => {
     setSearchColumn(e.target.value);  // Updates the search column based on user selection
@@ -62,22 +74,85 @@ function ManageEmployee() {
   };
 
   const handleSaveNewEmployee = () => {
-    if (!newEmployee.username || !newEmployee.firstName || !newEmployee.lastName || !newEmployee.email || !newEmployee.phoneNum || !newEmployee.password) {
-      alert("All fields are required!");
-      return;
+    let errors = {};
+  
+    // Username validation
+    if (!newEmployee.username || newEmployee.username.length < 4) {
+      errors.username = "Username must be at least 4 characters long.";
     }
   
+    // First Name validation
+    if (!newEmployee.firstName || !/^[A-Za-z]+$/.test(newEmployee.firstName)) {
+      errors.firstName = "First name is required and should contain only letters.";
+    }
+  
+    // Last Name validation
+    if (!newEmployee.lastName || !/^[A-Za-z]+$/.test(newEmployee.lastName)) {
+      errors.lastName = "Last name is required and should contain only letters.";
+    }
+  
+    // Email validation
+    if (!newEmployee.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmployee.email)) {
+      errors.email = "Invalid email address.";
+    }
+  
+    // Phone Number validation
+    if (!newEmployee.phoneNum || !/^\d{10,15}$/.test(newEmployee.phoneNum)) {
+      errors.phoneNum = "Phone number must be between 10 and 15 digits.";
+    }
+  
+    // Role validation
+    if (!newEmployee.role || !["admin", "employee"].includes(newEmployee.role.toLowerCase())) {
+      errors.role = "Role must be either 'admin' or 'employee'.";
+    }
+  
+    // Date of Birth validation
+    if (!newEmployee.dob) {
+      errors.dob = "Date of Birth is required.";
+    }
+  
+    // National ID validation
+    if (!newEmployee.nationalId || newEmployee.nationalId.length < 6) {
+      errors.nationalId = "National ID must be at least 6 characters long.";
+    }
+  
+    // Address validation
+    if (!newEmployee.address || newEmployee.address.length < 5) {
+      errors.address = "Address must be at least 5 characters long.";
+    }
+  
+    // Password validation
+    if (!newEmployee.password || newEmployee.password.length < 6) {
+      errors.password = "Password must be at least 6 characters long.";
+    }
+  
+    // Check if there are any validation errors
+    if (Object.keys(errors).length > 0) {
+      alert(Object.values(errors).join("\n")); // Show all errors in an alert
+      return;
+    }
+
+    
+    // Proceed with saving the employee if validation passes
     axios
-      .post('http://localhost:5000/api/employees', newEmployee)
+      .post("http://localhost:5000/api/employees", newEmployee)
       .then((response) => {
         console.log("Employee added:", response.data);
         setEmployees([...employees, response.data]);
         setShowModal(false);
       })
       .catch((error) => {
-        console.error('Error adding employee:', error);
+        console.error("Error adding employee:", error);
       });
   };
+
+
+  const handleViewEmployee = (employee) => {
+    setSelectedEmployee(employee);
+    setShowViewModal(true);
+    console.log("View Employee clicked:", employee);  // Check if this logs when clicking View button
+  };
+  
   
   return (
     <div className="ManageEmployee-container">
@@ -148,6 +223,7 @@ function ManageEmployee() {
                       <td>
                         <FaEye
                           style={{ marginRight: "10px", cursor: "pointer", color: "#2770b4" }}
+                          onClick={() => handleViewEmployee(emp)} // Ensure this triggers handleViewEmployee
                         />
                         <FaEdit
                           style={{ marginRight: "10px", cursor: "pointer", color: "#f0ad4e" }}
@@ -308,6 +384,75 @@ function ManageEmployee() {
             </div>
           </div>
         )}
+
+        {/* Modal for Viewing Employee */}
+        {showViewModal && selectedEmployee && (
+          <div className="modal-overlay1">
+            <div className="modal-content1">
+              <h2 className="modal-title1">View Employee</h2>
+              <form className="modal-form1">
+                <div className="grid-container">
+                  <div className="form-group">
+                    <label style={{ fontWeight: "bold" }}>USERID</label>
+                    <input type="text" className="form-control" value={selectedEmployee.userid} disabled />
+                  </div>
+                  <div className="form-group">
+                    <label style={{ fontWeight: "bold" }}>Username</label>
+                    <input type="text" className="form-control" value={selectedEmployee.username} disabled />
+                  </div>
+                  <div className="form-group">
+                    <label style={{ fontWeight: "bold" }}>First Name</label>
+                    <input type="text" className="form-control" value={selectedEmployee.first_name} disabled />
+                  </div>
+                  <div className="form-group">
+                    <label style={{ fontWeight: "bold" }}>Last Name</label>
+                    <input type="text" className="form-control" value={selectedEmployee.last_name} disabled />
+                  </div>
+                  <div className="form-group">
+                    <label style={{ fontWeight: "bold" }}>Email</label>
+                    <input type="email" className="form-control" value={selectedEmployee.email} disabled />
+                  </div>
+                  <div className="form-group">
+                    <label style={{ fontWeight: "bold" }}>Phone Number</label>
+                    <input type="text" className="form-control" value={selectedEmployee.phonenum} disabled />
+                  </div>
+                  <div className="form-group">
+                    <label style={{ fontWeight: "bold" }}>Role</label>
+                    <input type="text" className="form-control" value={selectedEmployee.role} disabled />
+                  </div>
+                  <div className="form-group">
+            <label style={{ fontWeight: "bold" }}>Date of Birth</label>
+            <input 
+              type="date" 
+              className="form-control" 
+              value={formatDate(selectedEmployee.dob)} 
+              disabled 
+            />
+          </div>
+                  <div className="form-group">
+                    <label style={{ fontWeight: "bold" }}>National ID</label>
+                    <input type="text" className="form-control" value={selectedEmployee.natID} disabled />
+                  </div>
+                  <div className="form-group">
+                    <label style={{ fontWeight: "bold" }}>Address</label>
+                    <input type="text" className="form-control" value={selectedEmployee.address} disabled />
+                  </div>
+                </div>
+                <div className="btn-container">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => setShowViewModal(false)} // Close the modal
+                    style={{ marginLeft: "200px", width: "150px" }}
+                  >
+                    Close
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );
