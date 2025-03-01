@@ -79,4 +79,42 @@ router.delete('/:userid', (req, res) => {
 });
 
 
+router.put('/:userid', (req, res) => {
+  const { userid } = req.params;
+  const { username, first_name, last_name, email, phonenum, role, dob, natID, address } = req.body;
+
+  // Log the received data for debugging
+  console.log("Received data for update:", req.body);
+
+  // Check if any required fields are missing or empty (excluding password and created_at)
+  if (!username || !first_name || !last_name || !email || !phonenum || !role || !dob || !natID || !address) {
+    // Log which field is actually missing
+    const missingFields = [];
+    if (!username) missingFields.push("username");
+    if (!first_name) missingFields.push("first_name");
+    if (!last_name) missingFields.push("last_name");
+    if (!email) missingFields.push("email");
+    if (!phonenum) missingFields.push("phonenum");
+    if (!role) missingFields.push("role");
+    if (!dob) missingFields.push("dob");
+    if (!natID) missingFields.push("natID");
+    if (!address) missingFields.push("address");
+
+    console.error('Missing required fields:', missingFields);
+
+    return res.status(400).json({ error: 'All fields are required except password, created_at', missingFields });
+  }
+
+  const query = `UPDATE users SET username=?, first_name=?, last_name=?, email=?, phonenum=?, role=?, dob=?, natID=?, address=? WHERE userid=?`;
+
+  connection.query(query, [username, first_name, last_name, email, phonenum, role, dob, natID, address, userid], (err, results) => {
+    if (err) {
+      console.error('Error updating employee:', err);
+      return res.status(500).send('Error updating employee');
+    }
+    console.log('Employee updated successfully');
+    res.status(200).send({ message: 'Employee updated successfully' });
+  });
+});
+
 module.exports = router;

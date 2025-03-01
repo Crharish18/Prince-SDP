@@ -21,10 +21,28 @@ function ManageEmployee() {
     address: '',
     password: '' 
   });
+
+  const [validationErrors, setValidationErrors] = useState({
+    username: '',
+    firstName: '',
+    lastName: '',
+    email: '',
+    phoneNum: '',
+    role: '',
+    dob: '',
+    nationalId: '',
+    address: '',
+    password: ''
+  });
+  
   const [searchText, setSearchText] = useState("");
   const [searchColumn, setSearchColumn] = useState("id");
   const [showViewModal, setShowViewModal] = useState(false); // To show/hide the view modal
   const [selectedEmployee, setSelectedEmployee] = useState(null); // To store the selected employee
+  const [showEditModal, setShowEditModal] = useState(false); // Modal visibility state
+  const [editedEmployee, setEditedEmployee] = useState({}); // State for holding the edited employee data
+
+
 
 
   // Fetch employees from the backend
@@ -127,23 +145,21 @@ function ManageEmployee() {
     }
   
     // Check if there are any validation errors
-    if (Object.keys(errors).length > 0) {
-      alert(Object.values(errors).join("\n")); // Show all errors in an alert
-      return;
-    }
+    setValidationErrors(errors);
 
-    
-    // Proceed with saving the employee if validation passes
-    axios
-      .post("http://localhost:5000/api/employees", newEmployee)
-      .then((response) => {
-        console.log("Employee added:", response.data);
-        setEmployees([...employees, response.data]);
-        setShowModal(false);
-      })
-      .catch((error) => {
-        console.error("Error adding employee:", error);
-      });
+    // If no errors, proceed with saving the employee
+    if (Object.keys(errors).length === 0) {
+      axios
+        .post("http://localhost:5000/api/employees", newEmployee)
+        .then((response) => {
+          console.log("Employee added:", response.data);
+          setEmployees([...employees, response.data]);
+          setShowModal(false);
+        })
+        .catch((error) => {
+          console.error("Error adding employee:", error);
+        });
+    }
   };
 
 
@@ -170,6 +186,66 @@ function ManageEmployee() {
       });
   };
   
+
+  const handleEditEmployee = (employee) => {
+    const formattedDob = employee.dob ? employee.dob.split('T')[0] : '';
+    setSelectedEmployee(employee);
+    setEditedEmployee({ ...employee, dob: formattedDob });
+    setShowEditModal(true);
+  };
+  
+  
+  const handleSaveEditEmployee = () => {
+    // Exclude password, created_at, and updated_at from the request
+    const { password, created_at, updated_at, ...employeeData } = editedEmployee;
+  
+    // Change snake_case to camelCase
+    const employeeDataCamelCase = {
+      ...employeeData,
+      firstName: employeeData.first_name,
+      lastName: employeeData.last_name,
+      phoneNum: employeeData.phonenum,
+      nationalId: employeeData.natID,
+    };
+  
+    console.log("Sending data to backend:", employeeDataCamelCase); // This will help ensure no extra data is being sent
+  
+    axios
+      .put(`http://localhost:5000/api/employees/${editedEmployee.userid}`, employeeDataCamelCase)
+      .then((response) => {
+        console.log("Employee updated:", response.data);
+        setEmployees((prevEmployees) =>
+          prevEmployees.map((emp) => (emp.userid === editedEmployee.userid ? editedEmployee : emp))
+        );
+        setShowEditModal(false);
+      })
+      .catch((error) => {
+        console.error("Error updating employee:", error.response ? error.response.data : error);
+      });
+  };
+  
+  const handleEditInputChange = (e) => {
+    const { name, value } = e.target;
+    if (name === "dob") {
+      setEditedEmployee((prev) => ({
+        ...prev,
+        [name]: new Date(value).toISOString().split('T')[0], // Format date to YYYY-MM-DD
+      }));
+    } else {
+      setEditedEmployee((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
+  };
+
+  
+  const handleCloseEditModal = () => {
+    setShowEditModal(false); // Close the edit modal
+    setSelectedEmployee(null); // Reset selected employee
+  };
+  
+
   return (
     <div className="ManageEmployee-container">
       <Sidebar />
@@ -243,6 +319,7 @@ function ManageEmployee() {
                         />
                         <FaEdit
                           style={{ marginRight: "10px", cursor: "pointer", color: "#f0ad4e" }}
+                          onClick={() => handleEditEmployee(emp)} 
                         />
                         <FaTrash
                           style={{ cursor: "pointer", color: "#d9534f" }}
@@ -261,8 +338,8 @@ function ManageEmployee() {
           </div>
         </div>
 
-        {/* Add Employee Modal */}
-        {showModal && (
+         {/* Add Employee Modal */}
+         {showModal && (
           <div className="modal-overlay1">
             <div className="modal-content1">
               <h2>Add Employee</h2>
@@ -278,6 +355,7 @@ function ManageEmployee() {
                       value={newEmployee.username}
                       onChange={handleInputChange}
                     />
+                    {validationErrors.username && <div className="error">{validationErrors.username}</div>}
                   </div>
                   <div className="form-group">
                     <label style={{ fontWeight: "bold" }}>First Name</label>
@@ -289,6 +367,7 @@ function ManageEmployee() {
                       value={newEmployee.firstName}
                       onChange={handleInputChange}
                     />
+                    {validationErrors.firstName && <div className="error">{validationErrors.firstName}</div>}
                   </div>
                   <div className="form-group">
                     <label style={{ fontWeight: "bold" }}>Last Name</label>
@@ -300,6 +379,7 @@ function ManageEmployee() {
                       value={newEmployee.lastName}
                       onChange={handleInputChange}
                     />
+                    {validationErrors.lastName && <div className="error">{validationErrors.lastName}</div>}
                   </div>
                   <div className="form-group">
                     <label style={{ fontWeight: "bold" }}>Email</label>
@@ -311,6 +391,7 @@ function ManageEmployee() {
                       value={newEmployee.email}
                       onChange={handleInputChange}
                     />
+                    {validationErrors.email && <div className="error">{validationErrors.email}</div>}
                   </div>
                   <div className="form-group">
                     <label style={{ fontWeight: "bold" }}>Phone Number</label>
@@ -322,6 +403,7 @@ function ManageEmployee() {
                       value={newEmployee.phoneNum}
                       onChange={handleInputChange}
                     />
+                    {validationErrors.phoneNum && <div className="error">{validationErrors.phoneNum}</div>}
                   </div>
                   <div className="form-group">
                     <label style={{ fontWeight: "bold" }}>Role</label>
@@ -333,6 +415,7 @@ function ManageEmployee() {
                       value={newEmployee.role}
                       onChange={handleInputChange}
                     />
+                    {validationErrors.role && <div className="error">{validationErrors.role}</div>}
                   </div>
                   <div className="form-group">
                     <label style={{ fontWeight: "bold" }}>Date of Birth</label>
@@ -344,6 +427,7 @@ function ManageEmployee() {
                       value={newEmployee.dob}
                       onChange={handleInputChange}
                     />
+                    {validationErrors.dob && <div className="error">{validationErrors.dob}</div>}
                   </div>
                   <div className="form-group">
                     <label style={{ fontWeight: "bold" }}>National ID</label>
@@ -355,6 +439,7 @@ function ManageEmployee() {
                       value={newEmployee.nationalId}
                       onChange={handleInputChange}
                     />
+                    {validationErrors.nationalId && <div className="error">{validationErrors.nationalId}</div>}
                   </div>
                   <div className="form-group">
                     <label style={{ fontWeight: "bold" }}>Address</label>
@@ -366,18 +451,20 @@ function ManageEmployee() {
                       value={newEmployee.address}
                       onChange={handleInputChange}
                     />
+                    {validationErrors.address && <div className="error">{validationErrors.address}</div>}
                   </div>
                   <div className="form-group">
-                  <label style={{ fontWeight: "bold" }}>Password</label>
-                  <input
-                    type="password"
-                    className="form-control"
-                    placeholder="Enter password"
-                    name="password"
-                    value={newEmployee.password}
-                    onChange={handleInputChange}
-                  />
-                </div>
+                    <label style={{ fontWeight: "bold" }}>Password</label>
+                    <input
+                      type="password"
+                      className="form-control"
+                      placeholder="Enter password"
+                      name="password"
+                      value={newEmployee.password}
+                      onChange={handleInputChange}
+                    />
+                    {validationErrors.password && <div className="error">{validationErrors.password}</div>}
+                  </div>
                 </div>
                 <div className="btn-container">
                   <button
@@ -438,14 +525,14 @@ function ManageEmployee() {
                     <input type="text" className="form-control" value={selectedEmployee.role} disabled />
                   </div>
                   <div className="form-group">
-            <label style={{ fontWeight: "bold" }}>Date of Birth</label>
-            <input 
-              type="date" 
-              className="form-control" 
-              value={formatDate(selectedEmployee.dob)} 
-              disabled 
-            />
-          </div>
+                    <label style={{ fontWeight: "bold" }}>Date of Birth</label>
+                    <input 
+                      type="date" 
+                      className="form-control" 
+                      value={formatDate(selectedEmployee.dob)} 
+                      disabled 
+                    />
+                  </div>
                   <div className="form-group">
                     <label style={{ fontWeight: "bold" }}>National ID</label>
                     <input type="text" className="form-control" value={selectedEmployee.natID} disabled />
@@ -469,7 +556,133 @@ function ManageEmployee() {
             </div>
           </div>
         )}
-
+        
+            {/* Modal for Editing Employee */}
+            {showEditModal && selectedEmployee && (
+          <div className="modal-overlay1">
+            <div className="modal-content1">
+              <h2 className="modal-title1">Edit Employee</h2>
+              <form className="modal-form1">
+                <div className="grid-container">
+                  <div className="form-group">
+                    <label style={{ fontWeight: "bold" }}>USERID</label>
+                    <input type="text" className="form-control" value={editedEmployee.userid} disabled />
+                  </div>
+                  <div className="form-group">
+                    <label style={{ fontWeight: "bold" }}>Username</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      name="username"
+                      value={editedEmployee.username}
+                      onChange={handleEditInputChange}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label style={{ fontWeight: "bold" }}>First Name</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      name="first_name"
+                      value={editedEmployee.first_name}
+                      onChange={handleEditInputChange}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label style={{ fontWeight: "bold" }}>Last Name</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      name="last_name"
+                      value={editedEmployee.last_name}
+                      onChange={handleEditInputChange}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label style={{ fontWeight: "bold" }}>Email</label>
+                    <input
+                      type="email"
+                      className="form-control"
+                      name="email"
+                      value={editedEmployee.email}
+                      onChange={handleEditInputChange}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label style={{ fontWeight: "bold" }}>Phone Number</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      name="phonenum"
+                      value={editedEmployee.phonenum}
+                      onChange={handleEditInputChange}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label style={{ fontWeight: "bold" }}>Role</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      name="role"
+                      value={editedEmployee.role}
+                      onChange={handleEditInputChange}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label style={{ fontWeight: "bold" }}>Date of Birth</label>
+                    <input
+                      type="date"
+                      className="form-control"
+                      name="dob"
+                      value={editedEmployee.dob}
+                      onChange={handleEditInputChange}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label style={{ fontWeight: "bold" }}>National ID</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      name="natID"
+                      value={editedEmployee.natID}
+                      onChange={handleEditInputChange}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label style={{ fontWeight: "bold" }}>Address</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      name="address"
+                      value={editedEmployee.address}
+                      onChange={handleEditInputChange}
+                    />
+                  </div>
+                </div>
+                <div className="btn-container">
+                  <button 
+                    type="button" 
+                    className="btn btn-secondary" 
+                    onClick={handleCloseEditModal} 
+                    style={{ marginLeft: "200px", width: "150px" }}
+                  >
+                    Close
+                  </button>
+                  <button 
+                    type="button" 
+                    className="btn btn-primary" 
+                    onClick={handleSaveEditEmployee}
+                    style={{ marginRight: "210px" }}
+                  >
+                    Save
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+        
+        
       </div>
     </div>
   );
