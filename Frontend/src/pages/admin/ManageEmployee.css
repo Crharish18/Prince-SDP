@@ -111,10 +111,11 @@ h1.section-title {
   border-radius: 10px;
   box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
   margin-right: 70px;
-  height: 400px; /* Set fixed height for the scrollable area */
+  height: 440px; /* Set fixed height for the scrollable area */
   overflow-y: scroll; /* Enable vertical scrolling */
   position: relative; /* Ensure stacking context for z-index */
   overflow-x: hidden;
+  /* margin-bottom: 40px; */
 }
 
 /* Table Header - Keep Fixed */

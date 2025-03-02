@@ -36,7 +36,7 @@ function ManageEmployee() {
   });
   
   const [searchText, setSearchText] = useState("");
-  const [searchColumn, setSearchColumn] = useState("id");
+  const [searchColumn, setSearchColumn] = useState("");
   const [showViewModal, setShowViewModal] = useState(false); // To show/hide the view modal
   const [selectedEmployee, setSelectedEmployee] = useState(null); // To store the selected employee
   const [showEditModal, setShowEditModal] = useState(false); // Modal visibility state
@@ -45,18 +45,18 @@ function ManageEmployee() {
 
 
 
-  // Fetch employees from the backend
-  useEffect(() => {
-    axios
-      .get('http://localhost:5000/api/employees')
-      .then((response) => {
-        setEmployees(response.data);
-      })
-      .catch((error) => {
-        console.error('Error fetching employees:', error);
-      });
-  }, []);
 
+    // Fetch employees from the backend
+    useEffect(() => {
+      axios
+        .get('http://localhost:5000/api/employees')
+        .then((response) => {
+          setEmployees(response.data);
+        })
+        .catch((error) => {
+          console.error('Error fetching employees:', error);
+        });
+    }, []);
   
   //to view the dob in my employee view mdel
   const formatDate = (dob) => {
@@ -75,6 +75,13 @@ function ManageEmployee() {
     setSearchText(e.target.value);  // Update the searchText state when the user types in the search input
   };
   
+  // Filter employees dynamically based on selected column
+const filteredEmployees = employees.filter((emp) => {
+  if (!searchText || !searchColumn) return true; // Show all employees if search is empty or no column is selected
+  const value = emp[searchColumn]?.toString().toLowerCase(); // Get selected column value
+  return value && value.includes(searchText.toLowerCase()); // Match with input
+});
+
   const handleAddEmployeeClick = () => {
     setShowModal(true);
   };
@@ -199,19 +206,10 @@ function ManageEmployee() {
     // Exclude password, created_at, and updated_at from the request
     const { password, created_at, updated_at, ...employeeData } = editedEmployee;
   
-    // Change snake_case to camelCase
-    const employeeDataCamelCase = {
-      ...employeeData,
-      firstName: employeeData.first_name,
-      lastName: employeeData.last_name,
-      phoneNum: employeeData.phonenum,
-      nationalId: employeeData.natID,
-    };
-  
-    console.log("Sending data to backend:", employeeDataCamelCase); // This will help ensure no extra data is being sent
+    console.log("Sending data to backend:", employeeData); // This will help ensure no extra data is being sent
   
     axios
-      .put(`http://localhost:5000/api/employees/${editedEmployee.userid}`, employeeDataCamelCase)
+      .put(`http://localhost:5000/api/employees/${editedEmployee.userid}`, employeeData)
       .then((response) => {
         console.log("Employee updated:", response.data);
         setEmployees((prevEmployees) =>
@@ -224,6 +222,9 @@ function ManageEmployee() {
       });
   };
   
+
+ 
+
   const handleEditInputChange = (e) => {
     const { name, value } = e.target;
     if (name === "dob") {
@@ -262,16 +263,12 @@ function ManageEmployee() {
                 onChange={handleSearchColumnChange}
                 style={{ marginRight: "10px", width: "200px" }}
               >
-                <option value="id">USERID</option>
-                <option value="firstName">FIRSTNAME</option>
-                <option value="lastName">LASTNAME</option>
-                <option value="email">EMAIL</option>
-                <option value="phoneNum">PHONENUM</option>
-                <option value="role">ROLE</option>
-                <option value="username">USERNAME</option>
-                <option value="dob">DATE OF BIRTH</option>
-                <option value="natId">NATIONAL ID</option>
-                <option value="address">ADDRESS</option>
+                <option value="userid">UserID</option>
+                <option value="first_name">FirstName</option>
+                <option value="last_name">LastName</option>
+                <option value="email">Email</option>
+                <option value="phoneNum">PhoneNum</option>
+                <option value="natId">NationalID</option>
               </select>
               <input
                 type="text"
@@ -298,20 +295,20 @@ function ManageEmployee() {
                   <th>LASTNAME</th>
                   <th>EMAIL</th>
                   <th>PHONENUM</th>
-                  <th>ROLE</th>
+                  <th>NationalID</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {employees.length > 0 ? (
-                  employees.map((emp) => (
+                {filteredEmployees.length > 0 ? (
+                  filteredEmployees.map((emp) => (
                     <tr key={emp.userid}>
                       <td>{emp.userid}</td>
                       <td>{emp.first_name}</td>
                       <td>{emp.last_name}</td>
                       <td>{emp.email}</td>
                       <td>{emp.phonenum}</td>
-                      <td>{emp.role}</td>
+                      <td>{emp.natID}</td>
                       <td>
                         <FaEye
                           style={{ marginRight: "10px", cursor: "pointer", color: "#2770b4" }}
