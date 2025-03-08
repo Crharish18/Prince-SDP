@@ -23,6 +23,13 @@ function App() {
           path="/admin/dashboard" 
           element={token && role === 'admin' ? <Dashboard /> : <Navigate to="/admin/login" />} 
         />
+
+         <Route 
+          path="/admin/categories" 
+          element={token && role === 'admin' ? <Categories /> : <Navigate to="/admin/login" />}  
+          
+        />
+
         <Route 
           path="/admin/categories" 
           element={token && role === 'admin' ? <Categories /> : <Navigate to="/admin/login" />} 

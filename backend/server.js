@@ -3,6 +3,8 @@ require('dotenv').config();
 const cors = require('cors');
 const authRoutes = require('./routes/auth');
 const employeesRoutes = require('./routes/employees'); // Import the employees route
+const categoriesRoutes = require('./routes/categories');
+const suppliersRoutes = require('./routes/suppliers');
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -26,6 +28,9 @@ app.use((req, res, next) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/employees', employeesRoutes); 
+app.use('/api/categories', categoriesRoutes); // Add the categories route
+app.use('/api/suppliers', suppliersRoutes); 
+
 
 
 // ✅ 404 Handler

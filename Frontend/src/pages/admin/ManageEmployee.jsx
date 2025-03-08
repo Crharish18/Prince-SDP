@@ -3,8 +3,10 @@ import axios from "axios";
 import { FaEye, FaEdit, FaTrash } from "react-icons/fa"; 
 import Sidebar from "../../components/sidebar";
 import Header from "../../components/Header";
-import './ManageEmployee.css';
+import styles from './ManageEmployee.module.css'; // Import as CSS module
 import 'bootstrap/dist/css/bootstrap.min.css';
+import ViewModal from "../../components/Viewmodal"; 
+import EditModal from "../../components/EditModal"; 
 
 function ManageEmployee() {
   const [employees, setEmployees] = useState([]);
@@ -37,50 +39,55 @@ function ManageEmployee() {
   
   const [searchText, setSearchText] = useState("");
   const [searchColumn, setSearchColumn] = useState("");
-  const [showViewModal, setShowViewModal] = useState(false); // To show/hide the view modal
-  const [selectedEmployee, setSelectedEmployee] = useState(null); // To store the selected employee
-  const [showEditModal, setShowEditModal] = useState(false); // Modal visibility state
-  const [editedEmployee, setEditedEmployee] = useState({}); // State for holding the edited employee data
+  const [showViewModal, setShowViewModal] = useState(false); 
+  const [selectedEmployee, setSelectedEmployee] = useState(null); 
+  const [showEditModal, setShowEditModal] = useState(false); 
+  const [editedEmployee, setEditedEmployee] = useState({}); 
 
+  useEffect(() => {
+    axios
+      .get('http://localhost:5000/api/employees')
+      .then((response) => {
+        setEmployees(response.data);
+      })
+      .catch((error) => {
+        console.error('Error fetching employees:', error);
+      });
+  }, []);
 
-
-
-
-    // Fetch employees from the backend
-    useEffect(() => {
-      axios
-        .get('http://localhost:5000/api/employees')
-        .then((response) => {
-          setEmployees(response.data);
-        })
-        .catch((error) => {
-          console.error('Error fetching employees:', error);
-        });
-    }, []);
-  
-  //to view the dob in my employee view mdel
   const formatDate = (dob) => {
     const date = new Date(dob);
     const year = date.getFullYear();
-    const month = (date.getMonth() + 1).toString().padStart(2, '0'); // Month is 0-indexed
+    const month = (date.getMonth() + 1).toString().padStart(2, '0'); 
     const day = date.getDate().toString().padStart(2, '0');
     return `${year}-${month}-${day}`;
   };
   
   const handleSearchColumnChange = (e) => {
-    setSearchColumn(e.target.value);  // Updates the search column based on user selection
+    setSearchColumn(e.target.value);  
   };
   
   const handleSearchChange = (e) => {
-    setSearchText(e.target.value);  // Update the searchText state when the user types in the search input
+    setSearchText(e.target.value);  
   };
   
-  // Filter employees dynamically based on selected column
-const filteredEmployees = employees.filter((emp) => {
-  if (!searchText || !searchColumn) return true; // Show all employees if search is empty or no column is selected
-  const value = emp[searchColumn]?.toString().toLowerCase(); // Get selected column value
-  return value && value.includes(searchText.toLowerCase()); // Match with input
-});
+  const filteredEmployees = employees.filter((emp) => {
+    if (!searchText || !searchColumn) return true; 
+    const value = emp[searchColumn]?.toString().toLowerCase(); 
+    return value && value.includes(searchText.toLowerCase());
+  });
+
+  const employeeFields = [
+    { label: "Username", name: "username", type: "text" },
+    { label: "First Name", name: "first_name", type: "text" },
+    { label: "Last Name", name: "last_name", type: "text" },
+    { label: "Email", name: "email", type: "email" },
+    { label: "Phone Number", name: "phonenum", type: "text" },
+    { label: "Role", name: "role", type: "text" },
+    { label: "Date of Birth", name: "dob", type: "date" },
+    { label: "National ID", name: "natID", type: "text" },
+    { label: "Address", name: "address", type: "text" }
+  ];
 
   const handleAddEmployeeClick = () => {
     setShowModal(true);
@@ -100,66 +107,43 @@ const filteredEmployees = employees.filter((emp) => {
 
   const handleSaveNewEmployee = () => {
     let errors = {};
-  
-    // Username validation
     if (!newEmployee.username || newEmployee.username.length < 4) {
       errors.username = "Username must be at least 4 characters long.";
     }
-  
-    // First Name validation
     if (!newEmployee.firstName || !/^[A-Za-z]+$/.test(newEmployee.firstName)) {
       errors.firstName = "First name is required and should contain only letters.";
     }
-  
-    // Last Name validation
     if (!newEmployee.lastName || !/^[A-Za-z]+$/.test(newEmployee.lastName)) {
       errors.lastName = "Last name is required and should contain only letters.";
     }
-  
-    // Email validation
     if (!newEmployee.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmployee.email)) {
       errors.email = "Invalid email address.";
     }
-  
-    // Phone Number validation
     if (!newEmployee.phoneNum || !/^\d{10,15}$/.test(newEmployee.phoneNum)) {
       errors.phoneNum = "Phone number must be between 10 and 15 digits.";
     }
-  
-    // Role validation
     if (!newEmployee.role || !["admin", "employee"].includes(newEmployee.role.toLowerCase())) {
       errors.role = "Role must be either 'admin' or 'employee'.";
     }
-  
-    // Date of Birth validation
     if (!newEmployee.dob) {
       errors.dob = "Date of Birth is required.";
     }
-  
-    // National ID validation
     if (!newEmployee.nationalId || newEmployee.nationalId.length < 6) {
       errors.nationalId = "National ID must be at least 6 characters long.";
     }
-  
-    // Address validation
     if (!newEmployee.address || newEmployee.address.length < 5) {
       errors.address = "Address must be at least 5 characters long.";
     }
-  
-    // Password validation
     if (!newEmployee.password || newEmployee.password.length < 6) {
       errors.password = "Password must be at least 6 characters long.";
     }
   
-    // Check if there are any validation errors
     setValidationErrors(errors);
 
-    // If no errors, proceed with saving the employee
     if (Object.keys(errors).length === 0) {
       axios
         .post("http://localhost:5000/api/employees", newEmployee)
         .then((response) => {
-          console.log("Employee added:", response.data);
           setEmployees([...employees, response.data]);
           setShowModal(false);
         })
@@ -169,21 +153,19 @@ const filteredEmployees = employees.filter((emp) => {
     }
   };
 
-
   const handleViewEmployee = (employee) => {
     setSelectedEmployee(employee);
     setShowViewModal(true);
-    console.log("View Employee clicked:", employee);  // Check if this logs when clicking View button
   };
-  
+
+  const handleCloseViewModal = () => {
+    setShowViewModal(false); 
+  };
+
   const handleDeleteEmployee = (employeeId) => {
-    // Send a DELETE request to your backend API
     axios
       .delete(`http://localhost:5000/api/employees/${employeeId}`)
       .then((response) => {
-        console.log("Employee deleted:", response.data);
-  
-        // Update the state to remove the deleted employee from the table
         setEmployees((prevEmployees) =>
           prevEmployees.filter((employee) => employee.userid !== employeeId)
         );
@@ -192,7 +174,6 @@ const filteredEmployees = employees.filter((emp) => {
         console.error("Error deleting employee:", error);
       });
   };
-  
 
   const handleEditEmployee = (employee) => {
     const formattedDob = employee.dob ? employee.dob.split('T')[0] : '';
@@ -201,17 +182,11 @@ const filteredEmployees = employees.filter((emp) => {
     setShowEditModal(true);
   };
   
-  
   const handleSaveEditEmployee = () => {
-    // Exclude password, created_at, and updated_at from the request
     const { password, created_at, updated_at, ...employeeData } = editedEmployee;
-  
-    console.log("Sending data to backend:", employeeData); // This will help ensure no extra data is being sent
-  
     axios
       .put(`http://localhost:5000/api/employees/${editedEmployee.userid}`, employeeData)
       .then((response) => {
-        console.log("Employee updated:", response.data);
         setEmployees((prevEmployees) =>
           prevEmployees.map((emp) => (emp.userid === editedEmployee.userid ? editedEmployee : emp))
         );
@@ -221,16 +196,13 @@ const filteredEmployees = employees.filter((emp) => {
         console.error("Error updating employee:", error.response ? error.response.data : error);
       });
   };
-  
-
- 
 
   const handleEditInputChange = (e) => {
     const { name, value } = e.target;
     if (name === "dob") {
       setEditedEmployee((prev) => ({
         ...prev,
-        [name]: new Date(value).toISOString().split('T')[0], // Format date to YYYY-MM-DD
+        [name]: new Date(value).toISOString().split('T')[0], 
       }));
     } else {
       setEditedEmployee((prev) => ({
@@ -240,23 +212,21 @@ const filteredEmployees = employees.filter((emp) => {
     }
   };
 
-  
   const handleCloseEditModal = () => {
-    setShowEditModal(false); // Close the edit modal
-    setSelectedEmployee(null); // Reset selected employee
+    setShowEditModal(false);
+    setSelectedEmployee(null);
   };
-  
 
   return (
-    <div className="ManageEmployee-container">
+    <div className={styles.ManageEmployeeContainer}>
       <Sidebar />
-      <div className="ManageEmployee-content">
+      <div className={styles.ManageEmployeeContent}>
         <Header />
+        <div className={styles.InnerContainer}>
+          <div className={styles.TopSection}>
+          <h1 className="section-title" style={{ fontSize: '28px', fontWeight: 'bold' }}>Manage Employees</h1>
 
-        <div className="inner-container">
-          <div className="top-section">
-            <h1 className="section-title">Manage Employees</h1>
-            <div className="search-wrapper">
+            <div className={styles.SearchWrapper}>
               <select
                 className="form-control"
                 value={searchColumn}
@@ -277,16 +247,16 @@ const filteredEmployees = employees.filter((emp) => {
                 onChange={handleSearchChange}
                 placeholder={`Search by ${searchColumn}...`}
               />
-              <div className="btn-container" style={{ marginTop: "-0px" }}>
-                <button className="btn btn-primary" onClick={handleAddEmployeeClick}>
+              <div className={styles.BtnContainer}>
+                <button className="btn btn-primary" style={{ width: '150px', marginLeft:"10px" }} onClick={handleAddEmployeeClick}>
                   Add Employee
                 </button>
-                <button className="btn btn-secondary">Filter</button>
+                <button className="btn btn-secondary" style={{ width: '150px', marginLeft:"10px" }}>Report</button>
               </div>
             </div>
           </div>
 
-          <div className="table-container">
+          <div className={styles.TableContainer}>
             <table className="table table-striped">
               <thead>
                 <tr>
@@ -312,7 +282,7 @@ const filteredEmployees = employees.filter((emp) => {
                       <td>
                         <FaEye
                           style={{ marginRight: "10px", cursor: "pointer", color: "#2770b4" }}
-                          onClick={() => handleViewEmployee(emp)} // Ensure this triggers handleViewEmployee
+                          onClick={() => handleViewEmployee(emp)} 
                         />
                         <FaEdit
                           style={{ marginRight: "10px", cursor: "pointer", color: "#f0ad4e" }}
@@ -320,7 +290,7 @@ const filteredEmployees = employees.filter((emp) => {
                         />
                         <FaTrash
                           style={{ cursor: "pointer", color: "#d9534f" }}
-                          onClick={() => handleDeleteEmployee(emp.userid)} // Delete employee
+                          onClick={() => handleDeleteEmployee(emp.userid)} 
                         />
                       </td>
                     </tr>
@@ -335,14 +305,13 @@ const filteredEmployees = employees.filter((emp) => {
           </div>
         </div>
 
-         {/* Add Employee Modal */}
-         {showModal && (
-          <div className="modal-overlay1">
-            <div className="modal-content1">
-              <h2>Add Employee</h2>
-              <form className="modal-form1">
-                <div className="grid-container">
-                  <div className="form-group">
+        {showModal && (
+          <div className={styles.ModalOverlay1}>
+            <div className={styles.ModalContent1}>
+              <h2 style={{alignSelf: "center"}}>Add Employee</h2>
+              <form className={styles.ModalForm1}>
+                <div className={styles.GridContainer}>
+                  <div className={styles.FormGroup}>
                     <label style={{ fontWeight: "bold" }}>Username</label>
                     <input
                       type="text"
@@ -354,7 +323,7 @@ const filteredEmployees = employees.filter((emp) => {
                     />
                     {validationErrors.username && <div className="error">{validationErrors.username}</div>}
                   </div>
-                  <div className="form-group">
+                  <div className={styles.FormGroup}>
                     <label style={{ fontWeight: "bold" }}>First Name</label>
                     <input
                       type="text"
@@ -366,7 +335,7 @@ const filteredEmployees = employees.filter((emp) => {
                     />
                     {validationErrors.firstName && <div className="error">{validationErrors.firstName}</div>}
                   </div>
-                  <div className="form-group">
+                  <div className={styles.FormGroup}>
                     <label style={{ fontWeight: "bold" }}>Last Name</label>
                     <input
                       type="text"
@@ -378,7 +347,7 @@ const filteredEmployees = employees.filter((emp) => {
                     />
                     {validationErrors.lastName && <div className="error">{validationErrors.lastName}</div>}
                   </div>
-                  <div className="form-group">
+                  <div className={styles.FormGroup}>
                     <label style={{ fontWeight: "bold" }}>Email</label>
                     <input
                       type="email"
@@ -390,7 +359,7 @@ const filteredEmployees = employees.filter((emp) => {
                     />
                     {validationErrors.email && <div className="error">{validationErrors.email}</div>}
                   </div>
-                  <div className="form-group">
+                  <div className={styles.FormGroup}>
                     <label style={{ fontWeight: "bold" }}>Phone Number</label>
                     <input
                       type="text"
@@ -402,7 +371,7 @@ const filteredEmployees = employees.filter((emp) => {
                     />
                     {validationErrors.phoneNum && <div className="error">{validationErrors.phoneNum}</div>}
                   </div>
-                  <div className="form-group">
+                  <div className={styles.FormGroup}>
                     <label style={{ fontWeight: "bold" }}>Role</label>
                     <input
                       type="text"
@@ -414,7 +383,7 @@ const filteredEmployees = employees.filter((emp) => {
                     />
                     {validationErrors.role && <div className="error">{validationErrors.role}</div>}
                   </div>
-                  <div className="form-group">
+                  <div className={styles.FormGroup}>
                     <label style={{ fontWeight: "bold" }}>Date of Birth</label>
                     <input
                       type="date"
@@ -426,7 +395,7 @@ const filteredEmployees = employees.filter((emp) => {
                     />
                     {validationErrors.dob && <div className="error">{validationErrors.dob}</div>}
                   </div>
-                  <div className="form-group">
+                  <div className={styles.FormGroup}>
                     <label style={{ fontWeight: "bold" }}>National ID</label>
                     <input
                       type="text"
@@ -438,7 +407,7 @@ const filteredEmployees = employees.filter((emp) => {
                     />
                     {validationErrors.nationalId && <div className="error">{validationErrors.nationalId}</div>}
                   </div>
-                  <div className="form-group">
+                  <div className={styles.FormGroup}>
                     <label style={{ fontWeight: "bold" }}>Address</label>
                     <input
                       type="text"
@@ -450,7 +419,7 @@ const filteredEmployees = employees.filter((emp) => {
                     />
                     {validationErrors.address && <div className="error">{validationErrors.address}</div>}
                   </div>
-                  <div className="form-group">
+                  <div className={styles.FormGroup}>
                     <label style={{ fontWeight: "bold" }}>Password</label>
                     <input
                       type="password"
@@ -463,19 +432,19 @@ const filteredEmployees = employees.filter((emp) => {
                     {validationErrors.password && <div className="error">{validationErrors.password}</div>}
                   </div>
                 </div>
-                <div className="btn-container">
+                <div className={styles.BtnContainer}>
                   <button
                     type="button"
                     className="btn btn-secondary"
                     onClick={handleCloseModal}
-                    style={{ marginLeft: "200px", width: "150px" }}
+                    style={{ marginLeft: "115px", width: "140px", height: "50px", borderRadius: "10px" }}
                   >
                     Close
                   </button>
                   <button
                     type="button"
                     className="btn btn-primary"
-                    style={{ marginRight: "210px" }}
+                    style={{  width: "140px", borderRadius: "10px" }}
                     onClick={handleSaveNewEmployee}
                   >
                     Save
@@ -486,200 +455,34 @@ const filteredEmployees = employees.filter((emp) => {
           </div>
         )}
 
-        {/* Modal for Viewing Employee */}
-        {showViewModal && selectedEmployee && (
-          <div className="modal-overlay1">
-            <div className="modal-content1">
-              <h2 className="modal-title1">View Employee</h2>
-              <form className="modal-form1">
-                <div className="grid-container">
-                  <div className="form-group">
-                    <label style={{ fontWeight: "bold" }}>USERID</label>
-                    <input type="text" className="form-control" value={selectedEmployee.userid} disabled />
-                  </div>
-                  <div className="form-group">
-                    <label style={{ fontWeight: "bold" }}>Username</label>
-                    <input type="text" className="form-control" value={selectedEmployee.username} disabled />
-                  </div>
-                  <div className="form-group">
-                    <label style={{ fontWeight: "bold" }}>First Name</label>
-                    <input type="text" className="form-control" value={selectedEmployee.first_name} disabled />
-                  </div>
-                  <div className="form-group">
-                    <label style={{ fontWeight: "bold" }}>Last Name</label>
-                    <input type="text" className="form-control" value={selectedEmployee.last_name} disabled />
-                  </div>
-                  <div className="form-group">
-                    <label style={{ fontWeight: "bold" }}>Email</label>
-                    <input type="email" className="form-control" value={selectedEmployee.email} disabled />
-                  </div>
-                  <div className="form-group">
-                    <label style={{ fontWeight: "bold" }}>Phone Number</label>
-                    <input type="text" className="form-control" value={selectedEmployee.phonenum} disabled />
-                  </div>
-                  <div className="form-group">
-                    <label style={{ fontWeight: "bold" }}>Role</label>
-                    <input type="text" className="form-control" value={selectedEmployee.role} disabled />
-                  </div>
-                  <div className="form-group">
-                    <label style={{ fontWeight: "bold" }}>Date of Birth</label>
-                    <input 
-                      type="date" 
-                      className="form-control" 
-                      value={formatDate(selectedEmployee.dob)} 
-                      disabled 
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label style={{ fontWeight: "bold" }}>National ID</label>
-                    <input type="text" className="form-control" value={selectedEmployee.natID} disabled />
-                  </div>
-                  <div className="form-group">
-                    <label style={{ fontWeight: "bold" }}>Address</label>
-                    <input type="text" className="form-control" value={selectedEmployee.address} disabled />
-                  </div>
-                </div>
-                <div className="btn-container">
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={() => setShowViewModal(false)} // Close the modal
-                    style={{ marginLeft: "200px", width: "150px" }}
-                  >
-                    Close
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-        
-            {/* Modal for Editing Employee */}
-            {showEditModal && selectedEmployee && (
-          <div className="modal-overlay1">
-            <div className="modal-content1">
-              <h2 className="modal-title1">Edit Employee</h2>
-              <form className="modal-form1">
-                <div className="grid-container">
-                  <div className="form-group">
-                    <label style={{ fontWeight: "bold" }}>USERID</label>
-                    <input type="text" className="form-control" value={editedEmployee.userid} disabled />
-                  </div>
-                  <div className="form-group">
-                    <label style={{ fontWeight: "bold" }}>Username</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      name="username"
-                      value={editedEmployee.username}
-                      onChange={handleEditInputChange}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label style={{ fontWeight: "bold" }}>First Name</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      name="first_name"
-                      value={editedEmployee.first_name}
-                      onChange={handleEditInputChange}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label style={{ fontWeight: "bold" }}>Last Name</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      name="last_name"
-                      value={editedEmployee.last_name}
-                      onChange={handleEditInputChange}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label style={{ fontWeight: "bold" }}>Email</label>
-                    <input
-                      type="email"
-                      className="form-control"
-                      name="email"
-                      value={editedEmployee.email}
-                      onChange={handleEditInputChange}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label style={{ fontWeight: "bold" }}>Phone Number</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      name="phonenum"
-                      value={editedEmployee.phonenum}
-                      onChange={handleEditInputChange}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label style={{ fontWeight: "bold" }}>Role</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      name="role"
-                      value={editedEmployee.role}
-                      onChange={handleEditInputChange}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label style={{ fontWeight: "bold" }}>Date of Birth</label>
-                    <input
-                      type="date"
-                      className="form-control"
-                      name="dob"
-                      value={editedEmployee.dob}
-                      onChange={handleEditInputChange}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label style={{ fontWeight: "bold" }}>National ID</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      name="natID"
-                      value={editedEmployee.natID}
-                      onChange={handleEditInputChange}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label style={{ fontWeight: "bold" }}>Address</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      name="address"
-                      value={editedEmployee.address}
-                      onChange={handleEditInputChange}
-                    />
-                  </div>
-                </div>
-                <div className="btn-container">
-                  <button 
-                    type="button" 
-                    className="btn btn-secondary" 
-                    onClick={handleCloseEditModal} 
-                    style={{ marginLeft: "200px", width: "150px" }}
-                  >
-                    Close
-                  </button>
-                  <button 
-                    type="button" 
-                    className="btn btn-primary" 
-                    onClick={handleSaveEditEmployee}
-                    style={{ marginRight: "210px" }}
-                  >
-                    Save
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-        
-        
+        <ViewModal
+          showViewModal={showViewModal}
+          selectedEntity={selectedEmployee}
+          handleClose={handleCloseViewModal}
+          entityTitle="Employee"
+          entityFields={[
+            { label: "USERID", name: "userid" },
+            { label: "Username", name: "username" },
+            { label: "First Name", name: "first_name" },
+            { label: "Last Name", name: "last_name" },
+            { label: "Email", name: "email" },
+            { label: "Phone Number", name: "phonenum" },
+            { label: "Role", name: "role" },
+            { label: "Date of Birth", name: "dob", format: formatDate },
+            { label: "National ID", name: "natID" },
+            { label: "Address", name: "address" }
+          ]}
+        />
+
+        <EditModal
+          showEditModal={showEditModal}
+          entityData={editedEmployee}
+          entityTitle="Employee"
+          entityFields={employeeFields}
+          handleClose={() => setShowEditModal(false)}
+          handleSaveEditEntity={handleSaveEditEmployee}
+          handleEditInputChange={handleEditInputChange}
+        />
       </div>
     </div>
   );

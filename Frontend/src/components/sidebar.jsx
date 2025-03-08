@@ -24,16 +24,16 @@ const Sidebar = () => {
         <ul className="list-unstyled">
             {/* Dashboard */}
             <li className="sidebar-item">
-                <button className="btn btn-link text-white">
-                <FaHome className="sidebar-icon" /> Dashboard
-                </button>
+                  <Link to="/admin/dashboard" className="btn btn-link text-white">
+                 <FaUsers className="sidebar-icon" /> Dashboard
+                 </Link>
             </li>
 
             {/* Manage Employees */}
             <li className="sidebar-item">
-                <button className="btn btn-link text-white">
-                <FaUsers className="sidebar-icon" /> Manage Employees
-                </button>
+                 <Link to="/admin/manageemployee" className="btn btn-link text-white">
+                 <FaUsers className="sidebar-icon" /> Manage Employees
+                 </Link>
             </li>
 
             {/* Manage Product */}
