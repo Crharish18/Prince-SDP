@@ -5,15 +5,19 @@ const authRoutes = require('./routes/auth');
 const employeesRoutes = require('./routes/employees'); // Import the employees route
 const categoriesRoutes = require('./routes/categories');
 const suppliersRoutes = require('./routes/suppliers');
+const productsRoutes = require('./routes/products');
+const customersRoutes = require('./routes/Customers'); // Import the customers route
+const inventoryRoutes =require('./routes/inventory');
 const app = express();
 const port = process.env.PORT || 5000;
 
 // ✅ Fix CORS to allow requests from Vite (`http://localhost:5173`)
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:5173'], // Allow both React dev servers
+  origin: ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174'], // Add the missing port
   methods: 'GET,POST,PUT,DELETE', 
   credentials: true
 }));
+
 
 app.use(express.json());
 
@@ -30,7 +34,9 @@ app.use('/api/auth', authRoutes);
 app.use('/api/employees', employeesRoutes); 
 app.use('/api/categories', categoriesRoutes); // Add the categories route
 app.use('/api/suppliers', suppliersRoutes); 
-
+app.use('/api/products', productsRoutes);
+app.use('/api/customers', customersRoutes); // Add the customers route
+app.use('/api/inventory', inventoryRoutes);
 
 
 // ✅ 404 Handler

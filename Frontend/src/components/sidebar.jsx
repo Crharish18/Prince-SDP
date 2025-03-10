@@ -29,6 +29,14 @@ const Sidebar = () => {
                  </Link>
             </li>
 
+
+            {/* Manage Admin*/}
+            <li className="sidebar-item">
+                <button className="btn btn-link text-white">
+                <FaBox className="sidebar-icon" /> Manage Admin
+                </button>
+            </li>
+
             {/* Manage Employees */}
             <li className="sidebar-item">
                  <Link to="/admin/manageemployee" className="btn btn-link text-white">
@@ -36,7 +44,28 @@ const Sidebar = () => {
                  </Link>
             </li>
 
-            {/* Manage Product */}
+            {/* Manage Customers*/}
+            <li className="sidebar-item">
+                <Link to="/admin/Customer" className="btn btn-link text-white">
+                <FaBox className="sidebar-icon" /> Customers
+                </Link>
+            </li>
+
+            {/* Manage Order & order items*/}
+            <li className="sidebar-item">
+                <button className="btn btn-link text-white">
+                <FaBox className="sidebar-icon" /> Manage Orders
+                </button>
+            </li>
+
+            {/* Manage Transactions*/}
+            <li className="sidebar-item">
+                <button className="btn btn-link text-white">
+                <FaBox className="sidebar-icon" /> Transactions
+                </button>
+            </li>
+
+            {/* Manage Product & Inventory */}
             <li className="sidebar-item">
                 <button className="btn btn-link text-white">
                 <FaBox className="sidebar-icon" /> Manage Product
@@ -44,16 +73,32 @@ const Sidebar = () => {
             </li>
 
             <li className="sidebar-item">
-          <Link to="/admin/categories" className="btn btn-link text-white">
-            <FaList className="sidebar-icon" /> Categories
-          </Link>
-        </li>
-            
+                <Link to="/admin/categories" className="btn btn-link text-white">
+                <FaList className="sidebar-icon" /> Categories
+               </Link>
+            </li>
 
-            {/* Manage Orders */}
+            {/* Manage Discount*/}
             <li className="sidebar-item">
                 <button className="btn btn-link text-white">
-                <FaRegFileAlt className="sidebar-icon" /> Manage Orders
+                <FaBox className="sidebar-icon" /> Manage Discount
+                </button>
+            </li>
+
+            
+            
+
+            {/* Manage Discounts */}
+            <li className="sidebar-item">
+                <button className="btn btn-link text-white">
+                <FaRegFileAlt className="sidebar-icon" /> Manage Discounts
+                </button>
+            </li>
+
+             {/* Manage Supplier */}
+             <li className="sidebar-item">
+                <button className="btn btn-link text-white">
+                <FaCogs className="sidebar-icon" /> Manage Supplier
                 </button>
             </li>
 
@@ -64,19 +109,21 @@ const Sidebar = () => {
                 </button>
             </li>
 
-            {/* Enquiries */}
+            {/* Activity log*/}
             <li className="sidebar-item">
                 <button className="btn btn-link text-white">
-                <FaRegFileAlt className="sidebar-icon" /> Enquiries
+                <FaRegFileAlt className="sidebar-icon" /> Activity log
                 </button>
             </li>
 
-            {/* Manage Supplier */}
-            <li className="sidebar-item">
+             {/* Profile*/}
+             <li className="sidebar-item">
                 <button className="btn btn-link text-white">
-                <FaCogs className="sidebar-icon" /> Manage Supplier
+                <FaRegFileAlt className="sidebar-icon" /> Profile
                 </button>
             </li>
+
+           
         </ul>
 
     </div>

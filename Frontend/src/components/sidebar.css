@@ -13,7 +13,11 @@
     justify-content: center; /* Vertically center the content */
     transition: all 0.3s ease;
     font-family: 'Open Sans', sans-serif;  /* Apply Open Sans font */
+    overflow-y: auto; /* Enables vertical scrolling */
+    scrollbar-width: none; /* Hides scrollbar in Firefox */
   }
+
+
   
   /* Sidebar logo and menu items */
   .logodash-container {

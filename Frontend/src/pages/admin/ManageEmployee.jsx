@@ -7,6 +7,7 @@ import styles from './ManageEmployee.module.css'; // Import as CSS module
 import 'bootstrap/dist/css/bootstrap.min.css';
 import ViewModal from "../../components/Viewmodal"; 
 import EditModal from "../../components/EditModal"; 
+import AddEntityModal from "../../components/AddEntityModal";
 
 function ManageEmployee() {
   const [employees, setEmployees] = useState([]);
@@ -305,155 +306,28 @@ function ManageEmployee() {
           </div>
         </div>
 
-        {showModal && (
-          <div className={styles.ModalOverlay1}>
-            <div className={styles.ModalContent1}>
-              <h2 style={{alignSelf: "center"}}>Add Employee</h2>
-              <form className={styles.ModalForm1}>
-                <div className={styles.GridContainer}>
-                  <div className={styles.FormGroup}>
-                    <label style={{ fontWeight: "bold" }}>Username</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      placeholder="Enter Username"
-                      name="username"
-                      value={newEmployee.username}
-                      onChange={handleInputChange}
-                    />
-                    {validationErrors.username && <div className="error">{validationErrors.username}</div>}
-                  </div>
-                  <div className={styles.FormGroup}>
-                    <label style={{ fontWeight: "bold" }}>First Name</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      placeholder="Enter first name"
-                      name="firstName"
-                      value={newEmployee.firstName}
-                      onChange={handleInputChange}
-                    />
-                    {validationErrors.firstName && <div className="error">{validationErrors.firstName}</div>}
-                  </div>
-                  <div className={styles.FormGroup}>
-                    <label style={{ fontWeight: "bold" }}>Last Name</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      placeholder="Enter last name"
-                      name="lastName"
-                      value={newEmployee.lastName}
-                      onChange={handleInputChange}
-                    />
-                    {validationErrors.lastName && <div className="error">{validationErrors.lastName}</div>}
-                  </div>
-                  <div className={styles.FormGroup}>
-                    <label style={{ fontWeight: "bold" }}>Email</label>
-                    <input
-                      type="email"
-                      className="form-control"
-                      placeholder="Enter email"
-                      name="email"
-                      value={newEmployee.email}
-                      onChange={handleInputChange}
-                    />
-                    {validationErrors.email && <div className="error">{validationErrors.email}</div>}
-                  </div>
-                  <div className={styles.FormGroup}>
-                    <label style={{ fontWeight: "bold" }}>Phone Number</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      placeholder="Enter phone number"
-                      name="phoneNum"
-                      value={newEmployee.phoneNum}
-                      onChange={handleInputChange}
-                    />
-                    {validationErrors.phoneNum && <div className="error">{validationErrors.phoneNum}</div>}
-                  </div>
-                  <div className={styles.FormGroup}>
-                    <label style={{ fontWeight: "bold" }}>Role</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      placeholder="Enter role"
-                      name="role"
-                      value={newEmployee.role}
-                      onChange={handleInputChange}
-                    />
-                    {validationErrors.role && <div className="error">{validationErrors.role}</div>}
-                  </div>
-                  <div className={styles.FormGroup}>
-                    <label style={{ fontWeight: "bold" }}>Date of Birth</label>
-                    <input
-                      type="date"
-                      className="form-control"
-                      placeholder="Enter DOB"
-                      name="dob"
-                      value={newEmployee.dob}
-                      onChange={handleInputChange}
-                    />
-                    {validationErrors.dob && <div className="error">{validationErrors.dob}</div>}
-                  </div>
-                  <div className={styles.FormGroup}>
-                    <label style={{ fontWeight: "bold" }}>National ID</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      placeholder="Enter NationalID"
-                      name="nationalId"
-                      value={newEmployee.nationalId}
-                      onChange={handleInputChange}
-                    />
-                    {validationErrors.nationalId && <div className="error">{validationErrors.nationalId}</div>}
-                  </div>
-                  <div className={styles.FormGroup}>
-                    <label style={{ fontWeight: "bold" }}>Address</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      placeholder="Enter Address"
-                      name="address"
-                      value={newEmployee.address}
-                      onChange={handleInputChange}
-                    />
-                    {validationErrors.address && <div className="error">{validationErrors.address}</div>}
-                  </div>
-                  <div className={styles.FormGroup}>
-                    <label style={{ fontWeight: "bold" }}>Password</label>
-                    <input
-                      type="password"
-                      className="form-control"
-                      placeholder="Enter password"
-                      name="password"
-                      value={newEmployee.password}
-                      onChange={handleInputChange}
-                    />
-                    {validationErrors.password && <div className="error">{validationErrors.password}</div>}
-                  </div>
-                </div>
-                <div className={styles.BtnContainer}>
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={handleCloseModal}
-                    style={{ marginLeft: "115px", width: "140px", height: "50px", borderRadius: "10px" }}
-                  >
-                    Close
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-primary"
-                    style={{  width: "140px", borderRadius: "10px" }}
-                    onClick={handleSaveNewEmployee}
-                  >
-                    Save
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
+       
+        <AddEntityModal
+          showModal={showModal}
+          handleClose={handleCloseModal}
+          handleSave={handleSaveNewEmployee}
+          entityTitle="Employee"
+          entityData={newEmployee}
+          entityFields={[
+            { label: "Username", name: "username", type: "text" },
+            { label: "First Name", name: "firstName", type: "text" },
+            { label: "Last Name", name: "lastName", type: "text" },
+            { label: "Email", name: "email", type: "email" },
+            { label: "Phone Number", name: "phoneNum", type: "text" },
+            { label: "Role", name: "role", type: "text" },
+            { label: "Date of Birth", name: "dob", type: "date" },
+            { label: "National ID", name: "nationalId", type: "text" },
+            { label: "Address", name: "address", type: "text" },
+            { label: "Password", name: "password", type: "password" } // ✅ Password field included
+          ]}
+          handleInputChange={handleInputChange}
+          validationErrors={validationErrors}
+        />
 
         <ViewModal
           showViewModal={showViewModal}
