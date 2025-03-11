@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { Link } from 'react-router-dom';
 import { FaEye, FaEdit, FaTrash } from "react-icons/fa";
 import Sidebar from "../../components/sidebar";
 import Header from "../../components/Header";
@@ -184,11 +185,13 @@ function Categories() {
                 <button className="btn btn-primary" style={{ width: '150px', marginLeft:"10px" }} onClick={handleAddCategoryClick}>
                   Add Category
                 </button>
-                <button className="btn btn-secondary" style={{ width: '150px', marginLeft:"10px" }}>Report</button>
+                <Link to="/admin/products" className="btn btn-secondary" style={{ width: '150px', marginLeft:"10px" }}>
+                Products
+                </Link>
               </div>
             </div>
           </div>
-
+          
           <div className={styles.TableContainer}>
             <table className="table table-striped">
               <thead>

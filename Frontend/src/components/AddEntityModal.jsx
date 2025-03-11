@@ -17,7 +17,7 @@ const AddEntityModal = ({
     <div className={styles.ModalOverlay}>
       <div className={styles.ModalContent}>
         <h2 style={{ alignSelf: "center" }}>Add {entityTitle}</h2>
-        <form className={styles.ModalForm}>
+        <form className={styles.ModalForm}  autoComplete="off">
           <div className={styles.GridContainer}>
             {entityFields.map((field) => (
               <div key={field.name} className={styles.FormGroup}>

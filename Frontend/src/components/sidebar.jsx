@@ -53,10 +53,11 @@ const Sidebar = () => {
 
             {/* Manage Order & order items*/}
             <li className="sidebar-item">
-                <button className="btn btn-link text-white">
-                <FaBox className="sidebar-icon" /> Manage Orders
-                </button>
+                <Link to="/admin/Orders" className="btn btn-link text-white">
+                <FaList className="sidebar-icon" /> Orders
+               </Link>
             </li>
+            
 
             {/* Manage Transactions*/}
             <li className="sidebar-item">
@@ -67,39 +68,19 @@ const Sidebar = () => {
 
             {/* Manage Product & Inventory */}
             <li className="sidebar-item">
-                <button className="btn btn-link text-white">
-                <FaBox className="sidebar-icon" /> Manage Product
-                </button>
-            </li>
-
-            <li className="sidebar-item">
-                <Link to="/admin/categories" className="btn btn-link text-white">
-                <FaList className="sidebar-icon" /> Categories
+                <Link to="/admin/products" className="btn btn-link text-white">
+                <FaList className="sidebar-icon" /> Products
                </Link>
             </li>
 
-            {/* Manage Discount*/}
-            <li className="sidebar-item">
-                <button className="btn btn-link text-white">
-                <FaBox className="sidebar-icon" /> Manage Discount
-                </button>
-            </li>
-
             
-            
-
-            {/* Manage Discounts */}
-            <li className="sidebar-item">
-                <button className="btn btn-link text-white">
-                <FaRegFileAlt className="sidebar-icon" /> Manage Discounts
-                </button>
-            </li>
-
+        
              {/* Manage Supplier */}
              <li className="sidebar-item">
-                <button className="btn btn-link text-white">
-                <FaCogs className="sidebar-icon" /> Manage Supplier
-                </button>
+                
+                <Link to="/admin/Supplier" className="btn btn-link text-white">
+                <FaList className="sidebar-icon" /> Suppliers
+               </Link>
             </li>
 
             {/* Reviews */}

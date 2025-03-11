@@ -18,26 +18,28 @@ router.get('/', (req, res) => {
 
 // ✅ POST: Add a new product
 router.post('/', (req, res) => {
-    const { description, price, stock_qty, image_url, category_id } = req.body;
+    const { name, price, stock_qty, image_url, category_id, discount_percentage, min_quantity } = req.body;
 
-    if (!description || !price || !stock_qty) {
-        return res.status(400).json({ error: 'Description, price, and stock_qty are required fields' });
+    if (!name || !price || !stock_qty || !min_quantity) {
+        return res.status(400).json({ error: 'Name, price, stock_qty, and min_quantity are required fields' });
     }
 
-    const query = `INSERT INTO products (description, price, stock_qty, image_url, category_id) VALUES (?, ?, ?, ?, ?)`;
+    const query = `INSERT INTO products (name, price, stock_qty, image_url, category_id, discount_percentage, min_quantity) VALUES (?, ?, ?, ?, ?, ?, ?)`;
 
-    connection.query(query, [description, price, stock_qty, image_url, category_id], (err, results) => {
+    connection.query(query, [name, price, stock_qty, image_url, category_id, discount_percentage || 0, min_quantity], (err, results) => {
         if (err) {
             console.error('Error adding product:', err);
             res.status(500).send('Error adding product');
         } else {
             res.status(201).json({ 
                 product_id: results.insertId, 
-                description, 
+                name, 
                 price, 
                 stock_qty, 
                 image_url, 
-                category_id 
+                category_id, 
+                discount_percentage, 
+                min_quantity 
             });
         }
     });
@@ -46,15 +48,15 @@ router.post('/', (req, res) => {
 // ✅ PUT: Update a product
 router.put('/:product_id', (req, res) => {
     const { product_id } = req.params;
-    const { description, price, stock_qty, image_url, category_id } = req.body;
+    const { name, price, stock_qty, image_url, category_id, discount_percentage, min_quantity } = req.body;
 
-    if (!description || !price || !stock_qty) {
-        return res.status(400).json({ error: 'Description, price, and stock_qty are required fields' });
+    if (!name || !price || !stock_qty || !min_quantity) {
+        return res.status(400).json({ error: 'Name, price, stock_qty, and min_quantity are required fields' });
     }
 
-    const query = `UPDATE products SET description=?, price=?, stock_qty=?, image_url=?, category_id=? WHERE product_id=?`;
+    const query = `UPDATE products SET name=?, price=?, stock_qty=?, image_url=?, category_id=?, discount_percentage=?, min_quantity=? WHERE product_id=?`;
 
-    connection.query(query, [description, price, stock_qty, image_url, category_id, product_id], (err, results) => {
+    connection.query(query, [name, price, stock_qty, image_url, category_id, discount_percentage || 0, min_quantity, product_id], (err, results) => {
         if (err) {
             console.error('Error updating product:', err);
             res.status(500).send('Error updating product');

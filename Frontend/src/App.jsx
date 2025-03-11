@@ -5,6 +5,9 @@ import Categories from "./pages/admin/Categories";
 import ManageEmployee from "./pages/admin/ManageEmployee";
 import EDashboard from "./pages/employee/Dashboard";
 import Customer from "./pages/admin/Customer";
+import Products from "./pages/admin/products";
+import Supplier from "./pages/admin/Supplier";
+import Orders from "./pages/admin/Orders";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
 
@@ -37,8 +40,19 @@ function App() {
         />
 
         <Route 
-          path="/admin/categories" 
-          element={token && role === 'admin' ? <Categories /> : <Navigate to="/admin/login" />} 
+          path="/admin/Supplier" 
+          element={token && role === 'admin' ? <Supplier /> : <Navigate to="/admin/login" />}  
+          
+        />
+
+        <Route 
+          path="/admin/products" 
+          element={token && role === 'admin' ? <Products /> : <Navigate to="/admin/login" />} 
+        />
+
+        <Route 
+          path="/admin/Orders" 
+          element={token && role === 'admin' ? <Orders /> : <Navigate to="/admin/login" />} 
         />
 
         <Route 
