@@ -16,6 +16,25 @@ router.get('/', (req, res) => {
     });
 });
 
+// Fetch orders created today
+router.get('/today', (req, res) => {
+    const query = `
+        SELECT COUNT(*) AS total_orders
+        FROM \`order\`
+        WHERE DATE(created_at) = DATE(NOW());`;   // Ensure we use NOW() to compare only the date part
+
+    connection.query(query, (err, results) => {
+        if (err) {
+            console.error('Error fetching today\'s orders:', err);
+            return res.status(500).send('Error fetching today\'s orders');
+        }
+        res.json({ total_orders: results[0].total_orders });
+    });
+});
+
+
+
+
 // ✅ Create a new order
 router.post('/', (req, res) => {
     const { customer_id, total_price, status } = req.body;

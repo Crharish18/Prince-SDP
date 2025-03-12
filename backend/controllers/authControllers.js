@@ -34,14 +34,15 @@ const loginUser = (req, res) => {
         return res.status(400).json({ message: 'Incorrect password' });
       }
 
-      // Generate JWT token if password matches
-      const token = jwt.sign(
-        { id: user.userid, email: user.email, role: user.role },
-        process.env.JWT_SECRET,
-        { expiresIn: '1h' }
-      );
+    // Add the username to the response along with the token
+const token = jwt.sign(
+  { id: user.userid, email: user.email, role: user.role, username: user.username },  // Add username
+  process.env.JWT_SECRET,
+  { expiresIn: '1h' }
+);
 
-      res.json({ token, role: user.role });
+res.json({ token, role: user.role, username: user.username });  // Include username
+
     });
   });
 };

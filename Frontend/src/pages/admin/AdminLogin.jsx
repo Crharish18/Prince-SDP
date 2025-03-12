@@ -26,6 +26,7 @@ function Login() {
       // Store token and role
       localStorage.setItem('token', response.data.token);  
       localStorage.setItem('role', response.data.role);    
+      localStorage.setItem('username', response.data.username);  // Store username
 
       if (response.data.role === 'admin') {
         window.location.href = '/admin-dashboard';  
