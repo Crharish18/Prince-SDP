@@ -99,9 +99,10 @@ const Sidebar = () => {
 
              {/* Profile*/}
              <li className="sidebar-item">
-                <button className="btn btn-link text-white">
-                <FaRegFileAlt className="sidebar-icon" /> Profile
-                </button>
+               
+                <Link to="/admin/Profile" className="btn btn-link text-white">
+                <FaList className="sidebar-icon" /> Profile
+               </Link>
             </li>
 
            

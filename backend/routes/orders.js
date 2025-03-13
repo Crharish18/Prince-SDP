@@ -32,6 +32,21 @@ router.get('/today', (req, res) => {
     });
 });
 
+// Fetch today's total income
+router.get('/today-income', (req, res) => {
+    const query = `
+        SELECT SUM(total_price) AS total_income
+        FROM \`order\`
+        WHERE DATE(created_at) = DATE(NOW());`;  // Sum the total_price for orders created today
+
+    connection.query(query, (err, results) => {
+        if (err) {
+            console.error('Error fetching today\'s total income:', err);
+            return res.status(500).send('Error fetching today\'s total income');
+        }
+        res.json({ total_income: results[0].total_income || 0 });  // Return the total income
+    });
+});
 
 
 

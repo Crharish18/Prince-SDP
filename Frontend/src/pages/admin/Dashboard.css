@@ -63,4 +63,13 @@
   border-radius: 10px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   margin-top: 20px;
+  width: 45%;  /* Adjust width to make room for two charts */
+  display: inline-block;  /* Allow side-by-side display */
+  vertical-align: top;  /* Align them to the top */
 }
+
+.chart-row {
+  display: flex;
+  justify-content: space-between;  /* Distribute the charts evenly */
+}
+

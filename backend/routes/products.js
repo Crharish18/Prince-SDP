@@ -16,6 +16,21 @@ router.get('/', (req, res) => {
     });
 });
 
+// ✅ GET: Fetch all products sorted by stock quantity (low to high)
+router.get('/sorted', (req, res) => {
+    const query = 'SELECT * FROM products ORDER BY stock_qty ASC'; // Sort by stock_qty in ascending order
+
+    connection.query(query, (err, results) => {
+        if (err) {
+            console.error('Error fetching products:', err);
+            res.status(500).send('Error fetching products');
+        } else {
+            res.json(results);
+        }
+    });
+});
+
+
 // ✅ POST: Add a new product
 router.post('/', (req, res) => {
     const { name, price, stock_qty, image_url, category_id, discount_percentage, min_quantity } = req.body;
