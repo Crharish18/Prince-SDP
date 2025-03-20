@@ -3,6 +3,7 @@ import AdminLogin from "./pages/admin/AdminLogin";
 import Dashboard from "./pages/admin/Dashboard";
 import Categories from "./pages/admin/Categories";
 import ManageEmployee from "./pages/admin/ManageEmployee";
+import Admin from "./pages/admin/admin";
 import EDashboard from "./pages/employee/Dashboard";
 import Customer from "./pages/admin/Customer";
 import Products from "./pages/admin/products";
@@ -65,6 +66,11 @@ function App() {
         <Route 
           path="/admin/manageemployee" 
           element={token && role === 'admin' ? <ManageEmployee /> : <Navigate to="/admin/login" />} 
+        />
+
+        <Route 
+          path="/admin/Admin"
+          element={token && role === 'admin' ? <Admin /> : <Navigate to="/admin/login" />}
         />
         
         {/* ✅ Protected Employee Routes */}

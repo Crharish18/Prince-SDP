@@ -32,9 +32,9 @@ const Sidebar = () => {
 
             {/* Manage Admin*/}
             <li className="sidebar-item">
-                <button className="btn btn-link text-white">
-                <FaBox className="sidebar-icon" /> Manage Admin
-                </button>
+                <Link to="/admin/Admin" className="btn btn-link text-white">
+                 <FaUsers className="sidebar-icon" /> Admin
+                 </Link>
             </li>
 
             {/* Manage Employees */}

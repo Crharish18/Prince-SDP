@@ -94,8 +94,9 @@ function Dashboard() {
           </div>
         </div>
 
+        <div className="chart-row">
         {/* Chart Section */}
-        <div className="chart-container">
+        <div className="chart-container" style={{width: '140vw', height: '400px', marginRight: '-220px'}}>
           <h2 style={{fontSize: '25px'}}>Product Stock Quantities (Lowest)</h2>
           {productsData ? (
             <Bar 
@@ -128,6 +129,49 @@ function Dashboard() {
           ) : (
             <p>Loading products...</p>
           )}
+        </div>
+
+ 
+            {/* Second Chart (Placeholder for another chart) */}
+            <div className="chart-container" style={{width: '140vw', height: '400px'}} >
+            <h2>Another Graph</h2>
+            {productsData && productsData.labels ? (
+              <Bar
+                data={productsData}  // Example: Using the same data for now, replace with another dataset
+                key={Date.now()}
+                options={{
+                  responsive: true,
+                  scales: {
+                    x: {
+                      title: {
+                        display: true,
+                        text: 'Product Names',
+                      },
+                    },
+                    y: {
+                      title: {
+                        display: true,
+                        text: 'Stock Quantity',
+                      },
+                      beginAtZero: true,
+                    },
+                  },
+                  plugins: {
+                    legend: {
+                      position: 'top',
+                    },
+                  },
+                }}
+              />
+            ) : (
+              <p>Loading products...</p>
+            )}
+          </div>
+        
+
+        
+
+
         </div>
 
       </div>
