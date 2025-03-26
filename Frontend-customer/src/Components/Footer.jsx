@@ -7,7 +7,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className='text-left ml-[130px]'>
             <h3 className="text-xl font-semibold mb-4 ">Contact Us</h3>
-            <p>Email: info@agrotech.com</p>
+            <p>Email: princelanka.com</p>
             <p>Phone: +1 234 567 890</p>
           </div>
           <div className="text-white text-left ml-[100px]">

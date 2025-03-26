@@ -1,0 +1,124 @@
+.profile-container {
+  width: 80vw;
+  margin-left: 280px;
+  margin-top: -130px;
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.profile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #0066cc;
+  padding: 15px;
+  color: white;
+  border-radius: 10px 10px 0 0;
+}
+
+.edit-profile-button {
+  background-color: #fff;
+  color: #0066cc;
+  border: none;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.profile-info {
+  display: flex;
+  align-items: center;
+  padding: 20px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.profile-image img {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 20px;
+}
+
+.profile-details p {
+  margin-left: 100px;
+  margin-top: 10px;
+  font-size: 16px;
+  color: #333;
+}
+
+.profile-details p svg {
+  margin-right: 10px;
+}
+
+/* Editable fields style */
+.editable-field {
+  width: 100%;
+  padding: 8px;
+  margin: 10px 0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+/* Password Settings Section */
+.password-settings {
+  margin-top: 20px;
+}
+
+.change-password-button {
+  background-color: #0066cc;
+  color: white;
+  padding: 10px 20px;
+  font-size: 16px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.change-password-button svg {
+  margin-right: 8px;
+}
+
+/* Password change form styling */
+.password-change-form {
+  margin-top: 20px;
+}
+
+.password-field {
+  margin-bottom: 15px;
+}
+
+.password-field input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.password-actions {
+  display: flex;
+  justify-content: space-between;
+}
+
+.update-password-button,
+.cancel-button {
+  padding: 10px 20px;
+  font-size: 14px;
+  border: none;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.update-password-button {
+  background-color: #0066cc;
+  color: white;
+}
+
+.cancel-button {
+  background-color: #f0f0f0;
+  color: #333;
+}

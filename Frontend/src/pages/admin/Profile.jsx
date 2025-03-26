@@ -1,139 +1,132 @@
-import React, { useEffect, useState } from "react";
-import Sidebar from "../../components/sidebar";
-import Header from "../../components/Header";
-import styles from './Profile.module.css'; // Importing CSS Module
+import React, { useState } from 'react';
+import './profile.css';
+import Header from '../../components/Header';
+import Sidebar from '../../components/Sidebar';
+import { Mail, Phone, Building, MapPin, Lock } from 'lucide-react';
 
-function Profile() {
-  const [userData, setUserData] = useState({
-    username: '',
-    first_name: '',
-    last_name: '',
-    email: '',
-    address: '',
-    dob: '',
-    phonenum: '',
-    profilePic: '' // For profile picture
-  });
+const Profile = () => {
+  // State to manage edit mode
+  const [isEditing, setIsEditing] = useState(false);
+  
+  // State to manage the visibility of the change password form
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
-  const [oldPassword, setOldPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-
-  useEffect(() => {
-    // Fetch user data (replace with API call)
-    const fetchUserData = async () => {
-      // Assuming the user data is already available from a logged-in user session or an API
-      const data = {
-        username: "johndoe",
-        first_name: "John",
-        last_name: "Doe",
-        email: "johndoe@example.com",
-        address: "123 Street Name, City, Country",
-        dob: "1990-01-01",
-        phonenum: "+1234567890",
-        profilePic: "https://via.placeholder.com/150" // Placeholder for profile picture
-      };
-      setUserData(data);
-    };
-
-    fetchUserData();
-  }, []);
-
-  const handleProfilePicChange = (event) => {
-    // Handle profile picture change (upload functionality will go here)
-    const file = event.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setUserData({
-          ...userData,
-          profilePic: reader.result, // Update profile pic with uploaded image
-        });
-      };
-      reader.readAsDataURL(file);
-    }
+  // Toggle the edit profile mode
+  const handleEditClick = () => {
+    setIsEditing(!isEditing);
   };
 
-  const handlePasswordChange = (e) => {
-    e.preventDefault();
-    // Password change logic (should be handled by the backend)
-    if (newPassword === confirmPassword) {
-      alert("Password changed successfully!");
-    } else {
-      alert("Passwords do not match.");
-    }
+  // Toggle the change password form
+  const handleChangePasswordClick = () => {
+    setIsChangingPassword(!isChangingPassword);
   };
 
   return (
-    <div className="dashboard-container">
-      <div className="sidebar">
-        <Sidebar />
-      </div>
-      <div className="dashboard-content">
-        <Header />
-        
-        <div className={styles.profileContainer}>
-          <div className={styles.profileHeader}>
-            <div className={styles.profilePicContainer}>
-              <img 
-                src={userData.profilePic} 
-                alt="Profile" 
-                className={styles.profilePic}
-              />
-              <input 
-                type="file" 
-                accept="image/*" 
-                onChange={handleProfilePicChange} 
-                className={styles.profilePicUpload}
-              />
-            </div>
-            <div className={styles.profileInfo}>
-              <h2>{userData.first_name} {userData.last_name}</h2>
-              <p><strong>Username:</strong> {userData.username}</p>
-              <p><strong>Email:</strong> {userData.email}</p>
-              <p><strong>Address:</strong> {userData.address}</p>
-              <p><strong>Date of Birth:</strong> {userData.dob}</p>
-              <p><strong>Phone Number:</strong> {userData.phonenum}</p>
-            </div>
+    <div>
+      <Header />
+      <Sidebar />
+
+      <div className="profile-container">
+        {/* Profile Header */}
+        <div className="profile-header">
+          <h2>Profile Settings</h2>
+          <button className="edit-profile-button" onClick={handleEditClick}>
+            {isEditing ? 'Save Profile' : 'Edit Profile'}
+          </button>
+        </div>
+
+        {/* Profile Information Section */}
+        <div className="profile-info">
+          <div className="profile-image">
+            {/* Placeholder for profile image */}
+            <img src="path/to/profile-image.jpg" alt="Profile" />
           </div>
 
-          <div className={styles.passwordChangeSection}>
-            <h3>Change Password</h3>
-            <form onSubmit={handlePasswordChange}>
-              <div className={styles.passwordInputGroup}>
-                <label>Old Password</label>
-                <input 
-                  type="password" 
-                  value={oldPassword} 
-                  onChange={(e) => setOldPassword(e.target.value)} 
-                  required 
-                />
-              </div>
-              <div className={styles.passwordInputGroup}>
-                <label>New Password</label>
-                <input 
-                  type="password" 
-                  value={newPassword} 
-                  onChange={(e) => setNewPassword(e.target.value)} 
-                  required 
-                />
-              </div>
-              <div className={styles.passwordInputGroup}>
-                <label>Confirm New Password</label>
-                <input 
-                  type="password" 
-                  value={confirmPassword} 
-                  onChange={(e) => setConfirmPassword(e.target.value)} 
-                  required 
-                />
-              </div>
-              <button className={styles.profileButton} type="submit">Change Password</button>
-            </form>
-          </div>
+          {/* Toggle between view mode and edit mode */}
+          {isEditing ? (
+            <div className="profile-edit" style={{ marginLeft: '100px' }}>
+              {/* Editable fields */}
+              <input
+                className="editable-field"
+                type="text"
+                defaultValue="John Doe"
+              />
+              <input
+                className="editable-field"
+                type="email"
+                defaultValue="john.doe@example.com"
+              />
+              <input
+                className="editable-field"
+                type="tel"
+                defaultValue="+1 (555) 123-4567"
+              />
+              <input
+                className="editable-field"
+                type="text"
+                defaultValue="Inventory Solutions Inc."
+              />
+              <input
+                className="editable-field"
+                type="text"
+                defaultValue="New York, USA"
+              />
+            </div>
+          ) : (
+
+            <div className="profile-details">
+              {/* Non-editable fields */}
+              <p className="user-name">John Doe</p>
+              <p className="user-email">
+                <Mail /> john.doe@example.com
+              </p>
+              <p className="user-phone">
+                <Phone /> +1 (555) 123-4567
+              </p>
+              <p className="user-company">
+                <Building /> Inventory Solutions Inc.
+              </p>
+              <p className="user-location">
+                <MapPin /> New York, USA
+              </p>
+            </div>
+
+          )}
+
         </div>
-      </div>
+
+        {/* Password Settings Section (appears below profile information) */}
+        <div className="password-settings">
+          <button className="change-password-button" onClick={handleChangePasswordClick}>
+            <Lock /> Change Password
+          </button>
+          
+          
+          {/* Toggle the password change form visibility */}
+          {isChangingPassword && (
+            <div className="password-change-form">
+              <div className="password-field">
+                <label>Current Password</label>
+                <input type="password" placeholder="Enter current password" />
+              </div>
+              <div className="password-field">
+                <label>New Password</label>
+                <input type="password" placeholder="Enter new password" />
+              </div>
+              <div className="password-field">
+                <label>Confirm New Password</label>
+                <input type="password" placeholder="Confirm new password" />
+              </div>
+              <div className="password-actions">
+                <button className="update-password-button">Update Password</button>
+                <button className="cancel-button" onClick={handleChangePasswordClick}>Cancel</button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>qa
     </div>
   );
-}
+};
 
 export default Profile;

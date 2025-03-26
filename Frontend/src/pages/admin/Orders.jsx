@@ -208,9 +208,7 @@ function ManageOrder() {
                 placeholder={`Search by ${searchColumn}...`}
               />
               <div className={styles.BtnContainer}>
-                <button className="btn btn-primary" style={{ width: '150px', marginLeft:"10px" }} onClick={handleAddOrderClick}>
-                  Add Order
-                </button>
+                
                 <button className="btn btn-secondary" style={{ width: '150px', marginLeft:"10px" }}>Report</button>
               </div>
             </div>

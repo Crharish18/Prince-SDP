@@ -24,7 +24,7 @@ const About = () => {
         <div className="text-center mb-16">
           <h2 className="text-3xl font-bold mb-4">Our Mission</h2>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            At AgroTech, we're dedicated to revolutionizing agriculture through innovative technology 
+            At prince lanka, we're dedicated to revolutionizing agriculture through innovative technology 
             and sustainable practices. Our goal is to empower farmers with the tools and resources 
             they need to succeed in modern farming.
           </p>
