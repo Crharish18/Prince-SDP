@@ -211,12 +211,12 @@ function Admin() {
   };
 
   return (
-    <div className={styles.AdminContainer}>
+    <div className={styles.AdminContainer} >
       <Sidebar />
       <div className={styles.AdminContent}>
         <Header />
-        <div className={styles.InnerContainer}>
-          <div className={styles.TopSection}>
+        <div className={styles.InnerContainer} style={{ marginLeft: "10px", width: "100%" }} >
+          <div className={styles.TopSection} >
             <h1 className="section-title" style={{ fontSize: '28px', fontWeight: 'bold' }}>Manage Admins</h1>
 
             <div className={styles.SearchWrapper}>

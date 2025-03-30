@@ -189,7 +189,7 @@ function Customers() {
       <Sidebar />
       <div className={styles.ManageCustomerContent}>
         <Header />
-        <div className={styles.InnerContainer}>
+        <div className={styles.InnerContainer} style={{ marginLeft: "10px", width: "100%" }}>
           <div className={styles.TopSection}>
             <h1 className="section-title" style={{ fontSize: '28px', fontWeight: 'bold' }}>Manage Customers</h1>
 

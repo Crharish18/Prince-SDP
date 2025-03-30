@@ -55,9 +55,8 @@
 .chart-row {
   display: flex;
   justify-content: space-between;  /* Distribute charts evenly */
- gap: -50px;
+  gap: 10px; /* Reduced gap between the charts */
   margin-top: 20px;
-  
 }
 
 .chart-container {
@@ -66,7 +65,7 @@
   border-radius: 10px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   width: 48%; /* Adjust width to allow two charts side by side */
-  height: 200px; /* Set a fixed height for both charts */
+  height: 400px; /* Adjust height if necessary */
 }
 
 /* Make the charts responsive on smaller screens */

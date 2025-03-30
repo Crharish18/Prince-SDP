@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'; // Import Link from react-router-dom
 import React, { useState } from 'react';
 import './Sidebar.css'; 
-import { FaHome, FaUsers, FaBox, FaList, FaRegFileAlt, FaCogs, FaChevronDown, FaChevronUp } from 'react-icons/fa'; // Added icons
+import { FaTachometerAlt, FaUsers, FaBox, FaListAlt, FaRegFileAlt, FaCogs, FaChevronDown, FaChevronUp, FaUserShield, FaUserCircle, FaExchangeAlt, FaTag, FaTruck } from 'react-icons/fa'; // Added icons for submenu
 import logodash from "../assets/PicturesAdmin/logoWhite.png";
 
 const Sidebar = () => {
@@ -10,6 +10,8 @@ const Sidebar = () => {
   const [isCategoriesOpen, setCategoriesOpen] = useState(false);
   const [isOrdersOpen, setOrdersOpen] = useState(false);
   const [isSupplierOpen, setSupplierOpen] = useState(false);
+  const [isInventoryOpen, setInventoryOpen] = useState(false);
+  const [isReviewsOpen, setReviewsOpen] = useState(false);
 
   const toggleDropdown = (setter) => {
     setter(prevState => !prevState);
@@ -21,93 +23,105 @@ const Sidebar = () => {
         <img src={logodash} alt="Shop Logo" className="logodash img-fluid" />
       </div>
 
-        <ul className="list-unstyled">
-            {/* Dashboard */}
-            <li className="sidebar-item">
-                  <Link to="/admin/dashboard" className="btn btn-link text-white">
-                 <FaUsers className="sidebar-icon" /> Dashboard
-                 </Link>
-            </li>
+      <ul className="list-unstyled">
+        {/* Dashboard */}
+        <li className="sidebar-item">
+          <Link to="/admin/dashboard" className="btn btn-link text-white">
+            <FaTachometerAlt className="sidebar-icon" /> Dashboard
+          </Link>
+        </li>
 
+        {/* Manage Admin */}
+        <li className="sidebar-item">
+          <Link to="/admin/Admin" className="btn btn-link text-white">
+            <FaUserShield className="sidebar-icon" /> Admin
+          </Link>
+        </li>
 
-            {/* Manage Admin*/}
-            <li className="sidebar-item">
-                <Link to="/admin/Admin" className="btn btn-link text-white">
-                 <FaUsers className="sidebar-icon" /> Admin
-                 </Link>
-            </li>
+        {/* Manage Employees */}
+        <li className="sidebar-item">
+          <Link to="/admin/manageemployee" className="btn btn-link text-white">
+            <FaUsers className="sidebar-icon" /> Employees
+          </Link>
+        </li>
 
-            {/* Manage Employees */}
-            <li className="sidebar-item">
-                 <Link to="/admin/manageemployee" className="btn btn-link text-white">
-                 <FaUsers className="sidebar-icon" /> Manage Employees
-                 </Link>
-            </li>
+        {/* Manage Orders */}
+        <li 
+          className="sidebar-item position-relative"
+          onMouseEnter={() => setOrdersOpen(true)} 
+          onMouseLeave={() => setOrdersOpen(false)}
+        >
+          <div className="btn btn-link text-white align-items-center" 
+               style={{ textDecoration: 'none', fontSize: '20px', fontFamily: 'sans-serif' }}>
+            <FaListAlt className="sidebar-icon" style={{ marginRight: '10px' }} /> Orders
+          </div>
 
-            {/* Manage Customers*/}
-            <li className="sidebar-item">
-                <Link to="/admin/Customer" className="btn btn-link text-white">
-                <FaBox className="sidebar-icon" /> Customers
-                </Link>
-            </li>
+          {isOrdersOpen && (
+            <div className="hover-submenu">
+              <Link to="/admin/Orders" className="submenu-item">
+                <FaListAlt className="submenu-icon" style={{ marginRight: '10px' }} /> All Orders
+              </Link>
+              <Link to="/admin/Transactions" className="submenu-item">
+                <FaExchangeAlt className="submenu-icon" style={{ marginRight: '10px' }} /> All Transactions
+              </Link>
+            </div>
+          )}
+        </li>
 
-            {/* Manage Order & order items*/}
-            <li className="sidebar-item">
-                <Link to="/admin/Orders" className="btn btn-link text-white">
-                <FaList className="sidebar-icon" /> Orders
-               </Link>
-            </li>
-            
+        {/* Manage Customers */}
+        <li className="sidebar-item">
+          <Link to="/admin/Customer" className="btn btn-link text-white">
+            <FaUsers className="sidebar-icon" /> Customers
+          </Link>
+        </li>
 
-            {/* Manage Transactions*/}
-            <li className="sidebar-item">
-                <button className="btn btn-link text-white">
-                <FaBox className="sidebar-icon" /> Transactions
-                </button>
-            </li>
+        {/* Manage Inventory */}
+        <li 
+          className="sidebar-item position-relative"
+          onMouseEnter={() => setInventoryOpen(true)} 
+          onMouseLeave={() => setInventoryOpen(false)}
+        >
+          <div className="btn btn-link text-white align-items-center" 
+               style={{ textDecoration: 'none', fontSize: '20px', fontFamily: 'sans-serif' }}>
+            <FaCogs className="sidebar-icon" style={{ marginRight: '10px' }} /> Inventory
+          </div>
 
-            {/* Manage Product & Inventory */}
-            <li className="sidebar-item">
-                <Link to="/admin/products" className="btn btn-link text-white">
-                <FaList className="sidebar-icon" /> Products
-               </Link>
-            </li>
+          {isInventoryOpen && (
+            <div className="hover-submenu">
+              <Link to="/admin/products" className="submenu-item">
+                <FaBox className="submenu-icon" style={{ marginRight: '10px' }} /> Products
+              </Link>
+              <Link to="/admin/Categories" className="submenu-item">
+                <FaTag className="submenu-icon" style={{ marginRight: '10px' }} /> Categories
+              </Link>
+              <Link to="/admin/Supplier" className="submenu-item">
+                <FaTruck className="submenu-icon" style={{ marginRight: '10px' }} /> Suppliers
+              </Link>
+            </div>
+          )}
+        </li>
 
-            
-        
-             {/* Manage Supplier */}
-             <li className="sidebar-item">
-                
-                <Link to="/admin/Supplier" className="btn btn-link text-white">
-                <FaList className="sidebar-icon" /> Suppliers
-               </Link>
-            </li>
+        {/* Reviews */}
+        <li className="sidebar-item">
+          <Link to="/admin/reviews" className="btn btn-link text-white">
+            <FaRegFileAlt className="sidebar-icon" /> Reviews
+          </Link>
+        </li>
 
-            {/* Reviews */}
-            <li className="sidebar-item">
-                <button className="btn btn-link text-white">
-                <FaRegFileAlt className="sidebar-icon" /> Reviews
-                </button>
-            </li>
+        {/* Activity Log */}
+        <li className="sidebar-item">
+          <Link to="/admin/activitylog" className="btn btn-link text-white">
+            <FaListAlt className="sidebar-icon" /> Activity Log
+          </Link>
+        </li>
 
-            {/* Activity log*/}
-            <li className="sidebar-item">
-                <button className="btn btn-link text-white">
-                <FaRegFileAlt className="sidebar-icon" /> Activity log
-                </button>
-            </li>
-
-             {/* Profile*/}
-             <li className="sidebar-item">
-               
-                <Link to="/admin/Profile" className="btn btn-link text-white">
-                <FaList className="sidebar-icon" /> Profile
-               </Link>
-            </li>
-
-           
-        </ul>
-
+        {/* Profile */}
+        <li className="sidebar-item">
+          <Link to="/admin/Profile" className="btn btn-link text-white">
+            <FaUserCircle className="sidebar-icon" /> Profile
+          </Link>
+        </li>
+      </ul>
     </div>
   );
 };

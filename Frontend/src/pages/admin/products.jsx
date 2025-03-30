@@ -140,7 +140,7 @@ function ManageProducts() {
       <Sidebar />
       <div className={styles.ManageProductsContent}>
         <Header />
-        <div className={styles.InnerContainer}>
+        <div className={styles.InnerContainer} style={{ marginLeft: "10px", width: "100%" }}>
           <div className={styles.TopSection}>
             <h1 className="section-title" style={{ fontSize: '28px', fontWeight: 'bold' }}>Manage Products</h1>
             <div className={styles.SearchWrapper}>

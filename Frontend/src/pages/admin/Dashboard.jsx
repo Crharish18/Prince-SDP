@@ -4,6 +4,7 @@ import Header from "../../components/Header";
 import './dashboard.css';
 import { Bar } from 'react-chartjs-2'; // Import Bar chart
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js'; // Import BarElement
+import { X } from "lucide-react";
 
 // Register all necessary ChartJS components
 ChartJS.register(
@@ -66,13 +67,13 @@ function Dashboard() {
   }, []);
 
   return (
-    <div className="dashboard-container">
-      <div className="sidebar">
+    <div className="dashboard-container" style={{ overflow: "hidden" }}>
+      
         <Sidebar />
-      </div>
+      
       <div className="dashboard-content">
         <Header />
-        <div className="card-container">
+        <div className="card-container" style={{ marginLeft: "0px", width: "100%",height: "18vh", marginTop: "80px" }}>
           <div className="card">
             <h2>Today Orders</h2>
             <div className="metric-value" >{totalOrders}</div> {/* This should show the total orders fetched from the backend */}
@@ -93,51 +94,14 @@ function Dashboard() {
             <div className="metric-value">$15,340.00</div>
           </div>
         </div>
-
-        <div className="chart-row">
-        {/* Chart Section */}
-        <div className="chart-container" style={{width: '140vw', height: '400px', marginRight: '-220px'}}>
-          <h2 style={{fontSize: '25px'}}>Product Stock Quantities (Lowest)</h2>
-          {productsData ? (
-            <Bar 
-              data={productsData} 
-              key={Date.now()}  // Ensure the chart is re-rendered correctly
-              options={{
-                responsive: true,
-                scales: {
-                  x: {
-                    title: {
-                      display: true,
-                      text: 'Product Names',
-                    },
-                  },
-                  y: {
-                    title: {
-                      display: true,
-                      text: 'Stock Quantity',
-                    },
-                    beginAtZero: true, // Ensures the y-axis starts from 0
-                  },
-                },
-                plugins: {
-                  legend: {
-                    position: 'top',
-                  },
-                },
-              }} 
-            />
-          ) : (
-            <p>Loading products...</p>
-          )}
-        </div>
-
- 
-            {/* Second Chart (Placeholder for another chart) */}
-            <div className="chart-container" style={{width: '140vw', height: '400px'}} >
-            <h2>Another Graph</h2>
-            {productsData && productsData.labels ? (
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '20px', gap: '5px' }}>
+        
+          {/* Chart Section */}
+          <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '10px', boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)', width: '49%', height: '400px' }}>
+            <h2 style={{ fontSize: '25px' }}>Product Stock Quantities (Lowest)</h2>
+            {productsData ? (
               <Bar
-                data={productsData}  // Example: Using the same data for now, replace with another dataset
+                data={productsData}
                 key={Date.now()}
                 options={{
                   responsive: true,
@@ -167,16 +131,47 @@ function Dashboard() {
               <p>Loading products...</p>
             )}
           </div>
-        
 
-        
-
-
+          {/* Second Chart */}
+          <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '10px', boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)', width: '49%', height: '400px' }}>
+            <h2>Another Graph</h2>
+            {productsData && productsData.labels ? (
+              <Bar
+                data={productsData}
+                key={Date.now()}
+                options={{
+                  responsive: true,
+                  scales: {
+                    x: {
+                      title: {
+                        display: true,
+                        text: 'Product Names',
+                      },
+                    },
+                    y: {
+                      title: {
+                        display: true,
+                        text: 'Stock Quantity',
+                      },
+                      beginAtZero: true,
+                    },
+                  },
+                  plugins: {
+                    legend: {
+                      position: 'top',
+                    },
+                  },
+                }}
+              />
+            ) : (
+              <p>Loading products...</p>
+            )}
+          </div>
         </div>
-
       </div>
     </div>
   );
 }
+
 
 export default Dashboard;

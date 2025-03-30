@@ -1,10 +1,13 @@
+// In auth.js
 const express = require('express');
-const { loginUser } = require('../controllers/authControllers');  // Ensure this points to the correct controller
+const { loginUser, getUserProfile } = require('../controllers/authControllers');
 
 const router = express.Router();
 
-// POST route for login
-router.post('/login', loginUser);  // This should handle POST requests to /api/auth/login 
+// Login route
+router.post('/login', loginUser);
 
+// Profile route
+router.get('/profile', getUserProfile); // Make sure this route exists
 
 module.exports = router;
