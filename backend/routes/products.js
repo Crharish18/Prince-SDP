@@ -30,6 +30,27 @@ router.get('/sorted', (req, res) => {
     });
 });
 
+// ✅ GET: Fetch a single product by ID
+router.get('/:product_id', (req, res) => {
+    const { product_id } = req.params; // Get product_id from URL params
+  
+    const query = 'SELECT * FROM products WHERE product_id = ?';
+  
+    connection.query(query, [product_id], (err, results) => {
+      if (err) {
+        console.error('Error fetching product:', err);
+        res.status(500).send('Error fetching product');
+      } else {
+        if (results.length === 0) {
+          res.status(404).send('Product not found');
+        } else {
+          res.json(results[0]);  // Return the product
+        }
+      }
+    });
+  });
+  
+
 
 // ✅ POST: Add a new product
 router.post('/', (req, res) => {

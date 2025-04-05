@@ -15,6 +15,23 @@ router.get('/', (req, res) => {
       }
     });
   });
+
+
+// Route to fetch all categories (limit to 6)
+router.get('/only6', (req, res) => {
+  const query = 'SELECT * FROM categories LIMIT 6';  // Limiting the result to 6 categories
+  
+  connection.query(query, (err, results) => {
+      if (err) {
+          console.error('Error executing query:', err);
+          res.status(500).send('Error fetching categories');
+      } else {
+          res.json(results); // Send category data back to the frontend
+      }
+  });
+});
+
+
   router.post('/', (req, res) => {
     const { category_name } = req.body;
   

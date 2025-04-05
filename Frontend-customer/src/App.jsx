@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import Home from './Pages/Home'; // Import Home component
 import About from './Pages/About'; // Import About component
 import Products from './Pages/Products';
+import ProductDetail from './Pages/ProductDetail'; // Product Detail page
+import CustomerLogin from './Pages/CustomerLogin';
 import './App.css';
 
 
@@ -14,6 +16,8 @@ function App() {
         <Route path="/Home" element={<Home />} />
         <Route path="/About" element={<About />} />
         <Route path="/Products" element={<Products />} />
+        <Route path="/Product/:productId" element={<ProductDetail />} />
+        <Route path="/CustomerLogin" element={<CustomerLogin />} />
         {/* Add more routes here as needed */}
       </Routes>
     </Router>

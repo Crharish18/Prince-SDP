@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 const Hero = () => {
   const images = [
     "https://images.unsplash.com/photo-1625246333195-78d9c38ad449?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1920&q=80",
     "https://images.unsplash.com/photo-1466801182732-9e4ea054c094?q=80&w=1932&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", // Example second image
-    "https://images.unsplash.com/photo-1563772204-b2e8be0a5d2d?crop=entropy&cs=tinysrgb&fit=max&ixid=MnwzNjYyOXwwfDF8c2VhY2h8Mnx8fGFncmljdWx0dXJlfGVufDB8fHx8fDE2ODk2MDM1NzA&ixlib=rb-1.2.1&q=80&w=1080"  // Example third image
+    "https://images.unsplash.com/photo-1464226184884-fa280b87c399?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"  // Example third image
   ];
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -16,7 +16,7 @@ const Hero = () => {
     setTimeout(() => {
       setCurrentImageIndex((prevIndex) => (prevIndex + 1) % images.length); // Loop back to the first image
       setFadeClass('fade-in');
-    }, 300); // Match the duration of fade-out
+    }, 500); // Match the duration of fade-out
   };
 
   const handlePrevious = () => {
@@ -26,6 +26,16 @@ const Hero = () => {
       setFadeClass('fade-in');
     }, 300); // Match the duration of fade-out
   };
+
+  // Set up the automatic image change every 3 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      handleNext();
+    }, 3000); // Change image every 3 seconds
+
+    // Cleanup the interval when the component is unmounted
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div 
