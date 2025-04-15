@@ -15,7 +15,7 @@
     "@mui/material": "^6.4.4",
     "axios": "^1.7.9",
     "bootstrap": "^5.3.3",
-    "chart.js": "^4.4.7",
+    "chart.js": "^4.4.8",
     "google-auth-library": "^9.15.1",
     "googleapis": "^148.0.0",
     "lucide-react": "^0.483.0",

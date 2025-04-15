@@ -1,33 +1,44 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom'; // Get productId from URL
+import { useParams } from 'react-router-dom'; 
 import axios from 'axios';
 import HeaderPages from '../Components/HeaderPages';
 import Footer from '../Components/Footer';
-import { Minus, Plus, Heart, Share2, Info } from 'lucide-react';  // Import the icons
+import { Minus, Plus, Heart, Share2, Info } from 'lucide-react';
 
 const ProductDetail = () => {
-  const { productId } = useParams();  // Get productId from URL params
+  const { productId } = useParams();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [quantity, setQuantity] = useState(1);  // State for quantity
+  const [quantity, setQuantity] = useState(1);  
+  const [totalPrice, setTotalPrice] = useState(0);  // For total price with discount
 
-  // Fetch product data on component mount
   useEffect(() => {
     const fetchProduct = async () => {
-        try {
-          const response = await axios.get(`http://localhost:5000/api/products/${productId}`); // Use correct endpoint
-          setProduct(response.data);
-        } catch (error) {
-          console.error('Error fetching product:', error);
-        } finally {
-          setLoading(false);
-        }
-      };
+      try {
+        const response = await axios.get(`http://localhost:5000/api/products/${productId}`);
+        setProduct(response.data);
+      } catch (error) {
+        console.error('Error fetching product:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
     fetchProduct();
-  }, [productId]);
+  }, [productId]);  // Only fetch once when the component loads
 
-  // Handle quantity changes
+  // Recalculate total price whenever the quantity changes
+  useEffect(() => {
+    if (product) {
+      let discountedPrice = parseFloat(product.price);
+      // Apply discount if the quantity is greater than or equal to the min quantity for discount
+      if (quantity >= product.min_quantity) {
+        discountedPrice = discountedPrice - (discountedPrice * (product.discount_percentage / 100));
+      }
+      setTotalPrice(discountedPrice * quantity);  // Update the total price with discount
+    }
+  }, [product, quantity]);  // Recalculate price whenever product or quantity changes
+
   const decreaseQuantity = () => {
     if (quantity > 1) {
       setQuantity(quantity - 1);
@@ -52,11 +63,11 @@ const ProductDetail = () => {
           <div className="bg-white rounded-lg shadow-sm p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* Product Image */}
-              <div className="relative ">
+              <div className="relative">
                 <img
                   src={product.image_url}
                   alt={product.name}
-                  className="w-[400px] h-[400px] object-contain rounded-lg mt-[60px] shadow-md transition-transform transform hover:scale-105"
+                  className="w-[400px] h-[400px] object-contain rounded-lg mt-[60px] transition-transform transform hover:scale-105 shadow-xl shadow-green-400/50"
                 />
                 <div className="absolute top-4 right-4 space-x-2">
                   <button className="bg-white p-2 rounded-full shadow-md hover:bg-gray-100">
@@ -69,41 +80,41 @@ const ProductDetail = () => {
               </div>
 
               {/* Product Details */}
-              <div className="space-y-6 ">
-                <div className='text-left'>
+              <div className="space-y-6">
+                <div className="text-left">
                   <p className="text-sm text-gray-500 mb-2">{product.category_name}</p>
                   <h1 className="text-3xl font-semibold mb-2">{product.name}</h1>
                   <div className="flex items-center space-x-4 mt-[15px]">
-                    <span className="text-2xl font-bold ">Rs.{parseFloat(product.price).toFixed(2)}</span>
+                    <span className="text-2xl font-bold">Rs.{parseFloat(totalPrice).toFixed(2)}</span>
                     <span className="text-sm text-gray-500 text-green-500 font-bold text-[21px]">In Stock</span>
                   </div>
                 </div>
 
+                {/* Bulk Discount Info */}
+                <div className="bg-green-50 p-4 rounded-lg space-y-2">
+                  <div className="flex items-center text-green-700">
+                    <Info className="h-5 w-5 mr-2" />
+                    <h3 className="font-semibold">Bulk Purchase Discounts</h3>
+                  </div>
+                  <ul className="space-y-1 text-sm text-green-600">
+                    <li className="flex items-center">
+                      <span className={`w-2 h-2 rounded-full mr-2 ${quantity >= product.min_quantity ? 'bg-green-500' : 'bg-gray-300'}`}></span>
+                      Minimum Quantity for Discount: {product.min_quantity}
+                    </li>
+                    <li className="flex items-center">
+                      <span className={`w-2 h-2 rounded-full mr-2 ${quantity >= product.min_quantity ? 'bg-green-500' : 'bg-gray-300'}`}></span>
+                      Discount Percentage: {product.discount_percentage}%
+                    </li>
+                  </ul>
+                </div>
 
-                 {/* Bulk Discount Info */}
-                 <div className="bg-green-50 p-4 rounded-lg space-y-2">
-                          <div className="flex items-center text-green-700">
-                            <Info className="h-5 w-5 mr-2" />
-                            <h3 className="font-semibold">Bulk Purchase Discounts</h3>
-                          </div>
-                          <ul className="space-y-1 text-sm text-green-600">
-                            <li className="flex items-center">
-                              <span className={`w-2 h-2 rounded-full mr-2 ${quantity >= product.min_quantity ? 'bg-green-500' : 'bg-gray-300'}`}></span>
-                              Minimum Quantity for Discount: {product.min_quantity}
-                            </li>
-                            <li className="flex items-center">
-                              <span className={`w-2 h-2 rounded-full mr-2 ${quantity >= product.min_quantity ? 'bg-green-500' : 'bg-gray-300'}`}></span>
-                              Discount Percentage: {product.discount_percentage}%
-                            </li>
-                          </ul>
-                        </div>
-
-                {/* Dynamic Description */}
+                {/* Product Description */}
                 <div className="space-y-4 text-left">
                   <h3 className="text-lg font-semibold mt-[10px]">Description</h3>
                   <p className="text-gray-600">{product.description}</p>
                 </div>
 
+                {/* Key Features */}
                 <div className="space-y-4 text-left">
                   <h3 className="text-lg font-semibold">Key Features</h3>
                   <ul className="list-disc list-inside text-gray-600 space-y-2">
@@ -114,8 +125,7 @@ const ProductDetail = () => {
                   </ul>
                 </div>
 
-                {/* Display the Min Quantity and Discount Percentage */}
-                
+                {/* Quantity & Add to Cart */}
                 <div className="space-y-4">
                   <div className="flex items-center space-x-4">
                     <span className="text-lg font-semibold">Quantity:</span>
@@ -138,75 +148,9 @@ const ProductDetail = () => {
 
                   <div className="space-y-3">
                     <button className="w-full bg-green-500 text-white py-3 rounded-md hover:bg-green-600 transition">
-                      Add to Cart - Rs.{(product.price * quantity).toFixed(2)}
+                      Add to Cart - Rs.{(totalPrice).toFixed(2)}
                     </button>
                   </div>
-                  {/* Similar Products Section */}
-<div className="mt-12">
-  <h2 className="text-2xl font-semibold mb-6">Similar Products</h2>
-  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-    {/* Similar Product Card */}
-    <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-      <img
-        src="https://img.freepik.com/free-vector/bag-potting-mix_1308-39601.jpg?t=st=1743417113~exp=1743420713~hmac=66379d97039758cb429b0d06ddb3e86688855b986a936de492afc720efbf6c31&w=740"
-        alt="Similar Product"
-        className="w-full h-[200px] object-cover"
-      />
-      <div className="p-4">
-        <h3 className="text-lg font-semibold">Product Name</h3>
-        <p className="text-sm text-gray-500">Category Name</p>
-        <div className="flex items-center justify-between mt-2">
-          <span className="text-xl font-bold">Rs. 500.00</span>
-          <button className="bg-green-500 text-white py-2 px-4 rounded-md text-sm hover:bg-green-600 transition">
-            View Details
-          </button>
-        </div>
-      </div>
-    </div>
-
-    {/* Similar Product Card */}
-    <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-      <img
-        src="https://via.placeholder.com/200"
-        alt="Similar Product"
-        className="w-full h-[200px] object-cover"
-      />
-      <div className="p-4">
-        <h3 className="text-lg font-semibold">Product Name</h3>
-        <p className="text-sm text-gray-500">Category Name</p>
-        <div className="flex items-center justify-between mt-2">
-          <span className="text-xl font-bold">Rs. 600.00</span>
-          <button className="bg-green-500 text-white py-2 px-4 rounded-md text-sm hover:bg-green-600 transition">
-            View Details
-          </button>
-        </div>
-      </div>
-    </div>
-
-    {/* Similar Product Card */}
-    <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-      <img
-        src="https://via.placeholder.com/200"
-        alt="Similar Product"
-        className="w-full h-[200px] object-cover"
-      />
-      <div className="p-4">
-        <h3 className="text-lg font-semibold">Product Name</h3>
-        <p className="text-sm text-gray-500">Category Name</p>
-        <div className="flex items-center justify-between mt-2">
-          <span className="text-xl font-bold">Rs. 700.00</span>
-          <button className="bg-green-500 text-white py-2 px-4 rounded-md text-sm hover:bg-green-600 transition">
-            View Details
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-                
-
-
                 </div>
               </div>
             </div>

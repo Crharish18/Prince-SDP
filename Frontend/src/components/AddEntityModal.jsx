@@ -12,26 +12,39 @@ const AddEntityModal = ({
   validationErrors,
 }) => {
   if (!showModal) return null;
-
+  
   return (
     <div className={styles.ModalOverlay}>
       <div className={styles.ModalContent}>
         <h2 style={{ alignSelf: "center" }}>Add {entityTitle}</h2>
-        <form className={styles.ModalForm}  autoComplete="off">
+        <form className={styles.ModalForm} autoComplete="off">
           <div className={styles.GridContainer}>
             {entityFields.map((field) => (
               <div key={field.name} className={styles.FormGroup}>
                 <label style={{ fontWeight: "bold" }}>{field.label}</label>
-                <input
-                  type={field.type}
-                  className="form-control"
-                  placeholder={`Enter ${field.label}`}
-                  name={field.name}
-                  value={entityData[field.name] || ""}
-                  onChange={handleInputChange}
-                />
+                {field.type === 'file' ? (
+                  // Special handling for file inputs
+                  <input
+                    type="file"
+                    className="form-control"
+                    name={field.name}
+                    onChange={field.onChange || handleInputChange}
+                  />
+                ) : (
+                  // Regular inputs (text, number, etc.)
+                  <input
+                    type={field.type}
+                    className="form-control"
+                    placeholder={`Enter ${field.label}`}
+                    name={field.name}
+                    value={entityData[field.name] || ""}
+                    onChange={handleInputChange}
+                  />
+                )}
                 {validationErrors[field.name] && (
-                  <div className="error">{validationErrors[field.name]}</div>
+                  <div className="error" style={{ color: 'red', fontSize: '14px', marginTop: '5px' }}>
+                    {validationErrors[field.name]}
+                  </div>
                 )}
               </div>
             ))}
@@ -46,7 +59,6 @@ const AddEntityModal = ({
                 width: "140px",
                 height: "50px",
                 borderRadius: "10px",
-                
               }}
             >
               Close
@@ -54,7 +66,7 @@ const AddEntityModal = ({
             <button
               type="button"
               className="btn btn-primary"
-              style={{ width: "140px",height: "50px", borderRadius: "10px" }}
+              style={{ width: "140px", height: "50px", borderRadius: "10px" }}
               onClick={handleSave}
             >
               Save

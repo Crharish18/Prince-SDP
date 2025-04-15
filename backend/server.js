@@ -11,8 +11,10 @@ const customersRoutes = require('./routes/Customers'); // Import the customers r
 const inventoryRoutes = require('./routes/inventory');
 const ordersRoutes = require('./routes/orders'); // Import the orders route
 const order_itemsRoutes = require('./routes/order_items'); // Import the order_items route
+const TransactionsRoutes = require('./routes/Transactions'); // Import the transactions route
 const app = express();
 const port = process.env.PORT || 5000;
+const uploadRoutes = require('./routes/upload'); // Import the upload route
 
 app.use(cors({
   origin: ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'], // ✅ Added 5175
@@ -42,6 +44,14 @@ app.use('/api/customers', customersRoutes); // Add the customers route
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/orders', ordersRoutes); // Add the orders route
 app.use('/api/order_items', order_itemsRoutes); // Add the order_items route
+app.use('/api/transactions', TransactionsRoutes); // Add the transactions route
+
+// Add the upload route for image uploads
+console.log('Adding upload route...');
+app.use('/api/upload', uploadRoutes);  // Register the upload route
+console.log("Upload routes registered correctly");
+
+
 
 // ✅ 404 Handler
 app.all('*', (req, res) => {

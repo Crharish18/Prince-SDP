@@ -1,8 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const connection = require('../config/db'); // Import database connection
+const connection = require('../config/db');
+const multer = require('multer');
+const cloudinary = require('../config/cloudinary'); // Make sure this path is correct
+const upload = multer({ storage: multer.memoryStorage() });
 
-// ✅ GET: Fetch all products
+// GET: Fetch all products
 router.get('/', (req, res) => {
     const query = 'SELECT * FROM products';
 
@@ -16,9 +19,9 @@ router.get('/', (req, res) => {
     });
 });
 
-// ✅ GET: Fetch all products sorted by stock quantity (low to high)
+// GET: Fetch all products sorted by stock quantity (low to high)
 router.get('/sorted', (req, res) => {
-    const query = 'SELECT * FROM products ORDER BY stock_qty ASC'; // Sort by stock_qty in ascending order
+    const query = 'SELECT * FROM products ORDER BY stock_qty ASC';
 
     connection.query(query, (err, results) => {
         if (err) {
@@ -30,9 +33,9 @@ router.get('/sorted', (req, res) => {
     });
 });
 
-// ✅ GET: Fetch a single product by ID
+// GET: Fetch a single product by ID
 router.get('/:product_id', (req, res) => {
-    const { product_id } = req.params; // Get product_id from URL params
+    const { product_id } = req.params;
   
     const query = 'SELECT * FROM products WHERE product_id = ?';
   
@@ -44,55 +47,118 @@ router.get('/:product_id', (req, res) => {
         if (results.length === 0) {
           res.status(404).send('Product not found');
         } else {
-          res.json(results[0]);  // Return the product
+          res.json(results[0]);
         }
       }
     });
-  });
+});
+
+
+// In your products.js route file
+
+// GET: Fetch all products by category
+router.get('/category/:category_id', (req, res) => {
+    const { category_id } = req.params;
   
-
-
-// ✅ POST: Add a new product
-router.post('/', (req, res) => {
-    const { name, price, stock_qty, image_url, category_id, discount_percentage, min_quantity } = req.body;
-
-    if (!name || !price || !stock_qty || !min_quantity) {
-        return res.status(400).json({ error: 'Name, price, stock_qty, and min_quantity are required fields' });
-    }
-
-    const query = `INSERT INTO products (name, price, stock_qty, image_url, category_id, discount_percentage, min_quantity) VALUES (?, ?, ?, ?, ?, ?, ?)`;
-
-    connection.query(query, [name, price, stock_qty, image_url, category_id, discount_percentage || 0, min_quantity], (err, results) => {
-        if (err) {
-            console.error('Error adding product:', err);
-            res.status(500).send('Error adding product');
-        } else {
-            res.status(201).json({ 
-                product_id: results.insertId, 
-                name, 
-                price, 
-                stock_qty, 
-                image_url, 
-                category_id, 
-                discount_percentage, 
-                min_quantity 
-            });
-        }
+    const query = 'SELECT * FROM products WHERE category_id = ?';
+  
+    connection.query(query, [category_id], (err, results) => {
+      if (err) {
+        console.error('Error fetching products by category:', err);
+        res.status(500).send('Error fetching products by category');
+      } else {
+        res.json(results);
+      }
     });
 });
 
-// ✅ PUT: Update a product
-router.put('/:product_id', (req, res) => {
-    const { product_id } = req.params;
-    const { name, price, stock_qty, image_url, category_id, discount_percentage, min_quantity } = req.body;
+
+// POST: Add a new product with image upload
+router.post('/', upload.single('image'), (req, res) => {
+    console.log("POST /api/products received");
+    console.log("Request body:", req.body);
+    console.log("File:", req.file ? `${req.file.originalname} (${req.file.size} bytes)` : "No file");
+
+    const { name, description, price, stock_qty, category_id, discount_percentage, min_quantity } = req.body;
+    const file = req.file;
 
     if (!name || !price || !stock_qty || !min_quantity) {
         return res.status(400).json({ error: 'Name, price, stock_qty, and min_quantity are required fields' });
     }
 
-    const query = `UPDATE products SET name=?, price=?, stock_qty=?, image_url=?, category_id=?, discount_percentage=?, min_quantity=? WHERE product_id=?`;
+    if (!file) {
+        return res.status(400).json({ error: 'Image file is required' });
+    }
 
-    connection.query(query, [name, price, stock_qty, image_url, category_id, discount_percentage || 0, min_quantity, product_id], (err, results) => {
+    // Upload image to Cloudinary
+    cloudinary.uploader.upload_stream(
+        { resource_type: 'auto' },
+        (error, result) => {
+            if (error) {
+                console.error('Cloudinary upload error:', error);
+                return res.status(500).json({ error: 'Error uploading image to Cloudinary' });
+            }
+
+            console.log("Cloudinary upload successful:", result.secure_url);
+
+            // Save product with the Cloudinary URL
+            const query = `INSERT INTO products (name, description, price, stock_qty, image_url, category_id, discount_percentage, min_quantity) 
+                          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+
+            connection.query(query, [
+                name,
+                description || '',
+                price, 
+                stock_qty, 
+                result.secure_url,
+                category_id || null, 
+                discount_percentage || 0, 
+                min_quantity
+            ], (err, results) => {
+                if (err) {
+                    console.error('Error adding product:', err);
+                    res.status(500).json({ error: 'Error adding product to database' });
+                } else {
+                    console.log("Product added to database, ID:", results.insertId);
+                    res.status(201).json({ 
+                        product_id: results.insertId, 
+                        name,
+                        description: description || '',
+                        price, 
+                        stock_qty, 
+                        image_url: result.secure_url,
+                        category_id: category_id || null, 
+                        discount_percentage: discount_percentage || 0, 
+                        min_quantity 
+                    });
+                }
+            });
+        }
+    ).end(file.buffer);
+});
+
+// PUT: Update a product
+router.put('/:product_id', (req, res) => {
+    const { product_id } = req.params;
+    const { name, description, price, stock_qty, image_url, category_id, discount_percentage, min_quantity } = req.body;
+
+    if (!name || !price || !stock_qty || !min_quantity) {
+        return res.status(400).json({ error: 'Name, price, stock_qty, and min_quantity are required fields' });
+    }
+
+    const query = `UPDATE products SET name=?, description=?, price=?, stock_qty=?, image_url=?, category_id=?, discount_percentage=?, min_quantity=? WHERE product_id=?`;
+
+    connection.query(query, [
+        name, 
+        description || '',
+        price, 
+        stock_qty, 
+        image_url, 
+        category_id, 
+        discount_percentage || 0, 
+        min_quantity, 
+        product_id
+    ], (err, results) => {
         if (err) {
             console.error('Error updating product:', err);
             res.status(500).send('Error updating product');
@@ -106,7 +172,7 @@ router.put('/:product_id', (req, res) => {
     });
 });
 
-// ✅ DELETE: Remove a product
+// DELETE: Remove a product
 router.delete('/:product_id', (req, res) => {
     const { product_id } = req.params;
 
@@ -126,5 +192,4 @@ router.delete('/:product_id', (req, res) => {
     });
 });
 
-// ✅ Export the router
 module.exports = router;

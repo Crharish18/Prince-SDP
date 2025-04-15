@@ -17,22 +17,21 @@ router.get('/', (req, res) => {
     });
 });
 
-// ✅ POST: Add a new customer with created_at and updated_at
 router.post('/', async (req, res) => {
-    const { first_name, last_name, phone_num, address, national_id, password, dob } = req.body;
+    const { first_name, last_name, phone_num, address, national_id, password, dob, email } = req.body;
 
-    if (!first_name || !last_name || !phone_num || !national_id || !password || !dob) {
-        return res.status(400).json({ error: 'First name, last name, phone number, national ID, password, and DOB are required fields' });
+    if (!first_name || !last_name || !phone_num || !national_id || !password || !dob || !email) {
+        return res.status(400).json({ error: 'All fields (first name, last name, phone number, national ID, password, dob, and email) are required' });
     }
 
     try {
         // Hash the password before storing it
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        const query = `INSERT INTO customer (first_name, last_name, phone_num, address, national_id, password, dob, created_at, updated_at) 
-                       VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`;
+        const query = `INSERT INTO customer (first_name, last_name, phone_num, address, national_id, password, dob, email, created_at, updated_at) 
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`;
 
-        connection.query(query, [first_name, last_name, phone_num, address, national_id, hashedPassword, dob], (err, results) => {
+        connection.query(query, [first_name, last_name, phone_num, address, national_id, hashedPassword, dob, email], (err, results) => {
             if (err) {
                 console.error('Error adding customer:', err);
                 res.status(500).send('Error adding customer');
@@ -45,6 +44,7 @@ router.post('/', async (req, res) => {
                     address, 
                     national_id, 
                     dob,
+                    email,  // Include email in the response
                     created_at: new Date(), // Return the timestamp
                     updated_at: new Date() // Return the timestamp
                 });
@@ -55,6 +55,8 @@ router.post('/', async (req, res) => {
         res.status(500).send('Error hashing password');
     }
 });
+
+
 
 // ✅ PUT: Update a customer and set updated_at timestamp
 router.put('/:customer_id', async (req, res) => {

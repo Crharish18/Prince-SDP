@@ -5,6 +5,7 @@ import About from './Pages/About'; // Import About component
 import Products from './Pages/Products';
 import ProductDetail from './Pages/ProductDetail'; // Product Detail page
 import CustomerLogin from './Pages/CustomerLogin';
+import Signup from './Pages/CustomerSignup';
 import './App.css';
 
 
@@ -13,11 +14,12 @@ function App() {
     <Router>
       <Routes>
         {/* Define a route for the Home page */}
-        <Route path="/Home" element={<Home />} />
+        <Route path="/" element={<Home />} />
         <Route path="/About" element={<About />} />
         <Route path="/Products" element={<Products />} />
         <Route path="/Product/:productId" element={<ProductDetail />} />
         <Route path="/CustomerLogin" element={<CustomerLogin />} />
+        <Route path="/CustomerSignup" element={<Signup />} />
         {/* Add more routes here as needed */}
       </Routes>
     </Router>

@@ -10,6 +10,7 @@ import Products from "./pages/admin/products";
 import Supplier from "./pages/admin/Supplier";
 import Orders from "./pages/admin/Orders";
 import Profile from "./pages/admin/Profile";
+import Transactions from "./pages/admin/Transaction";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
 
@@ -22,7 +23,7 @@ function App() {
     <Router>
       <Routes>
         {/* ✅ Login Route: Allows access to the login page after sign out */}
-        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin" element={<AdminLogin />} />
 
         {/* ✅ Protected Admin Routes */}
         <Route 
@@ -71,6 +72,11 @@ function App() {
         <Route 
           path="/admin/Admin"
           element={token && role === 'admin' ? <Admin /> : <Navigate to="/admin/login" />}
+        />
+
+        <Route 
+          path="/admin/Transactions" 
+          element={token && role === 'admin' ? <Transactions /> : <Navigate to="/admin/login" />} 
         />
         
         {/* ✅ Protected Employee Routes */}

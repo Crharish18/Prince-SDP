@@ -38,7 +38,7 @@ const loginUser = (req, res) => {
 const token = jwt.sign(
   { id: user.userid, email: user.email, role: user.role, username: user.username },  // Add username
   process.env.JWT_SECRET,
-  { expiresIn: '1h' }
+  { expiresIn: '12h' }
 );
 
 res.json({ token, role: user.role, username: user.username });  // Include username

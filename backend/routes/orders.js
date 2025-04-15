@@ -48,6 +48,47 @@ router.get('/today-income', (req, res) => {
     });
 });
 
+// Fetch products sold in the ongoing month
+
+// Fetch products sold in the ongoing month without considering the order status
+router.get('/sold-this-month', (req, res) => {
+    const query = `
+        SELECT oi.product_id, p.name AS product_name, SUM(oi.qty) AS total_sales
+        FROM order_item oi
+        JOIN products p ON oi.product_id = p.product_id
+        JOIN \`order\` o ON oi.order_id = o.order_id
+        WHERE MONTH(o.created_at) = MONTH(CURRENT_DATE()) 
+        AND YEAR(o.created_at) = YEAR(CURRENT_DATE())
+        AND o.status <> 'Cancelled'  -- Exclude 'Delivered' orders
+        GROUP BY oi.product_id
+        ORDER BY total_sales DESC;
+    `;
+    connection.query(query, (err, results) => {
+        if (err) {
+            console.error('Error fetching products sold this month:', err);
+            return res.status(500).json({ error: 'Error fetching products sold this month' });
+        }
+        res.json(results);  // Return the results to the frontend
+    });
+});
+
+// Fetch total pending orders (all-time)
+router.get('/pending-all', (req, res) => {
+    const query = `
+        SELECT COUNT(*) AS pending_orders
+        FROM \`order\`
+        WHERE status = 'Pending';
+    `;
+
+    connection.query(query, (err, results) => {
+        if (err) {
+            console.error('Error fetching pending orders:', err);
+            return res.status(500).send('Error fetching pending orders');
+        }
+        res.json({ pending_orders: results[0].pending_orders });
+    });
+});
+
 
 
 // ✅ Create a new order
