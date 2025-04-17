@@ -55,6 +55,43 @@ const ProductDetail = () => {
 
   if (!product) return null;
 
+
+
+  const addToCart = async () => {
+    try {
+      const token = localStorage.getItem('customerToken');  // Get the customer token from localStorage
+      const userData = JSON.parse(localStorage.getItem('userData'));  // Retrieve user data from localStorage
+  
+      if (!token) {
+        alert("Please log in to add items to your cart.");
+        return;
+      }
+  
+      if (!userData) {
+        alert("No user data found.");
+        return;
+      }
+  
+      // Send request to backend to add product to the cart
+      const response = await axios.post('http://localhost:5000/api/cart', {
+        customer_id: userData.id,  // Use the customer ID from the logged-in user's data
+        product_id: product.product_id,
+        quantity: quantity,
+        price: product.price,
+        discount: product.discount_percentage > 0 ? (product.price * (product.discount_percentage / 100)) : 0, // Calculate discount if available
+        status: 'active'
+      });
+  
+      console.log('Product added to cart:', response.data);
+      // Optionally, show a success message or update UI
+    } catch (error) {
+      console.error('Error adding product to cart:', error);
+    }
+  };
+  
+
+
+
   return (
     <div>
       <HeaderPages />
@@ -147,9 +184,13 @@ const ProductDetail = () => {
                   </div>
 
                   <div className="space-y-3">
-                    <button className="w-full bg-green-500 text-white py-3 rounded-md hover:bg-green-600 transition">
+                  <button
+                      onClick={addToCart} // Trigger add to cart action
+                      className="w-full bg-green-500 text-white py-3 rounded-md hover:bg-green-600 transition"
+                    >
                       Add to Cart - Rs.{(totalPrice).toFixed(2)}
                     </button>
+
                   </div>
                 </div>
               </div>

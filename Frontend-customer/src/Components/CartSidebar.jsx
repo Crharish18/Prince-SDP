@@ -1,45 +1,96 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Plus, Minus, ShoppingBag, Trash2 } from 'lucide-react';
+import axios from 'axios';
 
 const CartSidebar = ({ isOpen, onClose }) => {
-  const [items, setItems] = useState([
-    // Sample cart data (replace with real data)
-    {
-      id: 1,
-      name: 'Agrotec Dora Boat Water Pump',
-      price: 44000,
-      quantity: 2,
-      image: 'https://via.placeholder.com/100',
-    },
-  ]);
+  const [cartItems, setCartItems] = useState([]);
 
-  // Calculate discount (10% of price)
-  const calculateDiscount = (price) => {
-    return price * 0.1;
+  useEffect(() => {
+    const fetchCart = async () => {
+      try {
+        const token = localStorage.getItem('customerToken');
+        if (!token) {
+          alert("Please log in to see your cart.");
+          return;
+        }
+        const decodedToken = JSON.parse(atob(token.split('.')[1])); // Decode JWT token to get user info
+        const customerId = decodedToken.id;
+
+        const response = await axios.get(`http://localhost:5000/api/cart/${customerId}`);
+        setCartItems(response.data);  // Update cart items in the sidebar
+      } catch (error) {
+        console.error('Error fetching cart data:', error);
+      }
+    };
+
+    if (isOpen) {
+      fetchCart(); // Fetch the cart data when the sidebar opens
+    }
+  }, [isOpen]);
+
+  // Function to calculate discount based on quantity and min_quantity
+  const calculateDiscount = (price, quantity, minQuantity, discountPercentage) => {
+    if (quantity >= minQuantity) {
+      // Apply discount if quantity is greater than or equal to min_quantity
+      return (price * discountPercentage / 100) * quantity;
+    }
+    return 0;  // No discount if quantity is less than min_quantity
   };
-
-  // Calculate total price
-  const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const totalDiscount = items.reduce((sum, item) => sum + calculateDiscount(item.price) * item.quantity, 0);
+  
+  const total = cartItems.reduce((sum, item) => sum + parseFloat(item.price) * item.quantity, 0);
+  const totalDiscount = cartItems.reduce((sum, item) => sum + calculateDiscount(parseFloat(item.price), item.quantity, item.min_quantity, item.discount_percentage), 0);
   const finalTotal = total - totalDiscount;
-
+  
   // Remove item from cart
-  const handleRemoveItem = (itemId) => {
-    setItems(items.filter((item) => item.id !== itemId));
+  const handleRemoveItem = async (cartId) => {
+    try {
+      // Call API to remove the item from the database
+      await axios.delete(`http://localhost:5000/api/cart/${cartId}`);
+      
+      // Update the local state to remove the item
+      setCartItems(cartItems.filter((item) => item.cart_id !== cartId));
+    } catch (error) {
+      console.error('Error removing item from cart:', error);
+    }
   };
 
-  // Update quantity
-  const handleUpdateQuantity = (itemId, quantity) => {
-    setItems(
-      items.map((item) =>
-        item.id === itemId ? { ...item, quantity: Math.max(quantity, 1) } : item
-      )
-    );
+  const handleUpdateQuantity = async (cartId, quantity) => {
+    const updatedQuantity = Math.max(quantity, 1); // Ensure quantity is at least 1
+    
+    try {
+      // Use the cart_id to update the quantity in the database
+      const response = await axios.put(`http://localhost:5000/api/cart/${cartId}`, {
+        quantity: updatedQuantity,
+      });
+  
+      // Check if the response was successful
+      if (response.status === 200) {
+        // Update the cartItems state with the new quantity
+        setCartItems(prevItems =>
+          prevItems.map(item =>
+            item.cart_id === cartId
+              ? { ...item, quantity: updatedQuantity }
+              : item
+          )
+        );
+      }
+    } catch (error) {
+      console.error("Error updating cart quantity:", error);
+    }
   };
-
+  
   // Clear the cart
-  const handleClearCart = () => {
-    setItems([]);
+  const handleClearCart = async () => {
+    try {
+      // You might want to add an API endpoint to clear all cart items at once
+      // For now, we'll just remove each item individually
+      for (const item of cartItems) {
+        await axios.delete(`http://localhost:5000/api/cart/${item.cart_id}`);
+      }
+      setCartItems([]);
+    } catch (error) {
+      console.error('Error clearing cart:', error);
+    }
   };
 
   return (
@@ -54,9 +105,7 @@ const CartSidebar = ({ isOpen, onClose }) => {
 
       {/* Sidebar */}
       <div
-        className={`fixed right-0 top-0 h-full w-full md:w-96 bg-white shadow-xl transform transition-transform duration-300 ease-in-out z-50 ${
-          isOpen ? 'translate-x-0' : 'translate-x-full'
-        }`}
+        className={`fixed right-0 top-0 h-full w-full md:w-96 bg-white shadow-xl transform transition-transform duration-300 ease-in-out z-50 ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
       >
         <div className="flex flex-col h-full">
           {/* Header */}
@@ -84,44 +133,35 @@ const CartSidebar = ({ isOpen, onClose }) => {
 
           {/* Cart Items */}
           <div className="flex-1 overflow-y-auto p-4">
-            {items.length === 0 ? (
+            {cartItems.length === 0 ? (
               <div className="text-center text-gray-500 mt-8">
                 Your cart is empty
               </div>
             ) : (
               <div className="space-y-4">
-                {items.map((item) => {
-                  const itemDiscount = calculateDiscount(item.price);
-                  const itemTotal = item.price * item.quantity;
-                  const itemDiscountTotal = itemDiscount * item.quantity;
-                  const itemFinalTotal = itemTotal - itemDiscountTotal;
+              {cartItems.map((item) => {
+                const itemPrice = parseFloat(item.price); // Ensure item price is a number
+                const itemDiscount = calculateDiscount(itemPrice, item.quantity, item.min_quantity, item.discount_percentage);
+                const itemTotal = itemPrice * item.quantity;
+                const itemFinalTotal = itemTotal - itemDiscount;
 
                   return (
-                    <div
-                      key={item.id}
-                      className="flex gap-4 bg-white p-4 rounded-lg shadow-sm"
-                    >
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="w-20 h-20 object-cover rounded-md"
-                      />
+                    <div key={item.cart_id} className="flex gap-4 bg-white p-4 rounded-lg shadow-sm">
                       <div className="flex-1">
                         <div className="flex justify-between">
-                          <div className='text-left'>
-                            <h3 className="font-medium text-sm">{item.name}</h3>
+                          <div className="text-left">
+                            <h3 className="font-medium text-sm">{item.name}</h3>  {/* Display product name */}
                             <div className="text-sm space-y-1">
                               <p className="text-gray-500">
-                                Price: Rs.{item.price.toFixed(2)}
+                                Price: Rs.{itemPrice.toFixed(2)}
                               </p>
                               <p className="text-green-600">
                                 Discount: -Rs.{itemDiscount.toFixed(2)}
                               </p>
-                              
                             </div>
                           </div>
                           <button
-                            onClick={() => handleRemoveItem(item.id)}
+                            onClick={() => handleRemoveItem(item.cart_id)}
                             className="text-gray-400 hover:text-red-500 h-10 w-10 mt-[20px]"
                           >
                             <X className="h-4 w-4 ml-[-7px]" />
@@ -131,7 +171,7 @@ const CartSidebar = ({ isOpen, onClose }) => {
                           <div className="flex items-center">
                             <button
                               onClick={() =>
-                                handleUpdateQuantity(item.id, item.quantity - 1)
+                                handleUpdateQuantity(item.cart_id, item.quantity - 1)
                               }
                               className="p-1 hover:bg-gray-100 rounded"
                             >
@@ -142,7 +182,7 @@ const CartSidebar = ({ isOpen, onClose }) => {
                             </span>
                             <button
                               onClick={() =>
-                                handleUpdateQuantity(item.id, item.quantity + 1)
+                                handleUpdateQuantity(item.cart_id, item.quantity + 1)
                               }
                               className="p-1 hover:bg-gray-100 rounded"
                             >
@@ -184,7 +224,7 @@ const CartSidebar = ({ isOpen, onClose }) => {
             </div>
             <button
               className="w-full bg-green-500 text-white py-3 rounded-md hover:bg-green-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={items.length === 0}
+              disabled={cartItems.length === 0}
             >
               Checkout
             </button>

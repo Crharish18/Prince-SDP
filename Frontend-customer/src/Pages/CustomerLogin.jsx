@@ -11,28 +11,31 @@ function CustomerLogin() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     try {
-      // Send email, password, and role (customer) to backend for authentication
+      // Send email, password to backend for authentication
       const response = await axios.post('http://localhost:5000/api/auth/Customerlogin', { 
         email, 
         password
-    });
-
-      // If login is successful, save the JWT token (for example, in localStorage)
-      localStorage.setItem('token', response.data.token);
-
+      });
+  
+      // Store token and user data in localStorage
+      const { token, username, userId, role } = response.data;  // Destructure response data
+      localStorage.setItem('customerToken', token);  // Store token
+      localStorage.setItem('userData', JSON.stringify({ id: userId, username, role }));  // Store user data
+  
       // Show a success message and navigate to the dashboard or home page
       setMessage('Login successful! Redirecting...');
       setTimeout(() => {
         navigate('/'); // Replace '/dashboard' with the appropriate route
       }, 2000);
-
+  
     } catch (err) {
       console.error('Error during login:', err);
       setMessage('Invalid email or password');
     }
   };
+  
 
   return (
     <div className="max-w-5xl w-full flex rounded-2xl shadow-2xl overflow-hidden ml-[100px] mt-[50px]">

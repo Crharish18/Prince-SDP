@@ -6,6 +6,7 @@ import Products from './Pages/Products';
 import ProductDetail from './Pages/ProductDetail'; // Product Detail page
 import CustomerLogin from './Pages/CustomerLogin';
 import Signup from './Pages/CustomerSignup';
+import Checkout from './Pages/Checkout';
 import './App.css';
 
 
@@ -20,6 +21,7 @@ function App() {
         <Route path="/Product/:productId" element={<ProductDetail />} />
         <Route path="/CustomerLogin" element={<CustomerLogin />} />
         <Route path="/CustomerSignup" element={<Signup />} />
+        <Route path="/Checkout" element={<Checkout />} />
         {/* Add more routes here as needed */}
       </Routes>
     </Router>
