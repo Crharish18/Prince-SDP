@@ -3,34 +3,35 @@ const router = express.Router();
 const connection = require('../config/db'); // Database connection
 
 router.get('/:customer_id', (req, res) => {
-    const { customer_id } = req.params;
-    const query = `
-  SELECT 
-    cart.cart_id, 
-    cart.customer_id, 
-    cart.product_id, 
-    cart.quantity, 
-    cart.price, 
-    cart.discount, 
-    cart.total_price, 
-    cart.status, 
-    products.name, 
-    products.min_quantity, 
-    products.discount_percentage 
-  FROM cart 
-  JOIN products ON cart.product_id = products.product_id 
-  WHERE cart.customer_id = ? AND cart.status = 'active'`;
+  const { customer_id } = req.params;
+  const query = `
+    SELECT 
+      cart.cart_id, 
+      cart.customer_id, 
+      cart.product_id, 
+      cart.quantity, 
+      cart.price, 
+      cart.discount, 
+      cart.total_price, 
+      cart.status, 
+      products.name, 
+      products.min_quantity, 
+      products.discount_percentage, 
+      products.image_url  -- Add image_url here
+    FROM cart 
+    JOIN products ON cart.product_id = products.product_id 
+    WHERE cart.customer_id = ? AND cart.status = 'active'`;
 
-  
-    connection.query(query, [customer_id], (err, results) => {
-      if (err) {
-        console.error('Error fetching cart items:', err);
-        res.status(500).send('Error fetching cart items');
-      } else {
-        res.json(results);
-      }
-    });
+  connection.query(query, [customer_id], (err, results) => {
+    if (err) {
+      console.error('Error fetching cart items:', err);
+      res.status(500).send('Error fetching cart items');
+    } else {
+      res.json(results);  // Send image_url along with other product details
+    }
   });
+});
+
   
   
 

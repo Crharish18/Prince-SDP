@@ -1,45 +1,37 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { FaEye, FaEdit, FaTrash } from "react-icons/fa";
-import Sidebar from "../../components/Sidebar";
+import { FaEye, FaEdit, FaTrash } from "react-icons/fa"; 
+import Sidebar from "../../components/sidebar";
 import Header from "../../components/Header";
-import styles from './Supplier.module.css'; // Import as CSS module
+import styles from './Supplier.module.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import ViewModal from "../../components/Viewmodal";
-import EditModal from "../../components/EditModal";
+import ViewModal from "../../components/Viewmodal"; 
+import EditModal from "../../components/EditModal"; 
 import AddEntityModal from "../../components/AddEntityModal";
 
 function Supplier() {
   const [suppliers, setSuppliers] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [newSupplier, setNewSupplier] = useState({
-    username: '',
-    companyName: '',
-    contactPerson: '',
+    name: '',
+    phone: '',
     email: '',
-    phoneNum: '',
-    address: '',
-    nationalId: '',
-    password: '' 
+    address: ''
   });
 
   const [validationErrors, setValidationErrors] = useState({
-    username: '',
-    companyName: '',
-    contactPerson: '',
+    name: '',
+    phone: '',
     email: '',
-    phoneNum: '',
-    address: '',
-    nationalId: '',
-    password: ''
+    address: ''
   });
-
+  
   const [searchText, setSearchText] = useState("");
   const [searchColumn, setSearchColumn] = useState("");
-  const [showViewModal, setShowViewModal] = useState(false);
-  const [selectedSupplier, setSelectedSupplier] = useState(null);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editedSupplier, setEditedSupplier] = useState({});
+  const [showViewModal, setShowViewModal] = useState(false); 
+  const [selectedSupplier, setSelectedSupplier] = useState(null); 
+  const [showEditModal, setShowEditModal] = useState(false); 
+  const [editedSupplier, setEditedSupplier] = useState({}); 
 
   useEffect(() => {
     axios
@@ -52,6 +44,14 @@ function Supplier() {
       });
   }, []);
 
+  const formatDate = (date) => {
+    const formattedDate = new Date(date);
+    const year = formattedDate.getFullYear();
+    const month = (formattedDate.getMonth() + 1).toString().padStart(2, '0'); 
+    const day = formattedDate.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+  
   const handleSearchColumnChange = (e) => {
     setSearchColumn(e.target.value);  
   };
@@ -59,22 +59,26 @@ function Supplier() {
   const handleSearchChange = (e) => {
     setSearchText(e.target.value);  
   };
-
-  const filteredSuppliers = suppliers.filter((sup) => {
-    if (!searchText || !searchColumn) return true;
-    const value = sup[searchColumn]?.toString().toLowerCase(); 
+  
+  const filteredSuppliers = suppliers.filter((supplier) => {
+    if (!searchText || !searchColumn) return true; 
+    const value = supplier[searchColumn]?.toString().toLowerCase(); 
     return value && value.includes(searchText.toLowerCase());
   });
 
   const supplierFields = [
-    { label: "Username", name: "username", type: "text" },
-    { label: "Company Name", name: "companyName", type: "text" },
-    { label: "Contact Person", name: "contactPerson", type: "text" },
+    { label: "Supplier ID", name: "supplier_id", type: "text" },
+    { label: "Name", name: "name", type: "text" },
+    { label: "Phone", name: "phone", type: "text" },
     { label: "Email", name: "email", type: "email" },
-    { label: "Phone Number", name: "phoneNum", type: "text" },
     { label: "Address", name: "address", type: "text" },
-    { label: "National ID", name: "nationalId", type: "text" }
+    { label: "Created At", name: "created_at", type: "text" }
   ];
+
+  const validateEmail = (email) => {
+    const re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    return re.test(String(email).toLowerCase());
+  };
 
   const handleAddSupplierClick = () => {
     setShowModal(true);
@@ -94,29 +98,18 @@ function Supplier() {
 
   const handleSaveNewSupplier = () => {
     let errors = {};
-    if (!newSupplier.username || newSupplier.username.length < 4) {
-      errors.username = "Username must be at least 4 characters long.";
+    if (!newSupplier.name) {
+      errors.name = "Name is required.";
     }
-    if (!newSupplier.companyName) {
-      errors.companyName = "Company Name is required.";
+    if (!newSupplier.phone) {
+      errors.phone = "Phone number is required.";
+    } else if (!/^\d{10,15}$/.test(newSupplier.phone)) {
+      errors.phone = "Please enter a valid phone number (10-15 digits).";
     }
-    if (!newSupplier.contactPerson) {
-      errors.contactPerson = "Contact Person is required.";
-    }
-    if (!newSupplier.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newSupplier.email)) {
-      errors.email = "Invalid email address.";
-    }
-    if (!newSupplier.phoneNum || !/^\d{10,15}$/.test(newSupplier.phoneNum)) {
-      errors.phoneNum = "Phone number must be between 10 and 15 digits.";
-    }
-    if (!newSupplier.address || newSupplier.address.length < 5) {
-      errors.address = "Address must be at least 5 characters long.";
-    }
-    if (!newSupplier.nationalId || newSupplier.nationalId.length < 6) {
-      errors.nationalId = "National ID must be at least 6 characters long.";
-    }
-    if (!newSupplier.password || newSupplier.password.length < 6) {
-      errors.password = "Password must be at least 6 characters long.";
+    if (!newSupplier.email) {
+      errors.email = "Email is required.";
+    } else if (!validateEmail(newSupplier.email)) {
+      errors.email = "Please enter a valid email address.";
     }
   
     setValidationErrors(errors);
@@ -148,7 +141,7 @@ function Supplier() {
       .delete(`http://localhost:5000/api/suppliers/${supplierId}`)
       .then((response) => {
         setSuppliers((prevSuppliers) =>
-          prevSuppliers.filter((supplier) => supplier.userid !== supplierId)
+          prevSuppliers.filter((supplier) => supplier.supplier_id !== supplierId)
         );
       })
       .catch((error) => {
@@ -158,17 +151,17 @@ function Supplier() {
 
   const handleEditSupplier = (supplier) => {
     setSelectedSupplier(supplier);
-    setEditedSupplier(supplier);
+    setEditedSupplier({ ...supplier });
     setShowEditModal(true);
   };
-
+  
   const handleSaveEditSupplier = () => {
-    const { password, created_at, updated_at, ...supplierData } = editedSupplier;
+    const { created_at, ...supplierData } = editedSupplier;
     axios
-      .put(`http://localhost:5000/api/suppliers/${editedSupplier.userid}`, supplierData)
+      .put(`http://localhost:5000/api/suppliers/${editedSupplier.supplier_id}`, supplierData)
       .then((response) => {
         setSuppliers((prevSuppliers) =>
-          prevSuppliers.map((sup) => (sup.userid === editedSupplier.userid ? editedSupplier : sup))
+          prevSuppliers.map((sup) => (sup.supplier_id === editedSupplier.supplier_id ? editedSupplier : sup))
         );
         setShowEditModal(false);
       })
@@ -181,7 +174,7 @@ function Supplier() {
     const { name, value } = e.target;
     setEditedSupplier((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -198,6 +191,7 @@ function Supplier() {
         <div className={styles.InnerContainer} style={{ marginLeft: "10px", width: "100%" }}>
           <div className={styles.TopSection}>
             <h1 className="section-title" style={{ fontSize: '28px', fontWeight: 'bold' }}>Manage Suppliers</h1>
+
             <div className={styles.SearchWrapper}>
               <select
                 className="form-control"
@@ -205,12 +199,11 @@ function Supplier() {
                 onChange={handleSearchColumnChange}
                 style={{ marginRight: "10px", width: "200px" }}
               >
-                <option value="userid">UserID</option>
-                <option value="companyName">CompanyName</option>
-                <option value="contactPerson">ContactPerson</option>
+                <option value="supplier_id">Supplier ID</option>
+                <option value="name">Name</option>
+                <option value="phone">Phone</option>
                 <option value="email">Email</option>
-                <option value="phoneNum">PhoneNum</option>
-                <option value="nationalId">NationalID</option>
+                <option value="address">Address</option>
               </select>
               <input
                 type="text"
@@ -232,50 +225,42 @@ function Supplier() {
             <table className="table table-striped">
               <thead>
                 <tr>
-                  <th>USERID</th>
-                  <th>COMPANYNAME</th>
-                  <th>CONTACTPERSON</th>
+                  <th>SUPPLIER ID</th>
+                  <th>NAME</th>
+                  <th>PHONE</th>
                   <th>EMAIL</th>
-                  <th>PHONENUM</th>
-                  <th>NationalID</th>
+                  <th>ADDRESS</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredSuppliers.length > 0 ? (
-                  filteredSuppliers.map((sup) => (
-                    <tr key={sup.userid}>
-                      <td>{sup.userid}</td>
-                      <td>{sup.companyName}</td>
-                      <td>{sup.contactPerson}</td>
-                      <td>{sup.email}</td>
-                      <td>{sup.phoneNum}</td>
-                      <td>{sup.nationalId}</td>
+                  filteredSuppliers.map((supplier) => (
+                    <tr key={supplier.supplier_id}>
+                      <td>{supplier.supplier_id}</td>
+                      <td>{supplier.name}</td>
+                      <td>{supplier.phone}</td>
+                      <td>{supplier.email}</td>
+                      <td>{supplier.address || 'N/A'}</td>
                       <td>
-                        <button
-                          className="btn btn-info"
-                          onClick={() => handleViewSupplier(sup)}
-                        >
-                          <FaEye />
-                        </button>
-                        <button
-                          className="btn btn-warning"
-                          onClick={() => handleEditSupplier(sup)}
-                        >
-                          <FaEdit />
-                        </button>
-                        <button
-                          className="btn btn-danger"
-                          onClick={() => handleDeleteSupplier(sup.userid)}
-                        >
-                          <FaTrash />
-                        </button>
+                        <FaEye
+                          style={{ marginRight: "10px", cursor: "pointer", color: "#2770b4" }}
+                          onClick={() => handleViewSupplier(supplier)} 
+                        />
+                        <FaEdit
+                          style={{ marginRight: "10px", cursor: "pointer", color: "#f0ad4e" }}
+                          onClick={() => handleEditSupplier(supplier)} 
+                        />
+                        <FaTrash
+                          style={{ cursor: "pointer", color: "#d9534f" }}
+                          onClick={() => handleDeleteSupplier(supplier.supplier_id)} 
+                        />
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="7">No suppliers found</td>
+                    <td colSpan="6">No suppliers found</td>
                   </tr>
                 )}
               </tbody>
@@ -283,34 +268,47 @@ function Supplier() {
           </div>
         </div>
 
-        {showModal && (
-          <AddEntityModal
-            show={showModal}
-            handleClose={handleCloseModal}
-            handleSave={handleSaveNewSupplier}
-            newEntity={newSupplier}
-            handleInputChange={handleInputChange}
-            validationErrors={validationErrors}
-          />
-        )}
+       
+        <AddEntityModal
+          showModal={showModal}
+          handleClose={handleCloseModal}
+          handleSave={handleSaveNewSupplier}
+          entityTitle="Supplier"
+          entityData={newSupplier}
+          entityFields={[
+            { label: "Name", name: "name", type: "text" },
+            { label: "Phone", name: "phone", type: "text" },
+            { label: "Email", name: "email", type: "email" },
+            { label: "Address", name: "address", type: "text" }
+          ]}
+          handleInputChange={handleInputChange}
+          validationErrors={validationErrors}
+        />
 
-        {showViewModal && selectedSupplier && (
-          <ViewModal
-            supplier={selectedSupplier}
-            show={showViewModal}
-            handleClose={handleCloseViewModal}
-          />
-        )}
+        <ViewModal
+          showViewModal={showViewModal}
+          selectedEntity={selectedSupplier}
+          handleClose={handleCloseViewModal}
+          entityTitle="Supplier"
+          entityFields={[
+            { label: "Supplier ID", name: "supplier_id" },
+            { label: "Name", name: "name" },
+            { label: "Phone", name: "phone" },
+            { label: "Email", name: "email" },
+            { label: "Address", name: "address" },
+            { label: "Created At", name: "created_at", format: formatDate }
+          ]}
+        />
 
-        {showEditModal && (
-          <EditModal
-            supplier={editedSupplier}
-            show={showEditModal}
-            handleClose={handleCloseEditModal}
-            handleSave={handleSaveEditSupplier}
-            handleInputChange={handleEditInputChange}
-          />
-        )}
+        <EditModal
+          showEditModal={showEditModal}
+          entityData={editedSupplier}
+          entityTitle="Supplier"
+          entityFields={supplierFields}
+          handleClose={handleCloseEditModal}
+          handleSaveEditEntity={handleSaveEditSupplier}
+          handleEditInputChange={handleEditInputChange}
+        />
       </div>
     </div>
   );

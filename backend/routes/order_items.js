@@ -44,4 +44,25 @@ router.get('/top-sellers', (req, res) => {
 });
 
 
+// Fetch order items for a specific product// Add a POST route to insert order items
+router.post('/', (req, res) => {
+    const orderItems = req.body; // The array of order items
+  
+    if (!Array.isArray(orderItems) || orderItems.length === 0) {
+      return res.status(400).json({ error: 'Invalid order items data' });
+    }
+  
+    const query = 'INSERT INTO prince.order_item (order_id, product_id, qty, price) VALUES ?';
+    const values = orderItems.map(item => [item.order_id, item.product_id, item.qty, item.price]);
+  
+    connection.query(query, [values], (err, results) => {
+      if (err) {
+        console.error('Error inserting order items:', err);
+        return res.status(500).send('Error adding order items');
+      }
+      res.status(201).json({ message: 'Order items added successfully' });
+    });
+  });
+  
+
 module.exports = router;

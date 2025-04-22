@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Minus, ShoppingBag, Trash2 } from 'lucide-react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 
 const CartSidebar = ({ isOpen, onClose }) => {
   const [cartItems, setCartItems] = useState([]);
+  const navigate = useNavigate(); // Initialize navigate using useNavigate
 
   useEffect(() => {
     const fetchCart = async () => {
@@ -92,6 +94,11 @@ const CartSidebar = ({ isOpen, onClose }) => {
       console.error('Error clearing cart:', error);
     }
   };
+
+    // Handle redirect to Checkout page
+    const handleCheckout = () => {
+      navigate('/checkout'); // Redirect to the Checkout page
+    };
 
   return (
     <>
@@ -223,6 +230,7 @@ const CartSidebar = ({ isOpen, onClose }) => {
               </div>
             </div>
             <button
+              onClick={handleCheckout}
               className="w-full bg-green-500 text-white py-3 rounded-md hover:bg-green-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={cartItems.length === 0}
             >
