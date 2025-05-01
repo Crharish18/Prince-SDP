@@ -50,7 +50,7 @@ const HeaderPages = () => {
   const handleLogout = () => {
     localStorage.removeItem('customerToken');
     setIsLoggedIn(false);
-    navigate('/CustomerLogin');
+    navigate('/');
   };
 
   return (
@@ -75,9 +75,18 @@ const HeaderPages = () => {
                 onMouseEnter={() => setProductsDropdownOpen(true)}
                 onMouseLeave={() => setProductsDropdownOpen(false)}
               >
-                <Link to="/products" className="text-gray-600 hover:text-green-500">Products</Link>
+                <Link
+                  to="/products"
+                  className="text-gray-600 hover:text-green-500"
+                  onClick={e => {
+                    e.preventDefault();
+                    setProductsDropdownOpen(open => !open);
+                  }}
+                >
+                  Products
+                </Link>
                 {productsDropdownOpen && (
-                  <div className="absolute left-0 mt-2 bg-white bg-opacity-90 shadow-lg rounded-lg z-20" style={{ width: '750px' }}>
+                  <div className="absolute left-0 top-full bg-white bg-opacity-90 shadow-lg rounded-lg z-20" style={{ width: '750px' }}>
                     <div className="p-3 border-b border-gray-200 bg-green-500 text-white font-medium rounded-t-lg">
                       Categories
                     </div>
@@ -116,17 +125,32 @@ const HeaderPages = () => {
 
               <div className="ml-[20px]">
                 {isLoggedIn ? (
-                  <div className="relative">
-                    <button className="text-gray-600" onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}>
+                  <div
+                    className="relative"
+                    onMouseEnter={() => setProfileDropdownOpen(true)}
+                    onMouseLeave={() => setProfileDropdownOpen(false)}
+                  >
+                    <button
+                      className="bg-transparent p-0 m-0 border-none shadow-none text-gray-600"
+                      style={{ background: 'transparent' }}
+                      onClick={() => setProfileDropdownOpen(open => !open)}
+                      tabIndex={0}
+                    >
                       <User className="h-6 w-6 text-gray-600" />
                     </button>
                     {profileDropdownOpen && (
-                      <div className="absolute right-0 mt-2 bg-white shadow-lg rounded-lg z-20">
+                      <div className="absolute right-0 top-full bg-white/70 shadow-lg rounded-lg z-20">
                         <div className="p-3">
-                          <button onClick={() => navigate('/profile')} className="text-black hover:text-green-500 hover:bg-transparent bg-transparent py-1 text-left">
+                          <button
+                            onClick={() => navigate('/profile')}
+                            className="text-black hover:text-green-500 hover:bg-transparent bg-transparent py-1 text-left"
+                          >
                             My Profile
                           </button>
-                          <button onClick={handleLogout} className="text-black hover:text-green-500 hover:bg-transparent bg-transparent py-1 text-left">
+                          <button
+                            onClick={handleLogout}
+                            className="text-black hover:text-green-500 hover:bg-transparent bg-transparent py-1 text-left"
+                          >
                             Logout
                           </button>
                         </div>

@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import HeaderPages from '../Components/HeaderPages';
 import { CreditCard, Truck, MapPin, ArrowLeft } from 'lucide-react';
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import logo from '../assets/logoBlack.png';
 import Footer from '../Components/Footer';
 
 const Checkout = ({ onBack }) => {
@@ -65,25 +68,7 @@ const Checkout = ({ onBack }) => {
       // Prepare order total (add shipping cost to the total)
       const totalPrice = total + shippingCost;
   
-      // 1. Send shipping details to backend (saving in shipping_details)
-      const shippingResponse = await axios.post('http://localhost:5000/api/shipping_details', {
-        first_name,
-        last_name,
-        phone,
-        address,
-        city,
-        province,
-        postalcode,
-        customer_id: customerId,
-        Ship_method: shipMethod,
-      });
-  
-      if (shippingResponse.status !== 201) {
-        alert('Failed to save shipping details.');
-        return;
-      }
-  
-      // 2. Create the order in the order table
+      // 1. Create the order in the order table
       const orderResponse = await axios.post('http://localhost:5000/api/orders', {
         customer_id: customerId,
         total_price: totalPrice,
@@ -93,30 +78,72 @@ const Checkout = ({ onBack }) => {
       if (orderResponse.status === 201) {
         const orderId = orderResponse.data.order_id;
   
-        // 3. Insert order items into the order_item table
-        const orderItems = cartItems.map(item => ({ 
+        // 2. Insert order items into the order_item table
+        const orderItems = cartItems.map(item => ({
           order_id: orderId,
           product_id: item.product_id,
           qty: item.quantity,
           price: item.price,
         }));
   
+        // POST the order items
         const orderItemsResponse = await axios.post('http://localhost:5000/api/order_items', orderItems);
   
         if (orderItemsResponse.status === 201) {
-          alert('Order placed successfully!');
-          // Optionally: Redirect or clear form
+          // 3. Send shipping details along with the order_id to the shipping_details table
+          const shippingResponse = await axios.post('http://localhost:5000/api/shipping_details', {
+            first_name,
+            last_name,
+            phone,
+            address,
+            city,
+            province,
+            postalcode,
+            customer_id: customerId,
+            Ship_method: shipMethod,
+            order_id: orderId, // Send the order_id here to link it to the order
+          });
+  
+          if (shippingResponse.status === 201) {
+            // Prepare shipping details object for PDF
+            const shipping = {
+              first_name,
+              last_name,
+              phone,
+              address,
+              city,
+              province,
+              postalcode,
+              Ship_method: shipMethod,
+            };
+  
+            // Generate PDF invoice
+            generateInvoicePDF({
+              orderId,
+              shipping,
+              cartItems,
+              total,
+              shippingCost,
+              grandTotal: totalPrice,
+            });
+  
+            alert('Order placed successfully!');
+            // Optionally: Redirect or clear form
+          } else {
+            alert('Failed to save shipping details.');
+          }
         } else {
           alert('Failed to save order items.');
         }
       } else {
-        alert('Failed to place order.');
+        alert('Failed to place the order.');
       }
     } catch (error) {
       console.error('Error placing order:', error);
       alert('Failed to place order');
     }
   };
+  
   
 
     // Update shipping cost based on selected shipping method
@@ -130,8 +157,83 @@ const Checkout = ({ onBack }) => {
       }
     };
 
+    function generateInvoicePDF({
+      orderId,
+      shipping,
+      cartItems,
+      total,
+      shippingCost,
+      grandTotal,
+    }) {
+      const doc = new jsPDF();
+    
+      // Add logo (adjust width/height as needed)
+      // If logo is a base64 string: doc.addImage(logo, 'PNG', 10, 10, 40, 20);
+      // If logo is a public URL: doc.addImage({url: logo}, 'PNG', 10, 10, 40, 20);
+      doc.addImage(logo, 'PNG', 10, 10, 40, 20);
+    
+      // Company Name and Invoice Title
+      doc.setFontSize(18);
+      doc.text("Prince Lanka Agencies", 60, 20);
+      doc.setFontSize(12);
+      doc.text(`Order ID: ${orderId}`, 150, 15);
+      doc.text(`Date: ${new Date().toLocaleDateString()}`, 150, 22);
+    
+      // Shipping Details
+      doc.setFontSize(13);
+      doc.text("Shipping Details:", 14, 40);
+      doc.setFontSize(11);
+      doc.text(
+        `${shipping.first_name} ${shipping.last_name}
+    ${shipping.address}
+    ${shipping.city}, ${shipping.province} - ${shipping.postalcode}
+    Phone: ${shipping.phone}
+    Shipping Method: ${shipping.Ship_method}`,
+        14,
+        46
+      );
+    
+      // Table for Order Items
+      autoTable(doc, {
+        startY: 80,
+        head: [['#', 'Product', 'Qty', 'Price', 'Total']],
+        body: cartItems.map((item, idx) => [
+        idx + 1,
+        item.name,
+        item.quantity,
+        `Rs.${Number(item.price).toFixed(2)}`,
+        `Rs.${(Number(item.price) * Number(item.quantity)).toFixed(2)}`
+      ]),
+
+        theme: 'striped',
+        headStyles: { fillColor: [34, 197, 94] }, // Tailwind green-500
+        styles: { halign: 'center' },
+      });
+    
+      // Totals
+      let finalY = doc.lastAutoTable.finalY + 10;
+      doc.setFontSize(12);
+      doc.text(`Subtotal: Rs.${total.toFixed(2)}`, 130, finalY);
+      doc.text(`Shipping: Rs.${shippingCost.toFixed(2)}`, 130, finalY + 7);
+      doc.setFontSize(14);
+      doc.text(`Total: Rs.${grandTotal.toFixed(2)}`, 130, finalY + 14);
+    
+      // Footer
+      doc.setFontSize(10);
+      doc.setTextColor(150);
+      doc.text(
+        "Thank you for shopping with Prince Lanka Agencies!",
+        14,
+        285
+      );
+      doc.text("www.princelanka.com | +94 763810245", 14, 292);
+    
+      doc.save(`Invoice_Order_${orderId}.pdf`);
+    }
+
 
   return (
+    <div>
     <div className="min-h-screen bg-gray-50 pt-16 w-[1520px] ml-[-150px]">
       <HeaderPages />
       <div className="max-w-7xl mx-auto px-4 py-8">
@@ -338,7 +440,9 @@ const Checkout = ({ onBack }) => {
           </div>
         </div>
       </div>
-      <Footer />
+      
+    </div>
+    <Footer />
     </div>
   );
 };

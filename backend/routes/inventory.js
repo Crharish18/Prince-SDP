@@ -1,6 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const connection = require('../config/db'); // Import the database connection
+const multer = require('multer');
+const cloudinary = require('../config/cloudinary'); // Adjust path if needed
+const upload = multer({ storage: multer.memoryStorage() });
+
 
 // Route to fetch all inventory records
 router.get('/', (req, res) => {
@@ -32,29 +36,72 @@ router.get('/today-expense', (req, res) => {
     });
 });
 
+router.post('/add-entity', upload.single('image'), (req, res) => {
+  // Get product and inventory fields from req.body
+  const {
+    name, price, category_id, discount_percentage, min_quantity, description,
+    qty_added, user_id, supplier_id, buying_price_per_unit
+  } = req.body;
+  const file = req.file;
 
-// Route to add a new inventory record
-router.post('/', (req, res) => {
-    const { qty_added, user_id, supplier_id, product_id, buying_price_per_unit } = req.body;
-  
-    const query = `INSERT INTO inventory (qty_added, user_id, supplier_id, product_id, buying_price_per_unit) 
-                   VALUES (?, ?, ?, ?, ?)`;
-  
-    connection.query(query, [qty_added, user_id, supplier_id, product_id, buying_price_per_unit], (err, results) => {
-      if (err) {
-        return res.status(500).send('Error adding inventory record');
+  if (!file) {
+    return res.status(400).json({ error: 'Image file is required' });
+  }
+
+  cloudinary.uploader.upload_stream(
+    { resource_type: 'auto' },
+    (error, result) => {
+      if (error) {
+        console.error('Cloudinary upload error:', error);
+        return res.status(500).json({ error: 'Error uploading image to Cloudinary' });
       }
-      res.status(201).json({
-        inventory_id: results.insertId,
-        qty_added,
-        user_id,
-        supplier_id,
-        product_id,
-        buying_price_per_unit,
-        added_on: new Date(), // Automatically generated timestamp
+
+      const image_url = result.secure_url;
+
+      // Begin transaction as before
+      connection.beginTransaction(err => {
+        if (err) return res.status(500).send('Transaction error');
+
+        // Insert into products
+        const insertProduct = `
+          INSERT INTO products
+          (name, price, stock_qty, image_url, category_id, discount_percentage, min_quantity, description)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+        connection.query(
+          insertProduct,
+          [name, price, qty_added, image_url, category_id, discount_percentage, min_quantity, description],
+          (err, productResults) => {
+            if (err) return connection.rollback(() => res.status(500).send('Error adding product'));
+
+            const newProductId = productResults.insertId;
+
+            // Insert into inventory
+            const insertInventory = `
+              INSERT INTO inventory
+              (qty_added, user_id, supplier_id, product_id, buying_price_per_unit)
+              VALUES (?, ?, ?, ?, ?)`;
+            connection.query(
+              insertInventory,
+              [qty_added, user_id, supplier_id, newProductId, buying_price_per_unit],
+              (err, inventoryResults) => {
+                if (err) return connection.rollback(() => res.status(500).send('Error adding inventory'));
+
+                connection.commit(err => {
+                  if (err) return connection.rollback(() => res.status(500).send('Transaction commit error'));
+                  res.status(201).json({
+                    product_id: newProductId,
+                    inventory_id: inventoryResults.insertId,
+                    message: "Product and inventory added successfully"
+                  });
+                });
+              }
+            );
+          }
+        );
       });
-    });
-  });
+    }
+  ).end(file.buffer);
+});
 
 // Route to update an inventory record by ID
 router.put('/:inventory_id', (req, res) => {

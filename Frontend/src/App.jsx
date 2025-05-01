@@ -11,6 +11,7 @@ import Supplier from "./pages/admin/Supplier";
 import Orders from "./pages/admin/Orders";
 import Profile from "./pages/admin/Profile";
 import Transactions from "./pages/admin/Transaction";
+import Inventory from "./pages/admin/Inventory";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
 
@@ -57,6 +58,12 @@ function App() {
         <Route 
           path="/admin/products" 
           element={token && role === 'admin' ? <Products /> : <Navigate to="/admin/login" />} 
+        />
+
+      <Route 
+          path="/admin/Inventory" 
+          element={token && role === 'admin' ? <Inventory /> : <Navigate to="/admin/login" />}  
+          
         />
 
         <Route 

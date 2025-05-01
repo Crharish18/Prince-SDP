@@ -62,7 +62,7 @@ const Header = () => {
   const handleLogout = () => {
     localStorage.removeItem('customerToken');
     setIsLoggedIn(false);
-    navigate('/CustomerLogin');
+    navigate('/');
   };
 
   return (
@@ -104,10 +104,8 @@ const Header = () => {
                   Products
                 </Link>
                 {productsDropdownOpen && (
-                  <div 
-                    className="absolute left-0 mt-2 bg-white bg-opacity-90 shadow-lg rounded-lg z-20"
-                    style={{ width: '750px' }}
-                  >
+                  <div className="absolute left-0 top-full bg-white bg-opacity-90 shadow-lg rounded-lg z-20" style={{ width: '750px' }}>
+
                     <div className="p-3 border-b border-gray-200 bg-green-500 text-white font-medium rounded-t-lg">
                       Categories
                     </div>
@@ -131,6 +129,7 @@ const Header = () => {
                   </div>
                 )}
               </div>
+
 
               {/* Remaining navigation links */}
               <Link
@@ -164,29 +163,42 @@ const Header = () => {
                 />
                 <span className={isScrolled ? 'text-gray-600' : 'text-white'}>Cart (0)</span>
               </div>
-              <div className="ml-[20px]">
+              <div className="ml-[20px] ">
                 {/* Profile/Login Icon with link */}
                 {isLoggedIn ? (
-                  <div className="relative">
-                    <button 
-                      className={`text-white ${isScrolled ? 'text-gray-600' : 'text-white'}`}
-                      onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}  // Toggle Profile dropdown
+                  <div
+                      className="relative"
+                      onMouseEnter={() => setProfileDropdownOpen(true)}
+                      onMouseLeave={() => setProfileDropdownOpen(false)}
                     >
-                      <User className={`h-6 w-6 ${isScrolled ? 'text-gray-600' : 'text-white'}`} />
-                    </button>
-                    {profileDropdownOpen && (
-                      <div className="absolute right-0 mt-2 bg-white shadow-lg rounded-lg z-20">
-                        <div className="p-3">
-                          <button onClick={() => navigate('/profile')} className="text-black hover:text-green-500 hover:bg-transparent bg-transparent py-1 text-left">
-                            My Profile
-                          </button>
-                          <button onClick={handleLogout} className="text-black hover:text-green-500 hover:bg-transparent bg-transparent py-1 text-left">
-                            Logout
-                          </button>
+                      <button
+                        className={`bg-transparent p-0 m-0 border-none shadow-none ${isScrolled ? 'text-gray-600' : 'text-white'}`}
+                        style={{ background: 'transparent' }}
+                        onClick={() => setProfileDropdownOpen((open) => !open)}
+                        tabIndex={0}
+                      >
+                        <User className={`h-6 w-6 ${isScrolled ? 'text-gray-600' : 'text-white'}`} />
+                      </button>
+                      {profileDropdownOpen && (
+                        <div className="absolute right-0  bg-white/70 shadow-lg rounded-lg z-20">
+                          <div className="p-3">
+                            <button
+                              onClick={() => navigate('/profile')}
+                              className="text-black hover:text-green-500 hover:bg-transparent bg-transparent py-1 text-left"
+                            >
+                              My Profile
+                            </button>
+                            <button
+                              onClick={handleLogout}
+                              className="text-black hover:text-green-500 hover:bg-transparent bg-transparent py-1 text-left"
+                            >
+                              Logout
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    )}
-                  </div>
+                      )}
+                    </div>
+
                 ) : (
                   <Link to="/CustomerLogin">
                     <User className={`h-6 w-6 ${isScrolled ? 'text-gray-600' : 'text-white'}`} />

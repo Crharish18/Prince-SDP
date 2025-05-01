@@ -18,33 +18,32 @@ router.get('/', (req, res) => {
 
 // Add a new shipping detail
 router.post('/', (req, res) => {
-    const { first_name, last_name, phone, address, city, province, postalcode, customer_id, Ship_method } = req.body;
+    const { first_name, last_name, phone, address, city, province, postalcode, customer_id, Ship_method, order_id } = req.body;
 
-
-    if (!first_name || !last_name || !phone || !address || !city || !province || !postalcode || !customer_id) {
+    if (!first_name || !last_name || !phone || !address || !city || !province || !postalcode || !customer_id || !order_id) {
         return res.status(400).json({ error: 'All fields are required' });
     }
 
     const query = `INSERT INTO prince.shipping_details 
-  (first_name, last_name, phone, address, city, province, postalcode, customer_id, Ship_method) 
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+  (first_name, last_name, phone, address, city, province, postalcode, customer_id, Ship_method, order_id) 
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
-    
-connection.query(query, [first_name, last_name, phone, address, city, province, postalcode, customer_id, Ship_method], (err, results) => {
+    connection.query(query, [first_name, last_name, phone, address, city, province, postalcode, customer_id, Ship_method, order_id], (err, results) => {
         if (err) {
             console.error('Error adding shipping detail:', err);
             res.status(500).send('Error adding shipping detail');
         } else {
             res.status(201).json({
-                shipping_id: results.insertId, 
-                first_name, 
-                last_name, 
-                phone, 
-                address, 
-                city, 
-                province, 
-                postalcode, 
-                customer_id
+                shipping_id: results.insertId,
+                first_name,
+                last_name,
+                phone,
+                address,
+                city,
+                province,
+                postalcode,
+                customer_id,
+                order_id
             });
         }
     });
@@ -54,7 +53,7 @@ connection.query(query, [first_name, last_name, phone, address, city, province, 
 router.delete('/:shipping_id', (req, res) => {
     const { shipping_id } = req.params;
 
-    const query = 'DELETE FROM prince.shipping_details WHERE id = ?';
+    const query = 'DELETE FROM prince.shipping_details WHERE ship_id = ?';
 
     connection.query(query, [shipping_id], (err, results) => {
         if (err) {
@@ -69,15 +68,15 @@ router.delete('/:shipping_id', (req, res) => {
 // Update a shipping detail
 router.put('/:shipping_id', (req, res) => {
     const { shipping_id } = req.params;
-    const { first_name, last_name, phone, address, city, province, postalcode, customer_id } = req.body;
+    const { first_name, last_name, phone, address, city, province, postalcode, customer_id, order_id } = req.body;
 
-    if (!first_name || !last_name || !phone || !address || !city || !province || !postalcode || !customer_id) {
+    if (!first_name || !last_name || !phone || !address || !city || !province || !postalcode || !customer_id || !order_id) {
         return res.status(400).json({ error: 'All fields are required' });
     }
 
-    const query = 'UPDATE prince.shipping_details SET first_name=?, last_name=?, phone=?, address=?, city=?, province=?, postalcode=?, customer_id=? WHERE id=?';
+    const query = 'UPDATE prince.shipping_details SET first_name=?, last_name=?, phone=?, address=?, city=?, province=?, postalcode=?, customer_id=?, order_id=? WHERE ship_id=?';
 
-    connection.query(query, [first_name, last_name, phone, address, city, province, postalcode, customer_id, shipping_id], (err, results) => {
+    connection.query(query, [first_name, last_name, phone, address, city, province, postalcode, customer_id, order_id, shipping_id], (err, results) => {
         if (err) {
             console.error('Error updating shipping detail:', err);
             res.status(500).send('Error updating shipping detail');

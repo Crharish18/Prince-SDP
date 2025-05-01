@@ -8,6 +8,11 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import ViewModal from "../../components/Viewmodal"; 
 import EditModal from "../../components/EditModal"; 
 import AddEntityModal from "../../components/AddEntityModal";
+import PrintModal from "../../components/PrintModal";
+import { jsPDF } from "jspdf";
+import 'jspdf-autotable';  // This is an additional library to handle tables in PDFs
+import logodash from "../../assets/PicturesAdmin/logoWhite.png";
+
 
 function ManageEmployee() {
   const [employees, setEmployees] = useState([]);
@@ -44,6 +49,9 @@ function ManageEmployee() {
   const [selectedEmployee, setSelectedEmployee] = useState(null); 
   const [showEditModal, setShowEditModal] = useState(false); 
   const [editedEmployee, setEditedEmployee] = useState({}); 
+  
+  const [showPrintModal, setShowPrintModal] = useState(false);
+
 
   useEffect(() => {
     axios
@@ -218,6 +226,18 @@ function ManageEmployee() {
     setSelectedEmployee(null);
   };
 
+  // Make sure you have these imports at the top of your file:
+// import { jsPDF } from "jspdf";
+// import 'jspdf-autotable';
+
+// Replace your existing handleDownloadPDF function with this simpler version
+// that doesn't rely on the autoTable plugin:
+
+
+const handleDownloadPDF = () => {
+  setShowPrintModal(true);
+};
+
   return (
     <div className={styles.ManageEmployeeContainer}>
       <Sidebar />
@@ -252,7 +272,7 @@ function ManageEmployee() {
                 <button className="btn btn-primary" style={{ width: '150px', marginLeft:"10px" }} onClick={handleAddEmployeeClick}>
                   Add Employee
                 </button>
-                <button className="btn btn-secondary" style={{ width: '150px', marginLeft:"10px" }}>Report</button>
+                <button className="btn btn-secondary"  onClick={handleDownloadPDF} style={{ width: '150px', marginLeft:"10px" }}>Print</button>
               </div>
             </div>
           </div>
@@ -357,9 +377,35 @@ function ManageEmployee() {
           handleSaveEditEntity={handleSaveEditEmployee}
           handleEditInputChange={handleEditInputChange}
         />
+
+<PrintModal
+show={showPrintModal}
+handleClose={() => setShowPrintModal(false)}
+title="Print Employee Report"
+data={filteredEmployees}
+fields={[
+  { label: "USERID", field: "userid" },
+  { label: "Username", field: "username" },
+  { label: "First Name", field: "first_name" },
+  { label: "Last Name", field: "last_name" },
+  { label: "Email", field: "email" },
+  { label: "Phone Number", field: "phonenum" },
+  { label: "Role", field: "role" },
+  { label: "Date of Birth", field: "dob", format: (date) => date ? new Date(date).toLocaleDateString() : "" },
+  { label: "National ID", field: "natID" },
+  { label: "Address", field: "address" }
+]}
+filename="employee_report.pdf"
+reportTitle="Employee Details Report"
+/>
+
       </div>
     </div>
   );
 }
+
+// Add this in your return statement before the closing </div>:
+
+
 
 export default ManageEmployee;

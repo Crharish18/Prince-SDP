@@ -22,25 +22,41 @@ const AddEntityModal = ({
             {entityFields.map((field) => (
               <div key={field.name} className={styles.FormGroup}>
                 <label style={{ fontWeight: "bold" }}>{field.label}</label>
-                {field.type === 'file' ? (
-                  // Special handling for file inputs
-                  <input
-                    type="file"
-                    className="form-control"
-                    name={field.name}
-                    onChange={field.onChange || handleInputChange}
-                  />
-                ) : (
-                  // Regular inputs (text, number, etc.)
-                  <input
-                    type={field.type}
-                    className="form-control"
-                    placeholder={`Enter ${field.label}`}
-                    name={field.name}
-                    value={entityData[field.name] || ""}
-                    onChange={handleInputChange}
-                  />
-                )}
+                {field.render ? (
+  field.render({
+    value: entityData[field.name] || "",
+    onChange: handleInputChange
+  })
+) : field.type === 'file' ? (
+  <input
+    type="file"
+    className="form-control"
+    name={field.name}
+    onChange={field.onChange || handleInputChange}
+  />
+) : field.type === 'select' ? (
+  <select
+    className="form-control"
+    name={field.name}
+    value={entityData[field.name] || ""}
+    onChange={handleInputChange}
+  >
+    <option value="">Select {field.label}</option>
+    {field.options && field.options.map(opt => (
+      <option key={opt.value} value={opt.value}>{opt.label}</option>
+    ))}
+  </select>
+) : (
+  <input
+    type={field.type}
+    className="form-control"
+    placeholder={`Enter ${field.label}`}
+    name={field.name}
+    value={entityData[field.name] || ""}
+    onChange={handleInputChange}
+  />
+)}
+
                 {validationErrors[field.name] && (
                   <div className="error" style={{ color: 'red', fontSize: '14px', marginTop: '5px' }}>
                     {validationErrors[field.name]}
