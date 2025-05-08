@@ -76,14 +76,13 @@ function Inventory() {
       inputValue={inputProductName}
       onInputChange={(event, newInputValue) => {
         setInputProductName(newInputValue);
-        onChange({ target: { name: 'name', value: newInputValue } });
       }}
       onChange={(event, newValue) => {
         setSelectedProduct(newValue);
         if (newValue && typeof newValue === 'object') {
+          // Auto-fill all product fields except qty_added and buying_price_per_unit
           setNewEntity(prev => ({
             ...prev,
-            // Autofill all product fields except qty_added and buying_price_per_unit
             name: newValue.name,
             price: newValue.price,
             category_id: newValue.category_id,
@@ -93,15 +92,23 @@ function Inventory() {
             image_url: newValue.image_url,
             product_id: newValue.product_id
           }));
+          
+          // Reset image file since we're using an existing product
+          setImageFile(null);
         }
       }}
       renderInput={(params) => (
         <TextField {...params} label="Product Name" variant="outlined" />
       )}
+      renderOption={(props, option) => (
+        <li {...props} key={option.product_id}>
+          {option.name}
+        </li>
+      )}
     />
   );
   
-
+  
 
 
   useEffect(() => {
@@ -139,8 +146,13 @@ function Inventory() {
   };
 
   const handleImageFileChange = (e) => {
-    setImageFile(e.target.files[0]);
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      console.log("Selected file:", file.name, file.size, "bytes");
+      setImageFile(file);
+    }
   };
+  
 
   const handleSearchChange = (e) => {
     setSearchText(e.target.value);
@@ -179,7 +191,7 @@ function Inventory() {
       render: renderProductAutocomplete
     },
     { label: "Price", name: "price", type: "number" },
-    { label: "Product Image", name: "image", type: "file", onChange: handleImageFileChange },
+   
     {
       label: "Category", name: "category_id", type: "select",
       options: categories.map(cat => ({ value: cat.category_id, label: cat.category_name }))
@@ -192,7 +204,8 @@ function Inventory() {
       label: "Supplier", name: "supplier_id", type: "select",
       options: suppliers.map(sup => ({ value: sup.supplier_id, label: sup.name }))
     },
-    { label: "Buying Price Per Unit", name: "buying_price_per_unit", type: "number" }
+    { label: "Buying Price Per Unit", name: "buying_price_per_unit", type: "number" },
+    { label: "Product Image", name: "image", type: "file", onChange: handleImageFileChange }
   ];
   
 
@@ -212,41 +225,77 @@ function Inventory() {
   };
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setNewEntity({
-      ...newEntity,
-      [name]: value
-    });
+    const { name, value, type, files } = e.target;
+    
+    if (type === 'file') {
+      // Handle file input
+      setImageFile(files[0]);
+    } else {
+      // Handle regular input
+      setNewEntity({
+        ...newEntity,
+        [name]: value
+      });
+    }
   };
+  
   
   
 
   const handleSaveNewEntity = () => {
     let errors = {};
-    // Basic validation (add more as needed)
+    
+    // Basic validation
     if (!newEntity.name) errors.name = "Product name is required.";
     if (!newEntity.price || isNaN(newEntity.price)) errors.price = "Price is required and must be a number.";
     if (!newEntity.qty_added || isNaN(newEntity.qty_added)) errors.qty_added = "Quantity is required and must be a number.";
     if (!newEntity.user_id) errors.user_id = "User ID is required.";
     if (!newEntity.supplier_id) errors.supplier_id = "Supplier ID is required.";
     if (!newEntity.buying_price_per_unit || isNaN(newEntity.buying_price_per_unit)) errors.buying_price_per_unit = "Buying price is required and must be a number.";
-  
+    
+    // Only require image for new products
+    if (modalMode === 'new' && !imageFile) {
+      errors.image = "Product image is required for new products.";
+    }
+    
     setValidationErrors(errors);
   
     if (Object.keys(errors).length === 0) {
       const formData = new FormData();
+      
       // Append all fields
       formData.append("name", newEntity.name);
       formData.append("price", newEntity.price);
       formData.append("category_id", newEntity.category_id);
-      formData.append("discount_percentage", newEntity.discount_percentage);
-      formData.append("min_quantity", newEntity.min_quantity);
-      formData.append("description", newEntity.description);
+      formData.append("discount_percentage", newEntity.discount_percentage || 0);
+      formData.append("min_quantity", newEntity.min_quantity || 1);
+      formData.append("description", newEntity.description || "");
       formData.append("qty_added", newEntity.qty_added);
       formData.append("user_id", newEntity.user_id);
       formData.append("supplier_id", newEntity.supplier_id);
       formData.append("buying_price_per_unit", newEntity.buying_price_per_unit);
-      formData.append("image", imageFile);
+      
+      // If it's an existing product, include the product_id
+      if (modalMode === 'existing' && newEntity.product_id) {
+        formData.append("product_id", newEntity.product_id);
+      }
+      
+      // Only append image if a file is selected
+      if (imageFile) {
+        formData.append("image", imageFile);
+      }
+  
+      // Add debugging to see what's being sent
+      console.log("Sending data:", {
+        name: newEntity.name,
+        price: newEntity.price,
+        qty_added: newEntity.qty_added,
+        user_id: newEntity.user_id,
+        supplier_id: newEntity.supplier_id,
+        buying_price_per_unit: newEntity.buying_price_per_unit,
+        product_id: newEntity.product_id || 'new product',
+        hasImage: !!imageFile
+      });
   
       axios
         .post("http://localhost:5000/api/inventory/add-entity", formData, {
@@ -255,10 +304,24 @@ function Inventory() {
         .then((response) => {
           setShowModal(false);
           setImageFile(null);
-          // Optionally refresh inventory/products
+          setSelectedProduct(null);
+          setInputProductName('');
+          
+          // Refresh inventory data
+          axios.get('http://localhost:5000/api/inventory')
+            .then(response => setInventories(response.data))
+            .catch(error => console.error('Error fetching inventory:', error));
+            
+          // Also refresh products data
+          axios.get('http://localhost:5000/api/products')
+            .then(response => setProducts(response.data))
+            .catch(error => console.error('Error fetching products:', error));
         })
         .catch((error) => {
           console.error("Error adding entity:", error);
+          if (error.response) {
+            console.error("Error response data:", error.response.data);
+          }
         });
     }
   };
@@ -353,11 +416,11 @@ function Inventory() {
       buying_price_per_unit: '',
       product_id: ''
     });
+    setImageFile(null); // Reset image file
     setModalMode(mode); // 'new' or 'existing'
     setShowModal(true);
   };
   
- 
 
   return (
     <div className={styles.InventoryContainer}>
@@ -389,7 +452,7 @@ function Inventory() {
                 onChange={handleSearchChange}
                 placeholder={`Search by ${searchColumn || "..."}`}
               />
-              <div className={styles.BtnContainer} >``
+              <div className={styles.BtnContainer} >
                 <button
                   className="btn btn-primary"
                   style={{ width: '180px', marginLeft: "10px"  }}
@@ -471,7 +534,7 @@ function Inventory() {
             showModal={showModal}
             handleClose={handleCloseModal}
             handleSave={handleSaveNewEntity}
-            entityTitle={modalMode === 'new' ? "Add New Product & Inventory" : "Add Inventory to Existing Product"}
+            entityTitle={modalMode === 'new' ? "Add New Product" : "Add  Existing Product"}
             entityData={newEntity}
             entityFields={modalMode === 'new' ? newProductFields : existingProductFields}
             handleInputChange={handleInputChange}

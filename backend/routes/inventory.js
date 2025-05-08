@@ -40,96 +40,132 @@ router.post('/add-entity', upload.single('image'), (req, res) => {
   // Get product and inventory fields from req.body
   const {
     name, price, category_id, discount_percentage, min_quantity, description,
-    qty_added, user_id, supplier_id, buying_price_per_unit
+    qty_added, user_id, supplier_id, buying_price_per_unit, product_id
   } = req.body;
   const file = req.file;
 
-  if (!file) {
-    return res.status(400).json({ error: 'Image file is required' });
-  }
+  // Begin transaction
+  connection.beginTransaction(err => {
+    if (err) return res.status(500).send('Transaction error');
 
-  cloudinary.uploader.upload_stream(
-    { resource_type: 'auto' },
-    (error, result) => {
-      if (error) {
-        console.error('Cloudinary upload error:', error);
-        return res.status(500).json({ error: 'Error uploading image to Cloudinary' });
+    // Check if we're adding inventory for an existing product
+    if (product_id) {
+      // First update the product if any fields have changed
+      const updateProduct = `
+        UPDATE products 
+        SET name=?, description=?, price=?, category_id=?, 
+        discount_percentage=?, min_quantity=? 
+        WHERE product_id=?`;
+      
+      connection.query(
+        updateProduct,
+        [name, description || '', price, category_id, discount_percentage || 0, min_quantity || 1, product_id],
+        (err) => {
+          if (err) return connection.rollback(() => res.status(500).send('Error updating product'));
+          
+          // If there's a new image, upload and update the image_url
+          if (file) {
+            cloudinary.uploader.upload_stream(
+              { resource_type: 'auto' },
+              (error, result) => {
+                if (error) {
+                  console.error('Cloudinary upload error:', error);
+                  return connection.rollback(() => res.status(500).send('Error uploading image'));
+                }
+                
+                // Update the image URL
+                connection.query(
+                  'UPDATE products SET image_url=? WHERE product_id=?',
+                  [result.secure_url, product_id],
+                  (err) => {
+                    if (err) return connection.rollback(() => res.status(500).send('Error updating product image'));
+                    
+                    // Now insert into inventory
+                    insertInventoryRecord(product_id);
+                  }
+                );
+              }
+            ).end(file.buffer);
+          } else {
+            // No new image, just insert into inventory
+            insertInventoryRecord(product_id);
+          }
+        }
+      );
+    } else {
+      // For new products, require an image
+      if (!file) {
+        return connection.rollback(() => res.status(400).json({ error: 'Image file is required for new products' }));
       }
 
-      const image_url = result.secure_url;
-
-      // Begin transaction as before
-      connection.beginTransaction(err => {
-        if (err) return res.status(500).send('Transaction error');
-
-        // Insert into products
-        const insertProduct = `
-          INSERT INTO products
-          (name, price, stock_qty, image_url, category_id, discount_percentage, min_quantity, description)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
-        connection.query(
-          insertProduct,
-          [name, price, qty_added, image_url, category_id, discount_percentage, min_quantity, description],
-          (err, productResults) => {
-            if (err) return connection.rollback(() => res.status(500).send('Error adding product'));
-
-            const newProductId = productResults.insertId;
-
-            // Insert into inventory
-            const insertInventory = `
-              INSERT INTO inventory
-              (qty_added, user_id, supplier_id, product_id, buying_price_per_unit)
-              VALUES (?, ?, ?, ?, ?)`;
-            connection.query(
-              insertInventory,
-              [qty_added, user_id, supplier_id, newProductId, buying_price_per_unit],
-              (err, inventoryResults) => {
-                if (err) return connection.rollback(() => res.status(500).send('Error adding inventory'));
-
-                connection.commit(err => {
-                  if (err) return connection.rollback(() => res.status(500).send('Transaction commit error'));
-                  res.status(201).json({
-                    product_id: newProductId,
-                    inventory_id: inventoryResults.insertId,
-                    message: "Product and inventory added successfully"
-                  });
-                });
-              }
-            );
+      // Upload image to Cloudinary and create new product
+      cloudinary.uploader.upload_stream(
+        { resource_type: 'auto' },
+        (error, result) => {
+          if (error) {
+            console.error('Cloudinary upload error:', error);
+            return connection.rollback(() => res.status(500).json({ error: 'Error uploading image to Cloudinary' }));
           }
-        );
-      });
+
+          const image_url = result.secure_url;
+
+          // Insert into products
+          const insertProduct = `
+            INSERT INTO products
+            (name, price, stock_qty, image_url, category_id, discount_percentage, min_quantity, description)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+          connection.query(
+            insertProduct,
+            [name, price, qty_added, image_url, category_id, discount_percentage || 0, min_quantity || 1, description || ''],
+            (err, productResults) => {
+              if (err) return connection.rollback(() => res.status(500).send('Error adding product'));
+
+              const newProductId = productResults.insertId;
+              
+              // Insert into inventory
+              insertInventoryRecord(newProductId);
+            }
+          );
+        }
+      ).end(file.buffer);
     }
-  ).end(file.buffer);
+
+    // Helper function to insert inventory record
+    function insertInventoryRecord(productId) {
+      const insertInventory = `
+        INSERT INTO inventory
+        (qty_added, user_id, supplier_id, product_id, buying_price_per_unit)
+        VALUES (?, ?, ?, ?, ?)`;
+      
+      connection.query(
+        insertInventory,
+        [qty_added, user_id, supplier_id, productId, buying_price_per_unit],
+        (err, inventoryResults) => {
+          if (err) return connection.rollback(() => res.status(500).send('Error adding inventory'));
+          
+          // Update product stock quantity
+          connection.query(
+            'UPDATE products SET stock_qty = stock_qty + ? WHERE product_id = ?',
+            [qty_added, productId],
+            (err) => {
+              if (err) return connection.rollback(() => res.status(500).send('Error updating product stock'));
+              
+              connection.commit(err => {
+                if (err) return connection.rollback(() => res.status(500).send('Transaction commit error'));
+                res.status(201).json({
+                  product_id: productId,
+                  inventory_id: inventoryResults.insertId,
+                  message: "Product and inventory added successfully"
+                });
+              });
+            }
+          );
+        }
+      );
+    }
+  });
 });
 
-// Route to update an inventory record by ID
-router.put('/:inventory_id', (req, res) => {
-    const { inventory_id } = req.params;  // Get inventory_id from URL parameter
-    const { qty_added, user_id, supplier_id, product_id, buying_price_per_unit } = req.body;  // Get fields from request body
-  
-    // Validate inputs
-    if (!qty_added || !user_id || !supplier_id || !product_id || !buying_price_per_unit) {
-      return res.status(400).json({ error: 'All fields are required to update inventory.' });
-    }
-  
-    const query = `UPDATE inventory 
-                   SET qty_added = ?, user_id = ?, supplier_id = ?, product_id = ?, buying_price_per_unit = ? 
-                   WHERE inventory_id = ?`;
-  
-    connection.query(query, [qty_added, user_id, supplier_id, product_id, buying_price_per_unit, inventory_id], (err, results) => {
-      if (err) {
-        console.error('Error updating inventory record:', err);
-        return res.status(500).send('Error updating inventory');
-      }
-  
-      if (results.affectedRows === 0) {
-        return res.status(404).send('Inventory record not found');
-      }
-  
-      res.status(200).send({ message: 'Inventory updated successfully' });
-    });
-  });
   
 
 // Route to delete an inventory record by ID

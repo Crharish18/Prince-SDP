@@ -14,6 +14,7 @@ const order_itemsRoutes = require('./routes/order_items'); // Import the order_i
 const TransactionsRoutes = require('./routes/Transactions'); // Import the transactions route
 const activity_logRoutes = require('./routes/activitylog'); // Import the activity log route
 const cartRoutes = require('./routes/Cart'); // Import the cart route
+const reviewsRoutes = require('./routes/review'); // Import the reviews route
 const shipping_detailsRoutes = require('./routes/shipping_details'); // Import the shipping details route
 const app = express();
 const port = process.env.PORT || 5000;
@@ -51,6 +52,7 @@ app.use('/api/transactions', TransactionsRoutes); // Add the transactions route
 app.use('/api/cart', cartRoutes); // Add the cart route
 app.use('/api/activitylog', activity_logRoutes); // Add the activity log route
 app.use('/api/shipping_details', shipping_detailsRoutes); // Add the shipping details route
+app.use('/api/reviews', reviewsRoutes); // Add the reviews route
 // Add the upload route for image uploads
 console.log('Adding upload route...');
 app.use('/api/upload', uploadRoutes);  // Register the upload route

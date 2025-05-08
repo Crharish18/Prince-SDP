@@ -29,8 +29,11 @@ const Checkout = ({ onBack }) => {
         const response = await axios.get(`http://localhost:5000/api/cart/${customerId}`);
         setCartItems(response.data);  // Update cart items
 
-        // Calculate total based on fetched cart items
-        const calculatedTotal = response.data.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        // Calculate total based on the total_price field from cart table
+        const calculatedTotal = response.data.reduce(
+          (sum, item) => sum + Number(item.total_price), 
+          0
+        );
         setTotal(calculatedTotal);  // Set the total
       } catch (error) {
         console.error('Error fetching cart items:', error);
@@ -65,13 +68,17 @@ const Checkout = ({ onBack }) => {
       // Set the shipping method
       const shipMethod = selectedShipping === 'standard' ? 'Standard Shipping' : 'Pickup';
   
-      // Prepare order total (add shipping cost to the total)
-      const totalPrice = total + shippingCost;
+      // Calculate all required values
+      const subtotal = cartItems.reduce((sum, item) => sum + (Number(item.price) * item.quantity), 0);
+      const totalDiscount = cartItems.reduce((sum, item) => sum + Number(item.discount || 0), 0);
+      const totalPrice = Number(total) + Number(shippingCost);
   
       // 1. Create the order in the order table
       const orderResponse = await axios.post('http://localhost:5000/api/orders', {
         customer_id: customerId,
-        total_price: totalPrice,
+        price: subtotal, // Total price before any discounts
+        total_discount: totalDiscount, // Total discount amount
+        total_price: totalPrice, // Final price after all discounts + shipping
         status: 'Pending',
       });
   
@@ -83,7 +90,9 @@ const Checkout = ({ onBack }) => {
           order_id: orderId,
           product_id: item.product_id,
           qty: item.quantity,
-          price: item.price,
+          price: Number(item.price) * item.quantity, // Unit price × quantity (before discount)
+          discount: Number(item.discount || 0), // Total discount for this product (not multiplied)
+          final_price: Number(item.total_price) // Final price after discount
         }));
   
         // POST the order items
@@ -144,97 +153,94 @@ const Checkout = ({ onBack }) => {
     }
   };
   
+  // Update shipping cost based on selected shipping method
+  const handleShippingChange = (event) => {
+    const selectedMethod = event.target.value;
+    setSelectedShipping(selectedMethod);
+    if (selectedMethod === "standard") {
+      setShippingCost(500); // Standard shipping costs Rs. 500
+    } else {
+      setShippingCost(0); // Pickup is free
+    }
+  };
+
+  function generateInvoicePDF({
+    orderId,
+    shipping,
+    cartItems,
+    total,
+    shippingCost,
+    grandTotal,
+  }) {
+    const doc = new jsPDF();
   
-
-    // Update shipping cost based on selected shipping method
-    const handleShippingChange = (event) => {
-      const selectedMethod = event.target.value;
-      setSelectedShipping(selectedMethod);
-      if (selectedMethod === "standard") {
-        setShippingCost(500); // Standard shipping costs Rs. 500
-      } else {
-        setShippingCost(0); // Pickup is free
-      }
-    };
-
-    function generateInvoicePDF({
-      orderId,
-      shipping,
-      cartItems,
-      total,
-      shippingCost,
-      grandTotal,
-    }) {
-      const doc = new jsPDF();
-    
-      // Add logo (adjust width/height as needed)
-      // If logo is a base64 string: doc.addImage(logo, 'PNG', 10, 10, 40, 20);
-      // If logo is a public URL: doc.addImage({url: logo}, 'PNG', 10, 10, 40, 20);
-      doc.addImage(logo, 'PNG', 10, 10, 40, 20);
-    
-      // Company Name and Invoice Title
-      doc.setFontSize(18);
-      doc.text("Prince Lanka Agencies", 60, 20);
-      doc.setFontSize(12);
-      doc.text(`Order ID: ${orderId}`, 150, 15);
-      doc.text(`Date: ${new Date().toLocaleDateString()}`, 150, 22);
-    
-      // Shipping Details
-      doc.setFontSize(13);
-      doc.text("Shipping Details:", 14, 40);
-      doc.setFontSize(11);
-      doc.text(
-        `${shipping.first_name} ${shipping.last_name}
-    ${shipping.address}
-    ${shipping.city}, ${shipping.province} - ${shipping.postalcode}
-    Phone: ${shipping.phone}
-    Shipping Method: ${shipping.Ship_method}`,
-        14,
-        46
-      );
-    
-      // Table for Order Items
-      autoTable(doc, {
-        startY: 80,
-        head: [['#', 'Product', 'Qty', 'Price', 'Total']],
-        body: cartItems.map((item, idx) => [
+    // Add logo (adjust width/height as needed)
+    doc.addImage(logo, 'PNG', 10, 10, 40, 20);
+  
+    // Company Name and Invoice Title
+    doc.setFontSize(18);
+    doc.text("Prince Lanka Agencies", 60, 20);
+    doc.setFontSize(12);
+    doc.text(`Order ID: ${orderId}`, 150, 15);
+    doc.text(`Date: ${new Date().toLocaleDateString()}`, 150, 22);
+  
+    // Shipping Details
+    doc.setFontSize(13);
+    doc.text("Shipping Details:", 14, 40);
+    doc.setFontSize(11);
+    doc.text(
+      `${shipping.first_name} ${shipping.last_name}
+  ${shipping.address}
+  ${shipping.city}, ${shipping.province} - ${shipping.postalcode}
+  Phone: ${shipping.phone}
+  Shipping Method: ${shipping.Ship_method}`,
+      14,
+      46
+    );
+  
+    // Table for Order Items
+    autoTable(doc, {
+      startY: 80,
+      head: [['#', 'Product', 'Qty', 'Price', 'Discount', 'Final Price']],
+      body: cartItems.map((item, idx) => [
         idx + 1,
         item.name,
         item.quantity,
         `Rs.${Number(item.price).toFixed(2)}`,
-        `Rs.${(Number(item.price) * Number(item.quantity)).toFixed(2)}`
+        `Rs.${Number(item.discount || 0).toFixed(2)}`,
+        `Rs.${Number(item.total_price).toFixed(2)}`
       ]),
-
-        theme: 'striped',
-        headStyles: { fillColor: [34, 197, 94] }, // Tailwind green-500
-        styles: { halign: 'center' },
-      });
-    
-      // Totals
-      let finalY = doc.lastAutoTable.finalY + 10;
-      doc.setFontSize(12);
-      doc.text(`Subtotal: Rs.${total.toFixed(2)}`, 130, finalY);
-      doc.text(`Shipping: Rs.${shippingCost.toFixed(2)}`, 130, finalY + 7);
-      doc.setFontSize(14);
-      doc.text(`Total: Rs.${grandTotal.toFixed(2)}`, 130, finalY + 14);
-    
-      // Footer
-      doc.setFontSize(10);
-      doc.setTextColor(150);
-      doc.text(
-        "Thank you for shopping with Prince Lanka Agencies!",
-        14,
-        285
-      );
-      doc.text("www.princelanka.com | +94 763810245", 14, 292);
-    
-      doc.save(`Invoice_Order_${orderId}.pdf`);
-    }
+      theme: 'striped',
+      headStyles: { fillColor: [34, 197, 94] }, // Tailwind green-500
+      styles: { halign: 'center' },
+    });
+  
+    // Totals
+    let finalY = doc.lastAutoTable.finalY + 10;
+    doc.setFontSize(12);
+    doc.text(`Subtotal: Rs.${cartItems.reduce((sum, item) => sum + (Number(item.price) * item.quantity), 0).toFixed(2)}`, 130, finalY);
+    doc.text(`Discount: Rs.${cartItems.reduce((sum, item) => sum + Number(item.discount || 0), 0).toFixed(2)}`, 130, finalY + 7);
+    doc.text(`Shipping: Rs.${Number(shippingCost).toFixed(2)}`, 130, finalY + 14);
+    doc.setFontSize(14);
+    doc.text(`Total: Rs.${Number(grandTotal).toFixed(2)}`, 130, finalY + 21);
+  
+    // Footer
+    doc.setFontSize(10);
+    doc.setTextColor(150);
+    doc.text(
+      "Thank you for shopping with Prince Lanka Agencies!",
+      14,
+      285
+    );
+    doc.text("www.princelanka.com | +94 763810245", 14, 292);
+  
+    doc.save(`Invoice_Order_${orderId}.pdf`);
+  }
 
 
   return (
     <div>
-    <div className="min-h-screen bg-gray-50 pt-16 w-[1520px] ml-[-150px]">
+    <div className="min-h-screen bg-gray-50 pt-16 ">
       <HeaderPages />
       <div className="max-w-7xl mx-auto px-4 py-8">
         <button
@@ -362,15 +368,21 @@ const Checkout = ({ onBack }) => {
                     cartItems.map((item) => (
                       <div key={item.cart_id} className="flex items-center gap-4 text-left" >
                         <img
-                          src={item.image_url}  // Display the image using image_url from backend
+                          src={item.image_url}
                           alt={item.name}
                           className="w-16 h-16 object-cover rounded-md"
                         />
                         <div className="flex-1">
                           <h3 className="font-medium">{item.name}</h3>
                           <p className="text-sm text-gray-500">Quantity: {item.quantity}</p>
+                          <p className="text-sm text-red-500">Discount: Rs.{Number(item.discount || 0).toFixed(2)}</p>
                         </div>
-                        <p className="font-medium">Rs.{(item.price * item.quantity).toFixed(2)}</p>
+                        <div className="text-right">
+                          <p className="font-medium">Rs.{(Number(item.price) * item.quantity).toFixed(2)}</p>
+                          {/* Don't multiply discount by quantity here */}
+                          <p className="text-sm text-red-500">-Rs.{Number(item.discount || 0).toFixed(2)}</p>
+                          <p className="font-semibold">Rs.{Number(item.total_price).toFixed(2)}</p>
+                        </div>
                       </div>
                     ))
                   ) : (
@@ -381,15 +393,24 @@ const Checkout = ({ onBack }) => {
                 <div className="border-t mt-6 pt-6 space-y-2">
                   <div className="flex justify-between text-gray-600">
                     <span>Subtotal</span>
-                    <span>Rs.{total.toFixed(2)}</span>
+                    <span>Rs.{cartItems.reduce((sum, item) => sum + (Number(item.price) * item.quantity), 0).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-red-500">
+                    <span>Discount</span>
+                    {/* Don't multiply discount by quantity in the total either */}
+                    <span>-Rs.{cartItems.reduce((sum, item) => sum + Number(item.discount || 0), 0).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-gray-600">
+                    <span>After Discount</span>
+                    <span>Rs.{Number(total).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-gray-600">
                     <span>Shipping</span>
-                    <span>Rs.{shippingCost.toFixed(2)}</span> {/* Show dynamic shipping cost */}
+                    <span>Rs.{Number(shippingCost).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-lg font-bold">
                     <span>Total</span>
-                    <span>Rs.{(total + shippingCost).toFixed(2)}</span> {/* Update total with shipping cost */}
+                    <span>Rs.{(Number(total) + Number(shippingCost)).toFixed(2)}</span>
                   </div>
                 </div>
             </div>

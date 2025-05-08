@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import './EditModal.css';  // Add or update the corresponding CSS for styling
 
 const EditModal = ({
@@ -10,7 +10,32 @@ const EditModal = ({
   handleSaveEditEntity,  // Save the entity data
   handleEditInputChange   // Handle the change of inputs
 }) => {
+  const [imagePreview, setImagePreview] = useState({});
+  
   if (!showEditModal || !entityData) return null; // Don't render if modal is not open or there's no data
+
+  const handleFileChange = (e, fieldName) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Create a temporary URL for the image preview
+      const previewUrl = URL.createObjectURL(file);
+      setImagePreview({
+        ...imagePreview,
+        [fieldName]: previewUrl
+      });
+      
+      // Create a custom event to pass to handleEditInputChange
+      const customEvent = {
+        target: {
+          name: fieldName,
+          value: file,
+          type: 'file'
+        }
+      };
+      
+      handleEditInputChange(customEvent);
+    }
+  };
 
   return (
     <div className="modal-overlay1">
@@ -21,13 +46,31 @@ const EditModal = ({
             {entityFields.map((field, index) => (
               <div className="form-group" key={index}>
                 <label style={{ fontWeight: "bold" }}>{field.label}</label>
-                <input
-                  type={field.type || "text"} // Allow dynamic input types (e.g., text, email, date, etc.)
-                  className="form-control"
-                  name={field.name}
-                  value={entityData[field.name] || ""}
-                  onChange={handleEditInputChange}
-                />
+                {field.type === "image" ? (
+                  <div className="image-edit-container">
+                    <div className="current-image">
+                      <img 
+                        src={imagePreview[field.name] || entityData[field.name]} 
+                        alt={`Current ${field.label}`}
+                        className="edit-image-preview"
+                      />
+                    </div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleFileChange(e, field.name)}
+                      className="form-control"
+                    />
+                  </div>
+                ) : (
+                  <input
+                    type={field.type || "text"} // Allow dynamic input types (e.g., text, email, date, etc.)
+                    className="form-control"
+                    name={field.name}
+                    value={entityData[field.name] || ""}
+                    onChange={handleEditInputChange}
+                  />
+                )}
               </div>
             ))}
           </div>

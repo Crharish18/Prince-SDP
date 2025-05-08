@@ -49,7 +49,7 @@ const Hero = () => {
   return (
     <div 
       className="relative min-h-screen" 
-      style={{ width: '100vw', overflowX: 'hidden', position: 'relative', marginLeft: '-160px', marginTop: '-32px'}}
+      style={{ width: '100vw', overflowX: 'hidden', position: 'relative'}}
     >
       {/* Full width container */}
       <div className="absolute inset-0 w-full h-full">

@@ -48,7 +48,186 @@ const customerLogin = (req, res) => {
   });
 };
 
+// Get customer profile data
+const getCustomerProfile = (req, res) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  
+  if (!token) {
+    return res.status(401).json({ message: 'No token provided' });
+  }
+  
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const customerId = decoded.id;
+    
+    db.query('SELECT customer_id, first_name, last_name, email, phone_num, national_id, dob, address FROM customer WHERE customer_id = ?', 
+      [customerId], 
+      (err, result) => {
+        if (err) {
+          return res.status(500).json({ error: err.message });
+        }
+        
+        if (result.length === 0) {
+          return res.status(404).json({ message: 'Customer not found' });
+        }
+        
+        res.json(result[0]);
+      }
+    );
+  } catch (err) {
+    return res.status(401).json({ message: 'Invalid token' });
+  }
+};
+
+// Update customer profile
+const updateCustomerProfile = (req, res) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  
+  if (!token) {
+    return res.status(401).json({ message: 'No token provided' });
+  }
+  
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const customerId = decoded.id;
+    
+    const { firstName, lastName, email, phone, nationalId, dob } = req.body;
+    
+    // Check if email is already in use by another customer
+    if (email) {
+      db.query('SELECT customer_id FROM customer WHERE email = ? AND customer_id != ?', 
+        [email, customerId], 
+        (err, result) => {
+          if (err) {
+            return res.status(500).json({ error: err.message });
+          }
+          
+          if (result.length > 0) {
+            return res.status(400).json({ message: 'Email is already in use by another account' });
+          }
+          
+          // If email is not in use, proceed with update
+          updateCustomer();
+        }
+      );
+    } else {
+      // If no email provided, proceed with update
+      updateCustomer();
+    }
+    
+    function updateCustomer() {
+      const updateQuery = `
+        UPDATE customer 
+        SET 
+          first_name = ?,
+          last_name = ?,
+          email = ?,
+          phone_num = ?,
+          national_id = ?,
+          dob = ?
+        WHERE customer_id = ?
+      `;
+      
+      db.query(updateQuery, 
+        [firstName, lastName, email, phone, nationalId, dob, customerId], 
+        (err, result) => {
+          if (err) {
+            return res.status(500).json({ error: err.message });
+          }
+          
+          if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Customer not found or no changes made' });
+          }
+          
+          res.json({ message: 'Profile updated successfully' });
+        }
+      );
+    }
+    
+  } catch (err) {
+    return res.status(401).json({ message: 'Invalid token' });
+  }
+};
+
+// Get customer orders
+// Get customer orders with product details
+// Get customer orders with product details
+const getCustomerOrders = (req, res) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  
+  if (!token) {
+    return res.status(401).json({ message: 'No token provided' });
+  }
+  
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const customerId = decoded.id;
+    
+    // Join orders with order_items and products to get complete details
+    const query = `
+      SELECT o.order_id, o.total_price, o.price as order_original_price, o.total_discount, o.status, o.created_at,
+             oi.order_item_id, oi.product_id, oi.qty, oi.price as item_price, oi.discount as item_discount, oi.final_price as item_final_price,
+             p.name as product_name, p.image_url
+      FROM \`order\` o
+      LEFT JOIN order_item oi ON o.order_id = oi.order_id
+      LEFT JOIN products p ON oi.product_id = p.product_id
+      WHERE o.customer_id = ?
+      ORDER BY o.created_at DESC
+    `;
+    
+    db.query(query, [customerId], (err, results) => {
+      if (err) {
+        console.error('Database error:', err);
+        return res.status(500).json({ error: err.message });
+      }
+      
+      // Group order items by order
+      const orders = [];
+      const orderMap = new Map();
+      
+      results.forEach(row => {
+        if (!orderMap.has(row.order_id)) {
+          const order = {
+            order_id: row.order_id,
+            total_price: row.total_price,
+            original_price: row.order_original_price,
+            total_discount: row.total_discount,
+            status: row.status,
+            created_at: row.created_at,
+            items: []
+          };
+          
+          orderMap.set(row.order_id, orders.length);
+          orders.push(order);
+        }
+        
+        if (row.order_item_id) {
+          const orderIndex = orderMap.get(row.order_id);
+          orders[orderIndex].items.push({
+            order_item_id: row.order_item_id,
+            product_id: row.product_id,
+            product_name: row.product_name,
+            image_url: row.image_url,
+            qty: row.qty,
+            price: row.item_price / row.qty, // Unit price
+            total_price: row.item_price, // Total price before discount
+            discount: row.item_discount,
+            final_price: row.item_final_price
+          });
+        }
+      });
+      
+      res.json(orders);
+    });
+  } catch (err) {
+    console.error('Token verification error:', err);
+    return res.status(401).json({ message: 'Invalid token' });
+  }
+};
 
 
-module.exports = { customerLogin };
+
+module.exports = { customerLogin, getCustomerProfile, updateCustomerProfile, getCustomerOrders };
+
+
 

@@ -40,7 +40,7 @@ const ProductCategories = () => {
   };
 
   return (
-    <div className="py-16 bg-gray-50 w-full" style={{ width: '100vw', marginLeft: '-160px' }}>
+    <div className="py-16 bg-gray-50 w-full">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <h2 className="text-3xl font-bold text-center mb-12">Explore Our Product Categories</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

@@ -262,7 +262,8 @@ const Products = () => {
   )?.category_name;
 
   return (
-    <div className="pt-16 min-h-screen bg-gray-50" style={{ width: "100vw", marginLeft: '-160px' }}>
+    <div className=''>
+    <div className="pt-16 min-h-screen bg-gray-50 " >
       <HeaderPages />
 
       <div>
@@ -473,9 +474,10 @@ const Products = () => {
           </div>
         </div>
       </div>
-      <div className='ml=5' style={{marginLeft: '165px'}}>
+      <div  >
         <Footer/>
       </div>
+    </div>
     </div>
   );
 };

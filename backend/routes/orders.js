@@ -6,7 +6,6 @@ const connection = require('../config/db'); // Import the database connection
 router.get('/', (req, res) => {
     const query = 'SELECT * FROM `order`';   // Correct
 
-    
     connection.query(query, (err, results) => {
         if (err) {
             console.error('Error fetching orders:', err);
@@ -59,7 +58,7 @@ router.get('/sold-this-month', (req, res) => {
         JOIN \`order\` o ON oi.order_id = o.order_id
         WHERE MONTH(o.created_at) = MONTH(CURRENT_DATE()) 
         AND YEAR(o.created_at) = YEAR(CURRENT_DATE())
-        AND o.status <> 'Cancelled'  -- Exclude 'Delivered' orders
+        AND o.status <> 'Cancelled'  -- Exclude 'Cancelled' orders
         GROUP BY oi.product_id
         ORDER BY total_sales DESC;
     `;
@@ -89,20 +88,18 @@ router.get('/pending-all', (req, res) => {
     });
 });
 
-
-
 // ✅ Create a new order
 router.post('/', (req, res) => {
-    const { customer_id, total_price, status } = req.body;
+    const { customer_id, total_price, status, price, total_discount } = req.body;
 
-    if (!customer_id || !total_price || !status) {
+    if (!customer_id || !total_price || !status || !price || !total_discount) {
         return res.status(400).json({ error: 'All fields are required' });
     }
 
-    const query = `INSERT INTO \`order\` (customer_id, total_price, status, created_at, updated_at) 
-                   VALUES (?, ?, ?, NOW(), NOW())`;
+    const query = `INSERT INTO \`order\` (customer_id, total_price, status, price, total_discount, created_at, updated_at) 
+                   VALUES (?, ?, ?, ?, ?, NOW(), NOW())`;
 
-    connection.query(query, [customer_id, total_price, status], (err, results) => {
+    connection.query(query, [customer_id, total_price, status, price, total_discount], (err, results) => {
         if (err) {
             console.error('❌ Error inserting order:', err);
             return res.status(500).json({ error: 'Error adding order', details: err.message });
@@ -112,6 +109,8 @@ router.post('/', (req, res) => {
             customer_id, 
             total_price, 
             status, 
+            price, 
+            total_discount,
             created_at: new Date(), 
             updated_at: new Date()
         });
@@ -121,15 +120,15 @@ router.post('/', (req, res) => {
 // ✅ Update an order by ID
 router.put('/:order_id', (req, res) => {
     const { order_id } = req.params;
-    const { customer_id, total_price, status } = req.body;
+    const { customer_id, total_price, status, price, total_discount } = req.body;
 
-    if (!customer_id || !total_price || !status) {
+    if (!customer_id || !total_price || !status || !price || !total_discount) {
         return res.status(400).json({ error: 'All fields are required' });
     }
 
-    const query = `UPDATE \`order\` SET customer_id=?, total_price=?, status=?, updated_at=NOW() WHERE order_id=?`;
+    const query = `UPDATE \`order\` SET customer_id=?, total_price=?, status=?, price=?, total_discount=?, updated_at=NOW() WHERE order_id=?`;
 
-    connection.query(query, [customer_id, total_price, status, order_id], (err, results) => {
+    connection.query(query, [customer_id, total_price, status, price, total_discount, order_id], (err, results) => {
         if (err) {
             console.error('❌ Error updating order:', err);
             return res.status(500).json({ error: 'Error updating order', details: err.message });
@@ -138,6 +137,7 @@ router.put('/:order_id', (req, res) => {
     });
 });
 
+// ✅ Delete an order by ID
 router.delete('/:order_id', (req, res) => {
     const { order_id } = req.params;
 

@@ -31,6 +31,7 @@ function ManageProducts() {
   const [showEditModal, setShowEditModal] = useState(false); 
   const [editedProduct, setEditedProduct] = useState({}); 
   const [imageFile, setImageFile] = useState(null);
+  const [editImageFile, setEditImageFile] = useState(null);
 
   // Debug check when component mounts
   useEffect(() => {
@@ -182,7 +183,43 @@ function ManageProducts() {
     setShowEditModal(true);
   };
 
-  const handleSaveEditProduct = () => {
+  // Update the handleSaveEditProduct function to handle file uploads
+const handleSaveEditProduct = () => {
+  // If there's a new image file, use FormData to upload it
+  if (editImageFile) {
+    const formData = new FormData();
+    
+    // Add all product fields to FormData
+    Object.keys(editedProduct).forEach(key => {
+      if (key !== 'image_url') { // Skip the image_url field
+        formData.append(key, editedProduct[key]);
+      }
+    });
+    
+    // Add the new image file
+    formData.append('image', editImageFile);
+    
+    // Make the API request with FormData
+    axios
+      .put(`http://localhost:5000/api/products/${editedProduct.product_id}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      })
+      .then((response) => {
+        // Update the products list with the updated product
+        setProducts((prevProducts) =>
+          prevProducts.map((prod) => 
+            prod.product_id === editedProduct.product_id ? 
+              {...editedProduct, image_url: response.data.image_url} : prod
+          )
+        );
+        setShowEditModal(false);
+        setEditImageFile(null);
+      })
+      .catch((error) => console.error("Error updating product:", error));
+  } else {
+    // No new image, use regular JSON request
     axios
       .put(`http://localhost:5000/api/products/${editedProduct.product_id}`, editedProduct)
       .then(() => {
@@ -192,15 +229,24 @@ function ManageProducts() {
         setShowEditModal(false);
       })
       .catch((error) => console.error("Error updating product:", error));
-  };
+  }
+};
 
-  const handleEditInputChange = (e) => {
-    const { name, value } = e.target;
+  // Update the handleEditInputChange function
+const handleEditInputChange = (e) => {
+  const { name, value, type } = e.target;
+  
+  if (type === 'file') {
+    // Handle file input
+    setEditImageFile(value);
+  } else {
+    // Handle regular input
     setEditedProduct((prev) => ({
       ...prev,
       [name]: value
     }));
-  };
+  }
+};
   
   return (
     <div className={styles.ManageProductsContainer}>
@@ -307,42 +353,45 @@ function ManageProducts() {
           handleInputChange={handleInputChange}
         />
 
-        <ViewModal 
-          showViewModal={showViewModal} 
-          selectedEntity={selectedProduct} 
-          handleClose={handleCloseViewModal} 
-          entityTitle="Product" 
-          entityFields={[
-            { label: "Product ID", name: "product_id"},
-            { label: "Name", name: "name"},
-            { label: "Description", name: "description"},
-            { label: "Price", name: "price" },
-            { label: "Stock Quantity", name: "stock_qty"},
-            { label: "Image", name: "image_url", type: "image" },
-            { label: "Category ID", name: "category_id"},
-            { label: "Discount Percentage", name: "discount_percentage"},
-            { label: "Minimum Quantity", name: "min_quantity" }
-          ]} 
-        />
+          <ViewModal 
+            showViewModal={showViewModal} 
+            selectedEntity={selectedProduct} 
+            handleClose={handleCloseViewModal} 
+            entityTitle="Product" 
+            entityFields={[
+              { label: "Product ID", name: "product_id"},
+              { label: "Name", name: "name"},
+              { label: "Description", name: "description"},
+              { label: "Price", name: "price" },
+              { label: "Stock Quantity", name: "stock_qty"},
+              
+              { label: "Category ID", name: "category_id"},
+              { label: "Discount Percentage", name: "discount_percentage"},
+              { label: "Minimum Quantity", name: "min_quantity" },
+              { label: "Image", name: "image_url", type: "image" } // This line is correct
+            ]} 
+          />
 
-        <EditModal 
-          showEditModal={showEditModal} 
-          entityData={editedProduct} 
-          entityTitle="Product"
-          entityFields={[
-            { label: "Name", name: "name"},
-            { label: "Description", name: "description"},
-            { label: "Price", name: "price" },
-            { label: "Stock Quantity", name: "stock_qty"},
-            { label: "Image URL", name: "image_url" },
-            { label: "Category ID", name: "category_id"},
-            { label: "Discount Percentage", name: "discount_percentage"},
-            { label: "Minimum Quantity", name: "min_quantity" }
-          ]} 
-          handleClose={() => setShowEditModal(false)} 
-          handleSaveEditEntity={handleSaveEditProduct} 
-          handleEditInputChange={handleEditInputChange}   
-        />
+
+            <EditModal 
+              showEditModal={showEditModal} 
+              entityData={editedProduct} 
+              entityTitle="Product"
+              entityFields={[
+                { label: "Name", name: "name"},
+                { label: "Description", name: "description"},
+                { label: "Price", name: "price" },
+                { label: "Stock Quantity", name: "stock_qty"}, // Change this line
+                { label: "Category ID", name: "category_id"},
+                { label: "Discount Percentage", name: "discount_percentage"},
+                { label: "Minimum Quantity", name: "min_quantity" },
+                { label: "Image", name: "image_url", type: "image" }
+              ]} 
+              handleClose={() => setShowEditModal(false)} 
+              handleSaveEditEntity={handleSaveEditProduct} 
+              handleEditInputChange={handleEditInputChange}   
+            />
+  
       </div>
     </div>
   );

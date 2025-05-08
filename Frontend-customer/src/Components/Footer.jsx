@@ -3,7 +3,7 @@ import { Mail, Phone, MapPin, Facebook, Twitter, Instagram, Linkedin } from 'luc
 
 const Footer = () => {
   return (
-    <footer className="bg-gradient-to-r from-green-700 to-green-500 text-white py-16 relative ml-[-160px] w-[1530px] mb-[-32px] ">
+    <footer className="bg-gradient-to-r from-green-700 to-green-500 text-white py-16 relative   ">
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         {/* Decorative element */}
         <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-yellow-400 via-green-300 to-green-600"></div>

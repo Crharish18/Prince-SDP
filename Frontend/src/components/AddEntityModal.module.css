@@ -78,6 +78,32 @@
   background-color: #06325e;
 }
 
+.FileInputContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.ImagePreviewContainer {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  background-color: #f8f9fa;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  padding: 10px;
+  margin-bottom: 5px;
+}
+
+.ImagePreview {
+  max-width: 100%;
+  max-height: 200px;
+  object-fit: contain;
+}
+
+
+
 /* Animations */
 @keyframes fadeIn {
   from {

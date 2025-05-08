@@ -137,41 +137,84 @@ router.post('/', upload.single('image'), (req, res) => {
     ).end(file.buffer);
 });
 
-// PUT: Update a product
-router.put('/:product_id', (req, res) => {
+// PUT: Update a product with image upload
+router.put('/:product_id', upload.single('image'), (req, res) => {
     const { product_id } = req.params;
-    const { name, description, price, stock_qty, image_url, category_id, discount_percentage, min_quantity } = req.body;
-
+    const { name, description, price, stock_qty, category_id, discount_percentage, min_quantity } = req.body;
+    const file = req.file;
+  
     if (!name || !price || !stock_qty || !min_quantity) {
-        return res.status(400).json({ error: 'Name, price, stock_qty, and min_quantity are required fields' });
+      return res.status(400).json({ error: 'Name, price, stock_qty, and min_quantity are required fields' });
     }
-
-    const query = `UPDATE products SET name=?, description=?, price=?, stock_qty=?, image_url=?, category_id=?, discount_percentage=?, min_quantity=? WHERE product_id=?`;
-
-    connection.query(query, [
+  
+    // If there's a new image file, upload it to Cloudinary
+    if (file) {
+      cloudinary.uploader.upload_stream(
+        { resource_type: 'auto' },
+        (error, result) => {
+          if (error) {
+            console.error('Cloudinary upload error:', error);
+            return res.status(500).json({ error: 'Error uploading image to Cloudinary' });
+          }
+  
+          // Update product with new image URL
+          const query = `UPDATE products SET name=?, description=?, price=?, stock_qty=?, image_url=?, category_id=?, discount_percentage=?, min_quantity=? WHERE product_id=?`;
+  
+          connection.query(query, [
+            name, 
+            description || '',
+            price, 
+            stock_qty, 
+            result.secure_url, 
+            category_id, 
+            discount_percentage || 0, 
+            min_quantity, 
+            product_id
+          ], (err, results) => {
+            if (err) {
+              console.error('Error updating product:', err);
+              res.status(500).send('Error updating product');
+            } else {
+              if (results.affectedRows === 0) {
+                res.status(404).json({ error: 'Product not found' });
+              } else {
+                res.status(200).json({ 
+                  message: 'Product updated successfully',
+                  image_url: result.secure_url
+                });
+              }
+            }
+          });
+        }
+      ).end(file.buffer);
+    } else {
+      // No new image, just update the other fields
+      const query = `UPDATE products SET name=?, description=?, price=?, stock_qty=?, category_id=?, discount_percentage=?, min_quantity=? WHERE product_id=?`;
+  
+      connection.query(query, [
         name, 
         description || '',
         price, 
         stock_qty, 
-        image_url, 
         category_id, 
         discount_percentage || 0, 
         min_quantity, 
         product_id
-    ], (err, results) => {
+      ], (err, results) => {
         if (err) {
-            console.error('Error updating product:', err);
-            res.status(500).send('Error updating product');
+          console.error('Error updating product:', err);
+          res.status(500).send('Error updating product');
         } else {
-            if (results.affectedRows === 0) {
-                res.status(404).json({ error: 'Product not found' });
-            } else {
-                res.status(200).json({ message: 'Product updated successfully' });
-            }
+          if (results.affectedRows === 0) {
+            res.status(404).json({ error: 'Product not found' });
+          } else {
+            res.status(200).json({ message: 'Product updated successfully' });
+          }
         }
-    });
-});
-
+      });
+    }
+  });
+  
 // DELETE: Remove a product
 router.delete('/:product_id', (req, res) => {
     const { product_id } = req.params;

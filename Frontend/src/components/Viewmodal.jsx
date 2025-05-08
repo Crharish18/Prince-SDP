@@ -21,12 +21,23 @@ const ViewModal = ({ showViewModal, selectedEntity, handleClose, entityTitle, en
             {entityFields.map((field, index) => (
               <div className="form-group" key={index}>
                 <label style={{ fontWeight: "bold" }}>{field.label}</label>
-                <input 
-                  type="text" 
-                  className="form-control" 
-                  value={field.format ? field.format(selectedEntity[field.name]) : selectedEntity[field.name]} 
-                  disabled 
-                />
+                {field.type === "image" ? (
+                  <div className="image-container">
+                    <img 
+                      src={selectedEntity[field.name]} 
+                      alt={`${field.label}`}
+                      className="modal-image"
+                      style={{ maxWidth: "100%", maxHeight: "200px", objectFit: "contain" }}
+                    />
+                  </div>
+                ) : (
+                  <input 
+                    type="text" 
+                    className="form-control" 
+                    value={field.format ? field.format(selectedEntity[field.name]) : selectedEntity[field.name]} 
+                    disabled 
+                  />
+                )}
               </div>
             ))}
           </div>

@@ -121,6 +121,24 @@
     column-gap: 25px;
     row-gap: 20px;
   }
+
+  .image-container {
+    width: 180px;
+    display: flex;
+    justify-content: center;
+    margin-top: 5px;
+    background-color: #f8f9fa;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    padding: 10px;
+  }
+  
+  .modal-image {
+    max-width: 100%;
+    max-height: 200px;
+    object-fit: contain;
+  }
+  
   
   /* Error Messages */
   .error {

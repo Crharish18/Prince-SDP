@@ -29,71 +29,71 @@ function App() {
         {/* ✅ Protected Admin Routes */}
         <Route 
           path="/admin/dashboard" 
-          element={token && role === 'admin' ? <Dashboard /> : <Navigate to="/admin/login" />} 
+          element={token && role === 'admin' ? <Dashboard /> : <Navigate to="/admin" />} 
         />
 
         <Route 
           path="/admin/Customer"
-          element={token && role === 'admin' ? <Customer /> : <Navigate to="/admin/login" />} 
+          element={token && role === 'admin' ? <Customer /> : <Navigate to="/admin" />} 
         />
 
          <Route 
           path="/admin/categories" 
-          element={token && role === 'admin' ? <Categories /> : <Navigate to="/admin/login" />}  
+          element={token && role === 'admin' ? <Categories /> : <Navigate to="/admin" />}  
           
         />
 
       <Route 
           path="/admin/profile" 
-          element={token && role === 'admin' ? <Profile /> : <Navigate to="/admin/login" />}  
+          element={token && role === 'admin' ? <Profile /> : <Navigate to="/admin" />}  
           
         />
 
         <Route 
           path="/admin/Supplier" 
-          element={token && role === 'admin' ? <Supplier /> : <Navigate to="/admin/login" />}  
+          element={token && role === 'admin' ? <Supplier /> : <Navigate to="/admin" />}  
           
         />
 
         <Route 
           path="/admin/products" 
-          element={token && role === 'admin' ? <Products /> : <Navigate to="/admin/login" />} 
+          element={token && role === 'admin' ? <Products /> : <Navigate to="/admin" />} 
         />
 
       <Route 
           path="/admin/Inventory" 
-          element={token && role === 'admin' ? <Inventory /> : <Navigate to="/admin/login" />}  
+          element={token && role === 'admin' ? <Inventory /> : <Navigate to="/admin" />}  
           
         />
 
         <Route 
           path="/admin/Orders" 
-          element={token && role === 'admin' ? <Orders /> : <Navigate to="/admin/login" />} 
+          element={token && role === 'admin' ? <Orders /> : <Navigate to="/admin" />} 
         />
 
         <Route 
           path="/admin/manageemployee" 
-          element={token && role === 'admin' ? <ManageEmployee /> : <Navigate to="/admin/login" />} 
+          element={token && role === 'admin' ? <ManageEmployee /> : <Navigate to="/admin" />} 
         />
 
         <Route 
           path="/admin/Admin"
-          element={token && role === 'admin' ? <Admin /> : <Navigate to="/admin/login" />}
+          element={token && role === 'admin' ? <Admin /> : <Navigate to="/admin" />}
         />
 
         <Route 
           path="/admin/Transactions" 
-          element={token && role === 'admin' ? <Transactions /> : <Navigate to="/admin/login" />} 
+          element={token && role === 'admin' ? <Transactions /> : <Navigate to="/admin" />} 
         />
         
         {/* ✅ Protected Employee Routes */}
         <Route 
           path="/employee/dashboard" 
-          element={token && role === 'employee' ? <EDashboard /> : <Navigate to="/admin/login" />} 
+          element={token && role === 'employee' ? <EDashboard /> : <Navigate to="/admin" />} 
         />
 
         {/* ✅ Default Route: Redirects based on authentication */}
-        <Route path="*" element={<Navigate to={token ? `/${role}/dashboard` : "/admin/login"} />} />
+        <Route path="*" element={<Navigate to={token ? `/${role}/dashboard` : "/admin"} />} />
       </Routes>
     </Router>
   );

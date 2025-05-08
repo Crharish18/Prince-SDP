@@ -34,15 +34,31 @@ router.get('/:customer_id', (req, res) => {
 
   
   
-
 router.post('/', (req, res) => {
-    const { customer_id, product_id, quantity, price, discount, status } = req.body;
+  const { customer_id, product_id, quantity, price, status } = req.body;
+
+  if (!customer_id || !product_id || !quantity || !price) {
+    return res.status(400).json({ error: 'All fields are required' });
+  }
+
+  // First get the product details to calculate discount
+  const getProductQuery = 'SELECT min_quantity, discount_percentage FROM products WHERE product_id = ?';
   
-    if (!customer_id || !product_id || !quantity || !price) {
-      return res.status(400).json({ error: 'All fields are required' });
+  connection.query(getProductQuery, [product_id], (err, productResults) => {
+    if (err) {
+      console.error('Error fetching product details:', err);
+      return res.status(500).send('Error fetching product details');
     }
-  
-    const total_price = (price * quantity) - discount; // Calculate total price
+    
+    const product = productResults[0];
+    let discount = 0;
+    
+    // Calculate discount based on minimum quantity
+    if (quantity >= product.min_quantity) {
+      discount = (price * product.discount_percentage / 100) * quantity;
+    }
+    
+    const total_price = (price * quantity) - discount;
   
     // Check if there's already an active cart for this customer and product
     const checkCartQuery = 'SELECT * FROM cart WHERE customer_id = ? AND product_id = ? AND status = "active" LIMIT 1';
@@ -55,10 +71,10 @@ router.post('/', (req, res) => {
   
       if (results.length > 0) {
         // If the customer already has this product in their active cart, update the quantity
-        const updateCartQuery = 'UPDATE cart SET quantity = ?, total_price = ? WHERE cart_id = ?';
+        const updateCartQuery = 'UPDATE cart SET quantity = ?, discount = ?, total_price = ? WHERE cart_id = ?';
         const cart_id = results[0].cart_id;
   
-        connection.query(updateCartQuery, [quantity, total_price, cart_id], (err, results) => {
+        connection.query(updateCartQuery, [quantity, discount, total_price, cart_id], (err, results) => {
           if (err) {
             console.error('Error updating cart item:', err);
             return res.status(500).send('Error updating cart item');
@@ -81,6 +97,8 @@ router.post('/', (req, res) => {
       }
     });
   });
+});
+
   
   
 
@@ -108,8 +126,12 @@ router.put('/:cart_id', (req, res) => {
     return res.status(400).json({ error: 'Quantity is required' });
   }
 
-  // Fetch the cart item
-  const checkCartQuery = 'SELECT * FROM cart WHERE cart_id = ?';
+  // Fetch the cart item with product details
+  const checkCartQuery = `
+    SELECT cart.*, products.min_quantity, products.discount_percentage 
+    FROM cart 
+    JOIN products ON cart.product_id = products.product_id 
+    WHERE cart.cart_id = ?`;
 
   connection.query(checkCartQuery, [cart_id], (err, results) => {
     if (err) {
@@ -122,14 +144,21 @@ router.put('/:cart_id', (req, res) => {
     }
 
     const item = results[0];
-    const total_price = (item.price * quantity) - item.discount;
+    
+    // Calculate discount based on minimum quantity
+    let discount = 0;
+    if (quantity >= item.min_quantity) {
+      discount = (item.price * item.discount_percentage / 100) * quantity;
+    }
+    
+    const total_price = (item.price * quantity) - discount;
 
-    // Update the cart item with the new quantity
+    // Update the cart item with the new quantity and calculated discount
     const updateCartQuery = `UPDATE cart 
-                             SET quantity = ?, total_price = ? 
+                             SET quantity = ?, discount = ?, total_price = ? 
                              WHERE cart_id = ?`;
 
-    connection.query(updateCartQuery, [quantity, total_price, cart_id], (err, results) => {
+    connection.query(updateCartQuery, [quantity, discount, total_price, cart_id], (err, results) => {
       if (err) {
         console.error('Error updating cart item:', err);
         return res.status(500).send('Error updating cart item');
