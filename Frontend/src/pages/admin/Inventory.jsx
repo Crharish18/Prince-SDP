@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { FaEye, FaEdit, FaTrash } from "react-icons/fa";
-import Sidebar from "../../components/sidebar";
+import Sidebar from "../../components/Sidebar";
 import Header from "../../components/Header";
 import styles from './inventory.module.css'; // Use inventory.module.css
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -29,7 +29,8 @@ function Inventory() {
     user_id: '',
     supplier_id: '',
     product_id: '',
-    buying_price_per_unit: ''
+    buying_price_per_unit: '',
+    expiry_date: ''
   });
 
   const [newEntity, setNewEntity] = useState({
@@ -45,7 +46,8 @@ function Inventory() {
     qty_added: '',
     user_id: '',
     supplier_id: '',
-    buying_price_per_unit: ''
+    buying_price_per_unit: '',
+    expiry_date: ''
   });
   
 
@@ -54,9 +56,9 @@ function Inventory() {
     user_id: '',
     supplier_id: '',
     product_id: '',
-    buying_price_per_unit: ''
+    buying_price_per_unit: '',
+    expiry_date: ''
   });
-
   const [searchText, setSearchText] = useState("");
   const [searchColumn, setSearchColumn] = useState("");
   const [showViewModal, setShowViewModal] = useState(false);
@@ -140,7 +142,6 @@ function Inventory() {
       .then((response) => setProducts(response.data))
       .catch((error) => console.error('Error fetching products:', error));
   }, []);
-
   const handleSearchColumnChange = (e) => {
     setSearchColumn(e.target.value);
   };
@@ -180,7 +181,8 @@ function Inventory() {
       label: "Supplier", name: "supplier_id", type: "select",
       options: suppliers.map(sup => ({ value: sup.supplier_id, label: sup.name }))
     },
-    { label: "Buying Price Per Unit", name: "buying_price_per_unit", type: "number" }
+    { label: "Buying Price Per Unit", name: "buying_price_per_unit", type: "number" },
+    { label: "Expiry Date", name: "expiry_date", type: "date" }
   ];
   
   const existingProductFields = [
@@ -205,6 +207,7 @@ function Inventory() {
       options: suppliers.map(sup => ({ value: sup.supplier_id, label: sup.name }))
     },
     { label: "Buying Price Per Unit", name: "buying_price_per_unit", type: "number" },
+    { label: "Expiry Date", name: "expiry_date", type: "date" },
     { label: "Product Image", name: "image", type: "file", onChange: handleImageFileChange }
   ];
   
@@ -215,7 +218,8 @@ function Inventory() {
     { label: "User ID", name: "user_id", type: "number" },
     { label: "Supplier ID", name: "supplier_id", type: "number" },
     { label: "Product ID", name: "product_id", type: "number" },
-    { label: "Buying Price Per Unit", name: "buying_price_per_unit", type: "number" }
+    { label: "Buying Price Per Unit", name: "buying_price_per_unit", type: "number" },
+    { label: "Expiry Date", name: "expiry_date", type: "date" }
   ];
 
   
@@ -252,6 +256,7 @@ function Inventory() {
     if (!newEntity.user_id) errors.user_id = "User ID is required.";
     if (!newEntity.supplier_id) errors.supplier_id = "Supplier ID is required.";
     if (!newEntity.buying_price_per_unit || isNaN(newEntity.buying_price_per_unit)) errors.buying_price_per_unit = "Buying price is required and must be a number.";
+    if (!newEntity.expiry_date) errors.expiry_date = "Expiry date is required.";
     
     // Only require image for new products
     if (modalMode === 'new' && !imageFile) {
@@ -274,6 +279,7 @@ function Inventory() {
       formData.append("user_id", newEntity.user_id);
       formData.append("supplier_id", newEntity.supplier_id);
       formData.append("buying_price_per_unit", newEntity.buying_price_per_unit);
+      formData.append("expiry_date", newEntity.expiry_date);
       
       // If it's an existing product, include the product_id
       if (modalMode === 'existing' && newEntity.product_id) {
@@ -294,6 +300,7 @@ function Inventory() {
         supplier_id: newEntity.supplier_id,
         buying_price_per_unit: newEntity.buying_price_per_unit,
         product_id: newEntity.product_id || 'new product',
+        expiry_date: newEntity.expiry_date,
         hasImage: !!imageFile
       });
   
@@ -414,7 +421,8 @@ function Inventory() {
       user_id: userId,
       supplier_id: '',
       buying_price_per_unit: '',
-      product_id: ''
+      product_id: '',
+      expiry_date: ''
     });
     setImageFile(null); // Reset image file
     setModalMode(mode); // 'new' or 'existing'
@@ -490,6 +498,7 @@ function Inventory() {
                   <th>Product ID</th>
                   <th>Buying Price</th>
                   <th>Added On</th>
+                  <th>Expiry Date</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -504,6 +513,7 @@ function Inventory() {
                       <td>{inv.product_id}</td>
                       <td>{inv.buying_price_per_unit}</td>
                       <td>{inv.added_on ? new Date(inv.added_on).toLocaleString() : ""}</td>
+                      <td>{inv.expiry_date ? new Date(inv.expiry_date).toLocaleDateString() : ""}</td>
                       <td>
                         <FaEye
                           style={{ marginRight: "10px", cursor: "pointer", color: "#2770b4" }}
@@ -522,7 +532,7 @@ function Inventory() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="8">No inventory records found</td>
+                    <td colSpan="9">No inventory records found</td>
                   </tr>
                 )}
               </tbody>
@@ -556,7 +566,8 @@ function Inventory() {
             { label: "Supplier ID", name: "supplier_id" },
             { label: "Product ID", name: "product_id" },
             { label: "Buying Price", name: "buying_price_per_unit" },
-            { label: "Added On", name: "added_on", format: (date) => date ? new Date(date).toLocaleString() : "" }
+            { label: "Added On", name: "added_on", format: (date) => date ? new Date(date).toLocaleString() : "" },
+            { label: "Expiry Date", name: "expiry_date", format: (date) => date ? new Date(date).toLocaleDateString() : "" }
           ]}
         />
 
@@ -582,7 +593,8 @@ function Inventory() {
             { label: "Supplier ID", field: "supplier_id" },
             { label: "Product ID", field: "product_id" },
             { label: "Buying Price", field: "buying_price_per_unit" },
-            { label: "Added On", field: "added_on", format: (date) => date ? new Date(date).toLocaleString() : "" }
+            { label: "Added On", field: "added_on", format: (date) => date ? new Date(date).toLocaleString() : "" },
+            { label: "Expiry Date", field: "expiry_date", format: (date) => date ? new Date(date).toLocaleDateString() : "" }
           ]}
           filename="inventory_report.pdf"
           reportTitle="Inventory Details Report"

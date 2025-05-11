@@ -18,7 +18,7 @@ function Admin() {
     lastName: '',
     email: '',
     phoneNum: '',
-    role: 'admin',
+    role: 'admin', // Already hardcoded as "admin"
     dob: '',
     nationalId: '',
     address: '',
@@ -92,10 +92,13 @@ function Admin() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setNewAdmin({
-      ...newAdmin,
-      [name]: value
-    });
+    // Skip updating role as it's hardcoded
+    if (name !== 'role') {
+      setNewAdmin({
+        ...newAdmin,
+        [name]: value
+      });
+    }
   };
 
   const handleSaveNewAdmin = () => {
@@ -115,9 +118,7 @@ function Admin() {
     if (!newAdmin.phoneNum || !/^\d{10,15}$/.test(newAdmin.phoneNum)) {
       errors.phoneNum = "Phone number must be between 10 and 15 digits.";
     }
-    if (!newAdmin.role || !["admin"].includes(newAdmin.role.toLowerCase())) {
-      errors.role = "Role must be 'admin'.";
-    }
+    // Role validation removed since it's hardcoded
     if (!newAdmin.dob) {
       errors.dob = "Date of Birth is required.";
     }
@@ -134,8 +135,14 @@ function Admin() {
     setValidationErrors(errors);
 
     if (Object.keys(errors).length === 0) {
+      // Ensure role is set to "admin" before saving
+      const adminData = {
+        ...newAdmin,
+        role: 'admin'
+      };
+      
       axios
-        .post("http://localhost:5000/api/admin", newAdmin)
+        .post("http://localhost:5000/api/admin", adminData)
         .then((response) => {
           setAdmins([...admins, response.data]);
           setShowModal(false);
@@ -310,7 +317,7 @@ function Admin() {
             { label: "Last Name", name: "lastName", type: "text" },
             { label: "Email", name: "email", type: "email" },
             { label: "Phone Number", name: "phoneNum", type: "text" },
-            { label: "Role", name: "role", type: "text" },
+            // Role field removed from the form since it's hardcoded
             { label: "Date of Birth", name: "dob", type: "date" },
             { label: "National ID", name: "nationalId", type: "text" },
             { label: "Address", name: "address", type: "text" },

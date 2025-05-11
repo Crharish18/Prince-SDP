@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { FaEye, FaEdit, FaTrash } from "react-icons/fa"; 
-import Sidebar from "../../components/sidebar";
+import Sidebar from "../../components/Sidebar";
 import Header from "../../components/Header";
 import styles from './ManageEmployee.module.css'; // Import as CSS module
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -23,7 +23,7 @@ function ManageEmployee() {
     lastName: '',
     email: '',
     phoneNum: '',
-    role: '',
+    role: 'employee', // Hardcoded as "employee"
     dob: '',
     nationalId: '',
     address: '',
@@ -108,10 +108,13 @@ function ManageEmployee() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setNewEmployee({
-      ...newEmployee,
-      [name]: value
-    });
+    // Skip updating role as it's hardcoded
+    if (name !== 'role') {
+      setNewEmployee({
+        ...newEmployee,
+        [name]: value
+      });
+    }
   };
 
   const handleSaveNewEmployee = () => {
@@ -131,9 +134,7 @@ function ManageEmployee() {
     if (!newEmployee.phoneNum || !/^\d{10,15}$/.test(newEmployee.phoneNum)) {
       errors.phoneNum = "Phone number must be between 10 and 15 digits.";
     }
-    if (!newEmployee.role || !["admin", "employee"].includes(newEmployee.role.toLowerCase())) {
-      errors.role = "Role must be either 'admin' or 'employee'.";
-    }
+    // Role validation removed since it's hardcoded
     if (!newEmployee.dob) {
       errors.dob = "Date of Birth is required.";
     }
@@ -150,8 +151,14 @@ function ManageEmployee() {
     setValidationErrors(errors);
 
     if (Object.keys(errors).length === 0) {
+      // Ensure role is set to "employee" before saving
+      const employeeData = {
+        ...newEmployee,
+        role: 'employee'
+      };
+      
       axios
-        .post("http://localhost:5000/api/employees", newEmployee)
+        .post("http://localhost:5000/api/employees", employeeData)
         .then((response) => {
           setEmployees([...employees, response.data]);
           setShowModal(false);
@@ -226,17 +233,9 @@ function ManageEmployee() {
     setSelectedEmployee(null);
   };
 
-  // Make sure you have these imports at the top of your file:
-// import { jsPDF } from "jspdf";
-// import 'jspdf-autotable';
-
-// Replace your existing handleDownloadPDF function with this simpler version
-// that doesn't rely on the autoTable plugin:
-
-
-const handleDownloadPDF = () => {
-  setShowPrintModal(true);
-};
+  const handleDownloadPDF = () => {
+    setShowPrintModal(true);
+  };
 
   return (
     <div className={styles.ManageEmployeeContainer}>
@@ -339,11 +338,11 @@ const handleDownloadPDF = () => {
             { label: "Last Name", name: "lastName", type: "text" },
             { label: "Email", name: "email", type: "email" },
             { label: "Phone Number", name: "phoneNum", type: "text" },
-            { label: "Role", name: "role", type: "text" },
+            // Role field removed from the form since it's hardcoded
             { label: "Date of Birth", name: "dob", type: "date" },
             { label: "National ID", name: "nationalId", type: "text" },
             { label: "Address", name: "address", type: "text" },
-            { label: "Password", name: "password", type: "password" } // ✅ Password field included
+            { label: "Password", name: "password", type: "password" }
           ]}
           handleInputChange={handleInputChange}
           validationErrors={validationErrors}
@@ -378,34 +377,30 @@ const handleDownloadPDF = () => {
           handleEditInputChange={handleEditInputChange}
         />
 
-<PrintModal
-show={showPrintModal}
-handleClose={() => setShowPrintModal(false)}
-title="Print Employee Report"
-data={filteredEmployees}
-fields={[
-  { label: "USERID", field: "userid" },
-  { label: "Username", field: "username" },
-  { label: "First Name", field: "first_name" },
-  { label: "Last Name", field: "last_name" },
-  { label: "Email", field: "email" },
-  { label: "Phone Number", field: "phonenum" },
-  { label: "Role", field: "role" },
-  { label: "Date of Birth", field: "dob", format: (date) => date ? new Date(date).toLocaleDateString() : "" },
-  { label: "National ID", field: "natID" },
-  { label: "Address", field: "address" }
-]}
-filename="employee_report.pdf"
-reportTitle="Employee Details Report"
-/>
+        <PrintModal
+          show={showPrintModal}
+          handleClose={() => setShowPrintModal(false)}
+          title="Print Employee Report"
+          data={filteredEmployees}
+          fields={[
+            { label: "USERID", field: "userid" },
+            { label: "Username", field: "username" },
+            { label: "First Name", field: "first_name" },
+            { label: "Last Name", field: "last_name" },
+            { label: "Email", field: "email" },
+            { label: "Phone Number", field: "phonenum" },
+            { label: "Role", field: "role" },
+            { label: "Date of Birth", field: "dob", format: (date) => date ? new Date(date).toLocaleDateString() : "" },
+            { label: "National ID", field: "natID" },
+            { label: "Address", field: "address" }
+          ]}
+          filename="employee_report.pdf"
+          reportTitle="Employee Details Report"
+        />
 
       </div>
     </div>
   );
 }
-
-// Add this in your return statement before the closing </div>:
-
-
 
 export default ManageEmployee;

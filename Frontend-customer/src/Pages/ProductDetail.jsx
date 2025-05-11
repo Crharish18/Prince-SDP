@@ -10,7 +10,8 @@ const ProductDetail = () => {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);  
-  const [totalPrice, setTotalPrice] = useState(0);  // For total price with discount
+  const [totalPrice, setTotalPrice] = useState(0);
+  const [isInWishlist, setIsInWishlist] = useState(false);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -25,7 +26,29 @@ const ProductDetail = () => {
     };
 
     fetchProduct();
-  }, [productId]);  // Only fetch once when the component loads
+  }, [productId]);
+
+  useEffect(() => {
+    // Check if product is in wishlist
+    const checkWishlistStatus = async () => {
+      try {
+        const token = localStorage.getItem('customerToken');
+        if (!token || !product) return;
+
+        const response = await axios.get(`http://localhost:5000/api/auth/check-wishlist/${product.product_id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        
+        setIsInWishlist(response.data.inWishlist);
+      } catch (error) {
+        console.error('Error checking wishlist status:', error);
+      }
+    };
+
+    checkWishlistStatus();
+  }, [product]);
 
   // Recalculate total price whenever the quantity changes
   useEffect(() => {
@@ -35,9 +58,9 @@ const ProductDetail = () => {
       if (quantity >= product.min_quantity) {
         discountedPrice = discountedPrice - (discountedPrice * (product.discount_percentage / 100));
       }
-      setTotalPrice(discountedPrice * quantity);  // Update the total price with discount
+      setTotalPrice(discountedPrice * quantity);
     }
-  }, [product, quantity]);  // Recalculate price whenever product or quantity changes
+  }, [product, quantity]);
 
   const decreaseQuantity = () => {
     if (quantity > 1) {
@@ -49,18 +72,35 @@ const ProductDetail = () => {
     setQuantity(quantity + 1);
   };
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
-  if (!product) return null;
-
-
+  const toggleWishlist = async () => {
+    try {
+      const token = localStorage.getItem('customerToken');
+      
+      if (!token) {
+        alert("Please log in to add items to your wishlist.");
+        return;
+      }
+      
+      const response = await axios.post('http://localhost:5000/api/auth/toggle-wishlist', {
+        product_id: product.product_id
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      
+      setIsInWishlist(response.data.inWishlist);
+      // No alert messages for successful wishlist toggle
+    } catch (error) {
+      console.error('Error toggling wishlist:', error);
+      // No alert for error
+    }
+  };
 
   const addToCart = async () => {
     try {
-      const token = localStorage.getItem('customerToken');  // Get the customer token from localStorage
-      const userData = JSON.parse(localStorage.getItem('userData'));  // Retrieve user data from localStorage
+      const token = localStorage.getItem('customerToken');
+      const userData = JSON.parse(localStorage.getItem('userData'));
   
       if (!token) {
         alert("Please log in to add items to your cart.");
@@ -74,23 +114,27 @@ const ProductDetail = () => {
   
       // Send request to backend to add product to the cart
       const response = await axios.post('http://localhost:5000/api/cart', {
-        customer_id: userData.id,  // Use the customer ID from the logged-in user's data
+        customer_id: userData.id,
         product_id: product.product_id,
         quantity: quantity,
         price: product.price,
-        discount: product.discount_percentage > 0 ? (product.price * (product.discount_percentage / 100)) : 0, // Calculate discount if available
+        discount: product.discount_percentage > 0 ? (product.price * (product.discount_percentage / 100)) : 0,
         status: 'active'
       });
   
       console.log('Product added to cart:', response.data);
-      // Optionally, show a success message or update UI
+      alert("Product added to cart successfully!");
     } catch (error) {
       console.error('Error adding product to cart:', error);
+      alert("Failed to add product to cart. Please try again.");
     }
   };
-  
 
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
+  if (!product) return null;
 
   return (
     <div>
@@ -107,12 +151,13 @@ const ProductDetail = () => {
                   className="w-[400px] h-[400px] object-contain rounded-lg mt-[60px] transition-transform transform hover:scale-105 shadow-xl shadow-green-400/50"
                 />
                 <div className="absolute top-4 right-4 space-x-2">
-                  <button className="bg-white p-2 rounded-full shadow-md hover:bg-gray-100">
-                    <Heart className="h-5 w-5 text-gray-600" />
+                  <button 
+                    onClick={toggleWishlist}
+                    className={`p-2 rounded-full shadow-md ${isInWishlist ? 'bg-red-100' : 'bg-white hover:bg-gray-100'}`}
+                  >
+                    <Heart className={`h-5 w-5 ${isInWishlist ? 'text-red-500 fill-red-500' : 'text-gray-600'}`} />
                   </button>
-                  <button className="bg-white p-2 rounded-full shadow-md hover:bg-gray-100">
-                    <Share2 className="h-5 w-5 text-gray-600" />
-                  </button>
+                  
                 </div>
               </div>
 
@@ -184,13 +229,12 @@ const ProductDetail = () => {
                   </div>
 
                   <div className="space-y-3">
-                  <button
-                      onClick={addToCart} // Trigger add to cart action
+                    <button
+                      onClick={addToCart}
                       className="w-full bg-green-500 text-white py-3 rounded-md hover:bg-green-600 transition"
                     >
                       Add to Cart - Rs.{(totalPrice).toFixed(2)}
                     </button>
-
                   </div>
                 </div>
               </div>

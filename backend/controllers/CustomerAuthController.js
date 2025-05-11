@@ -149,8 +149,6 @@ const updateCustomerProfile = (req, res) => {
   }
 };
 
-// Get customer orders
-// Get customer orders with product details
 // Get customer orders with product details
 const getCustomerOrders = (req, res) => {
   const token = req.headers.authorization?.split(' ')[1];
@@ -225,9 +223,278 @@ const getCustomerOrders = (req, res) => {
   }
 };
 
+// Toggle product in wishlist (add if not exists, remove if exists)
+const toggleWishlist = (req, res) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  
+  if (!token) {
+    return res.status(401).json({ message: 'No token provided' });
+  }
+  
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const customerId = decoded.id;
+    const { product_id } = req.body;
+    
+    if (!product_id) {
+      return res.status(400).json({ message: 'Product ID is required' });
+    }
+    
+    // Check if the product is already in the wishlist
+    db.query('SELECT * FROM wishlist WHERE customer_id = ? AND product_id = ?', 
+      [customerId, product_id], 
+      (err, result) => {
+        if (err) {
+          return res.status(500).json({ error: err.message });
+        }
+        
+        // If product is already in wishlist, remove it
+        if (result.length > 0) {
+          db.query('DELETE FROM wishlist WHERE customer_id = ? AND product_id = ?', 
+            [customerId, product_id], 
+            (err, deleteResult) => {
+              if (err) {
+                return res.status(500).json({ error: err.message });
+              }
+              
+              return res.json({ 
+                message: 'Product removed from wishlist',
+                inWishlist: false
+              });
+            }
+          );
+        } else {
+          // If product is not in wishlist, add it
+          db.query('INSERT INTO wishlist (customer_id, product_id) VALUES (?, ?)', 
+            [customerId, product_id], 
+            (err, insertResult) => {
+              if (err) {
+                return res.status(500).json({ error: err.message });
+              }
+              
+              return res.json({ 
+                message: 'Product added to wishlist',
+                inWishlist: true
+              });
+            }
+          );
+        }
+      }
+    );
+  } catch (err) {
+    return res.status(401).json({ message: 'Invalid token' });
+  }
+};
+
+// Check if a product is in the customer's wishlist
+const checkWishlist = (req, res) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  const productId = req.params.productId;
+  
+  if (!token) {
+    return res.status(401).json({ message: 'No token provided' });
+  }
+  
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const customerId = decoded.id;
+    
+    db.query('SELECT * FROM wishlist WHERE customer_id = ? AND product_id = ?', 
+      [customerId, productId], 
+      (err, result) => {
+        if (err) {
+          return res.status(500).json({ error: err.message });
+        }
+        
+        return res.json({ inWishlist: result.length > 0 });
+      }
+    );
+  } catch (err) {
+    return res.status(401).json({ message: 'Invalid token' });
+  }
+};
+
+// Get customer wishlist with product details
+const getCustomerWishlist = (req, res) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  
+  if (!token) {
+    return res.status(401).json({ message: 'No token provided' });
+  }
+  
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const customerId = decoded.id;
+    
+    const query = `
+      SELECT w.wishlist_id, w.product_id, w.customer_id, 
+             p.name, p.description, p.price, p.image_url, p.discount_percentage
+      FROM wishlist w
+      JOIN products p ON w.product_id = p.product_id
+      WHERE w.customer_id = ?
+    `;
+    
+    db.query(query, [customerId], (err, results) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+      
+      res.json(results);
+    });
+  } catch (err) {
+    return res.status(401).json({ message: 'Invalid token' });
+  }
+};
 
 
-module.exports = { customerLogin, getCustomerProfile, updateCustomerProfile, getCustomerOrders };
+// Get customer addresses
+const getCustomerAddresses = (req, res) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  
+  if (!token) {
+    return res.status(401).json({ message: 'No token provided' });
+  }
+  
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const customerId = decoded.id;
+    
+    db.query('SELECT * FROM address WHERE customer_id = ?', [customerId], (err, results) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+      
+      res.json(results);
+    });
+  } catch (err) {
+    return res.status(401).json({ message: 'Invalid token' });
+  }
+};
+
+// Add a new address
+const addCustomerAddress = (req, res) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  
+  if (!token) {
+    return res.status(401).json({ message: 'No token provided' });
+  }
+  
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const customerId = decoded.id;
+    
+    const { fullname, street, apartment, city, province, postal_code, country, type } = req.body;
+    
+    if (!street || !city || !province || !postal_code || !country || !type) {
+      return res.status(400).json({ message: 'Required fields are missing' });
+    }
+    
+    const query = `
+      INSERT INTO address 
+      (customer_id, fullname, street, apartment, city, province, postal_code, country, type) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+    
+    db.query(
+      query, 
+      [customerId, fullname, street, apartment, city, province, postal_code, country, type],
+      (err, result) => {
+        if (err) {
+          return res.status(500).json({ error: err.message });
+        }
+        
+        // Return the newly created address
+        db.query('SELECT * FROM address WHERE address_id = ?', [result.insertId], (err, addressResult) => {
+          if (err) {
+            return res.status(500).json({ error: err.message });
+          }
+          
+          res.status(201).json(addressResult[0]);
+        });
+      }
+    );
+  } catch (err) {
+    return res.status(401).json({ message: 'Invalid token' });
+  }
+};
+
+// Update an existing address
+const updateCustomerAddress = (req, res) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  const addressId = req.params.addressId;
+  
+  if (!token) {
+    return res.status(401).json({ message: 'No token provided' });
+  }
+  
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const customerId = decoded.id;
+    
+    const { fullname, street, apartment, city, province, postal_code, country, type } = req.body;
+    
+    if (!street || !city || !province || !postal_code || !country || !type) {
+      return res.status(400).json({ message: 'Required fields are missing' });
+    }
+    
+    // First verify that this address belongs to the customer
+    db.query(
+      'SELECT * FROM address WHERE address_id = ? AND customer_id = ?',
+      [addressId, customerId],
+      (err, results) => {
+        if (err) {
+          return res.status(500).json({ error: err.message });
+        }
+        
+        if (results.length === 0) {
+          return res.status(404).json({ message: 'Address not found or does not belong to this customer' });
+        }
+        
+        // Update the address
+        const query = `
+          UPDATE address 
+          SET fullname = ?, street = ?, apartment = ?, city = ?, province = ?, 
+              postal_code = ?, country = ?, type = ?
+          WHERE address_id = ? AND customer_id = ?
+        `;
+        
+        db.query(
+          query,
+          [fullname, street, apartment, city, province, postal_code, country, type, addressId, customerId],
+          (err, updateResult) => {
+            if (err) {
+              return res.status(500).json({ error: err.message });
+            }
+            
+            // Return the updated address
+            db.query('SELECT * FROM address WHERE address_id = ?', [addressId], (err, addressResult) => {
+              if (err) {
+                return res.status(500).json({ error: err.message });
+              }
+              
+              res.json(addressResult[0]);
+            });
+          }
+        );
+      }
+    );
+  } catch (err) {
+    return res.status(401).json({ message: 'Invalid token' });
+  }
+};
 
 
 
+
+module.exports = { 
+  customerLogin, 
+  getCustomerProfile, 
+  updateCustomerProfile, 
+  getCustomerOrders,
+  toggleWishlist,
+  checkWishlist,
+  getCustomerWishlist,
+  getCustomerAddresses,
+  addCustomerAddress,
+  updateCustomerAddress
+};

@@ -1,48 +1,52 @@
 import React from 'react';
-import { Tractor, Sprout, Users, Wrench, BarChart, Leaf } from 'lucide-react';
+import { Truck, Phone, Clipboard, Tractor, BarChart, Leaf } from 'lucide-react';
+import HeaderPages from '../Components/HeaderPages';
+import Footer from '../Components/Footer';
 
+// Services component
 const Services = () => {
   const services = [
     {
       icon: Tractor,
-      title: "Equipment Rental",
-      description: "Access modern farming equipment without the heavy investment. Our rental service includes tractors, harvesters, and specialized tools.",
-      features: ["Daily, weekly & monthly rentals", "Maintenance included", "Delivery available", "Operator training"]
-    },
-    {
-      icon: Sprout,
-      title: "Crop Consulting",
-      description: "Expert guidance for optimal crop yields. Our agronomists provide personalized solutions for your farming needs.",
-      features: ["Soil analysis", "Crop planning", "Pest management", "Yield optimization"]
-    },
-    {
-      icon: Users,
-      title: "Farm Management",
-      description: "Comprehensive farm management services to help you maximize efficiency and productivity.",
-      features: ["Resource planning", "Labor management", "Cost optimization", "Production tracking"]
-    },
-    {
-      icon: Wrench,
-      title: "Equipment Maintenance",
-      description: "Professional maintenance and repair services for all your agricultural equipment.",
-      features: ["Regular servicing", "Emergency repairs", "Parts replacement", "Performance upgrades"]
+      title: "Agricultural Equipment Sales",
+      description: "We offer a wide range of agricultural equipment, including tractors, harvesters, and planting machines for both retail and wholesale.",
+      features: ["Tractors & Harvesters", "Soil cultivation tools", "Planting machines", "Full agricultural equipment range"]
     },
     {
       icon: BarChart,
-      title: "Market Analysis",
-      description: "Stay ahead with our market intelligence and price forecasting services.",
-      features: ["Price trends", "Market reports", "Demand forecasting", "Trade recommendations"]
+      title: "Fertilizer Sales",
+      description: "Providing high-quality fertilizers to optimize your crop production. Available for both retail and wholesale customers.",
+      features: ["Organic & chemical fertilizers", "Soil health solutions", "Custom fertilizer options", "Bulk pricing available"]
+    },
+    {
+      icon: Truck,
+      title: "Delivery Service",
+      description: "We offer reliable delivery services for all products, ensuring that your orders arrive on time, no matter where you are.",
+      features: ["Fast delivery", "Nationwide service", "Custom delivery scheduling", "Affordable shipping rates"]
+    },
+    {
+      icon: Phone,
+      title: "Customer Support",
+      description: "Our customer support team is ready to assist you with any questions or concerns. We ensure a smooth and hassle-free shopping experience.",
+      features: ["24/7 support", "Order tracking", "Product inquiries", "Post-purchase assistance"]
     },
     {
       icon: Leaf,
-      title: "Sustainable Farming",
-      description: "Guidance on implementing sustainable farming practices for better yields and environmental protection.",
-      features: ["Organic certification", "Water conservation", "Soil health", "Bio-diversity"]
+      title: "Pesticides & Herbicides",
+      description: "We provide a full range of pesticides and herbicides to protect your crops from pests, weeds, and diseases.",
+      features: ["Insecticides", "Herbicides", "Fungicides", "Custom solutions"]
+    },
+    {
+      icon: Clipboard,
+      title: "Chemical Sales",
+      description: "Supplying agricultural chemicals, including pesticides and fertilizers, to optimize crop yield and maintain soil health.",
+      features: ["Pesticides", "Herbicides", "Soil conditioning chemicals", "Bulk pricing"]
     }
   ];
 
   return (
     <div className="min-h-screen bg-gray-50 pt-16">
+      <HeaderPages />
       {/* Hero Section */}
       <div className="relative h-[400px]">
         <img
@@ -78,13 +82,11 @@ const Services = () => {
                   </li>
                 ))}
               </ul>
-              <button className="w-full mt-6 py-2 border-2 border-green-500 text-green-500 rounded-lg hover:bg-green-50 transition">
-                Learn More
-              </button>
             </div>
           ))}
         </div>
       </div>
+      <Footer />
     </div>
   );
 };

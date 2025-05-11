@@ -118,6 +118,24 @@ router.delete('/:cart_id', (req, res) => {
     });
 });
 
+
+// Delete all cart items for a customer
+router.delete('/customer/:customer_id', (req, res) => {
+    const { customer_id } = req.params;
+
+    const query = 'DELETE FROM cart WHERE customer_id = ? AND status = "active"';
+
+    connection.query(query, [customer_id], (err, results) => {
+        if (err) {
+            console.error('Error clearing customer cart:', err);
+            return res.status(500).send('Error clearing customer cart');
+        }
+        
+        res.status(200).json({ message: 'Cart cleared successfully' });
+    });
+});
+
+
 router.put('/:cart_id', (req, res) => {
   const { cart_id } = req.params;
   const { quantity } = req.body;

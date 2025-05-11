@@ -19,7 +19,7 @@ const ViewModal = ({ showViewModal, selectedEntity, handleClose, entityTitle, en
         <form className="modal-form1">
           <div className="grid-container">
             {entityFields.map((field, index) => (
-              <div className="form-group" key={index}>
+              <div className="form-group" key={index} style={{ gridColumn: field.fullWidth ? "1 / span 2" : "auto" }}>
                 <label style={{ fontWeight: "bold" }}>{field.label}</label>
                 {field.type === "image" ? (
                   <div className="image-container">
@@ -30,11 +30,13 @@ const ViewModal = ({ showViewModal, selectedEntity, handleClose, entityTitle, en
                       style={{ maxWidth: "100%", maxHeight: "200px", objectFit: "contain" }}
                     />
                   </div>
+                ) : field.format ? (
+                  <div>{field.format(selectedEntity[field.name])}</div>
                 ) : (
                   <input 
                     type="text" 
                     className="form-control" 
-                    value={field.format ? field.format(selectedEntity[field.name]) : selectedEntity[field.name]} 
+                    value={selectedEntity[field.name] || ''} 
                     disabled 
                   />
                 )}
@@ -46,7 +48,7 @@ const ViewModal = ({ showViewModal, selectedEntity, handleClose, entityTitle, en
               type="button"
               className="btn btn-secondary"
               onClick={handleClose} // Close the modal
-              style={{ marginLeft: "200px", width: "150px" }}
+              style={{ marginLeft: "0", width: "150px" }}
             >
               Close
             </button>

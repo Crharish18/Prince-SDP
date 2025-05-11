@@ -4,6 +4,7 @@ import ProfileSidebar from '../Components/Profile/ProfileSidebar';
 import ProfileInfo from '../Components/Profile/ProfileInfo';
 import OrderHistory from '../Components/Profile/OrderHistory';
 import Notifications from '../Components/Profile/Notifications';
+import Wishlist from '../Components/Profile/Wishlist';
 import axios from 'axios';
 
 const Profile = () => {
@@ -12,6 +13,8 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
+  const [wishlistItems, setWishlistItems] = useState([]);
+  const [wishlistLoading, setWishlistLoading] = useState(true);
 
   // Fetch customer data when component mounts
   useEffect(() => {
@@ -71,6 +74,58 @@ const Profile = () => {
     fetchCustomerOrders();
   }, [activeTab]);
 
+  // Add this useEffect to fetch wishlist items
+  useEffect(() => {
+    const fetchWishlistItems = async () => {
+      if (activeTab === 'wishlist') {
+        try {
+          setWishlistLoading(true);
+          const token = localStorage.getItem('customerToken');
+          
+          if (!token) {
+            setWishlistLoading(false);
+            return;
+          }
+          
+          // Replace with your actual API endpoint for wishlist
+          const response = await axios.get('http://localhost:5000/api/auth/customer-wishlist', {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          });
+          
+          setWishlistItems(response.data);
+          setWishlistLoading(false);
+        } catch (error) {
+          console.error('Error fetching wishlist items:', error);
+          setWishlistLoading(false);
+        }
+      }
+    };
+    
+    fetchWishlistItems();
+  }, [activeTab]);
+
+  const handleRemoveFromWishlist = async (itemId) => {
+    try {
+      const token = localStorage.getItem('customerToken');
+      
+      if (!token) return;
+      
+      // Replace with your actual API endpoint for removing from wishlist
+      await axios.delete(`http://localhost:5000/api/auth/customer-wishlist/${itemId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      
+      // Update wishlist items after removal
+      setWishlistItems(wishlistItems.filter(item => item.id !== itemId));
+    } catch (error) {
+      console.error('Error removing item from wishlist:', error);
+    }
+  };
+
   return (
     <div className='w-[]'>
       <HeaderPages />
@@ -102,6 +157,14 @@ const Profile = () => {
               
               {activeTab === 'notifications' && (
                 <Notifications />
+              )}
+
+              {activeTab === 'wishlist' && (
+                <Wishlist 
+                  wishlistItems={wishlistItems} 
+                  onRemoveFromWishlist={handleRemoveFromWishlist}
+                  loading={wishlistLoading}
+                />
               )}
             </div>
           </div>

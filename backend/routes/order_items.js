@@ -49,7 +49,7 @@ router.post('/', (req, res) => {
       return res.status(400).json({ error: 'Invalid order items data' });
     }
   
-    const query = 'INSERT INTO prince.order_item (order_id, product_id, qty, price, discount, final_price) VALUES ?';
+    const query = 'INSERT INTO order_item (order_id, product_id, qty, price, discount, final_price) VALUES ?';
     const values = orderItems.map(item => [
         item.order_id, 
         item.product_id, 
@@ -67,5 +67,6 @@ router.post('/', (req, res) => {
       res.status(201).json({ message: 'Order items added successfully' });
     });
 });
+
 
 module.exports = router;

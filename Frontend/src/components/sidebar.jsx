@@ -17,29 +17,39 @@ const Sidebar = () => {
     setter(prevState => !prevState);
   };
 
+  // Style to reduce spacing between sidebar items
+  const sidebarItemStyle = {
+    padding: '4px 0', // Reduced padding
+    marginBottom: '2px' // Reduced margin
+  };
+  
+
   return (
     <div className="sidebar d-flex flex-column">
       <div className="logodash-container mb-0">
         <img src={logodash} alt="Shop Logo" className="logodash img-fluid" />
       </div>
-
+      
+      <div style={{ marginTop: '-30px', marginLeft: '7px' }}>
       <ul className="list-unstyled">
         {/* Dashboard */}
-        <li className="sidebar-item">
+        <li className="sidebar-item" style={sidebarItemStyle}>
           <Link to="/admin/dashboard" className="btn btn-link text-white">
             <FaTachometerAlt className="sidebar-icon" /> Dashboard
           </Link>
         </li>
 
         {/* Manage Admin */}
-        <li className="sidebar-item">
+        <li className="sidebar-item" style={sidebarItemStyle}>
           <Link to="/admin/Admin" className="btn btn-link text-white">
             <FaUserShield className="sidebar-icon" /> Admin
           </Link>
         </li>
 
+        {/* Manage Admin - duplicate removed */}
+        
         {/* Manage Employees */}
-        <li className="sidebar-item">
+        <li className="sidebar-item" style={sidebarItemStyle}>
           <Link to="/admin/manageemployee" className="btn btn-link text-white">
             <FaUsers className="sidebar-icon" /> Employees
           </Link>
@@ -48,6 +58,7 @@ const Sidebar = () => {
         {/* Manage Orders */}
         <li 
           className="sidebar-item position-relative"
+          style={sidebarItemStyle}
           onMouseEnter={() => setOrdersOpen(true)} 
           onMouseLeave={() => setOrdersOpen(false)}
         >
@@ -69,7 +80,7 @@ const Sidebar = () => {
         </li>
 
         {/* Manage Customers */}
-        <li className="sidebar-item">
+        <li className="sidebar-item" style={sidebarItemStyle}>
           <Link to="/admin/Customer" className="btn btn-link text-white">
             <FaUsers className="sidebar-icon" /> Customers
           </Link>
@@ -78,6 +89,7 @@ const Sidebar = () => {
         {/* Manage Inventory */}
         <li 
           className="sidebar-item position-relative"
+          style={sidebarItemStyle}
           onMouseEnter={() => setInventoryOpen(true)} 
           onMouseLeave={() => setInventoryOpen(false)}
         >
@@ -88,6 +100,9 @@ const Sidebar = () => {
 
           {isInventoryOpen && (
             <div className="hover-submenu">
+                <Link to="/admin/Inventory" className="submenu-item">
+                <FaBox className="submenu-icon" style={{ marginRight: '10px' }} /> Inventories
+              </Link>
               <Link to="/admin/products" className="submenu-item">
                 <FaBox className="submenu-icon" style={{ marginRight: '10px' }} /> Products
               </Link>
@@ -102,26 +117,34 @@ const Sidebar = () => {
         </li>
 
         {/* Reviews */}
-        <li className="sidebar-item">
+        <li className="sidebar-item" style={sidebarItemStyle}>
           <Link to="/admin/reviews" className="btn btn-link text-white">
             <FaRegFileAlt className="sidebar-icon" /> Reviews
           </Link>
         </li>
 
         {/* Activity Log */}
-        <li className="sidebar-item">
+        <li className="sidebar-item" style={sidebarItemStyle}>
           <Link to="/admin/activitylog" className="btn btn-link text-white">
             <FaListAlt className="sidebar-icon" /> Activity Log
           </Link>
         </li>
 
+        {/* Reports - Added as requested */}
+        <li className="sidebar-item" style={sidebarItemStyle}>
+          <Link to="/admin/reports" className="btn btn-link text-white">
+            <FaRegFileAlt className="sidebar-icon" /> Reports
+          </Link>
+        </li>
+
         {/* Profile */}
-        <li className="sidebar-item">
+        <li className="sidebar-item" style={sidebarItemStyle}>
           <Link to="/admin/Profile" className="btn btn-link text-white">
             <FaUserCircle className="sidebar-icon" /> Profile
           </Link>
         </li>
       </ul>
+      </div>
     </div>
   );
 };

@@ -88,11 +88,12 @@ router.get('/pending-all', (req, res) => {
     });
 });
 
+
 // ✅ Create a new order
 router.post('/', (req, res) => {
     const { customer_id, total_price, status, price, total_discount } = req.body;
 
-    if (!customer_id || !total_price || !status || !price || !total_discount) {
+    if (!customer_id || total_price === undefined || !status || price === undefined || total_discount === undefined) {
         return res.status(400).json({ error: 'All fields are required' });
     }
 
@@ -116,6 +117,7 @@ router.post('/', (req, res) => {
         });
     });
 });
+
 
 // ✅ Update an order by ID
 router.put('/:order_id', (req, res) => {

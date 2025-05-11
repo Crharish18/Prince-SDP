@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { FaEye, FaEdit, FaTrash } from "react-icons/fa"; 
-import Sidebar from "../../components/sidebar";
+import Sidebar from "../../components/Sidebar";
 import Header from "../../components/Header";
 import styles from './Supplier.module.css';
 import 'bootstrap/dist/css/bootstrap.min.css';

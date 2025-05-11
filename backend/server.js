@@ -16,6 +16,9 @@ const activity_logRoutes = require('./routes/activitylog'); // Import the activi
 const cartRoutes = require('./routes/Cart'); // Import the cart route
 const reviewsRoutes = require('./routes/review'); // Import the reviews route
 const shipping_detailsRoutes = require('./routes/shipping_details'); // Import the shipping details route
+const ReportRoutes = require('./routes/report'); // Import the report route
+const MessagesRoutes = require('./routes/messages'); // Import the messages route
+const order_addressRoutes = require('./routes/order_address'); // Import the order address route
 const app = express();
 const port = process.env.PORT || 5000;
 const uploadRoutes = require('./routes/upload'); // Import the upload route
@@ -53,6 +56,9 @@ app.use('/api/cart', cartRoutes); // Add the cart route
 app.use('/api/activitylog', activity_logRoutes); // Add the activity log route
 app.use('/api/shipping_details', shipping_detailsRoutes); // Add the shipping details route
 app.use('/api/reviews', reviewsRoutes); // Add the reviews route
+app.use('/api/reports', ReportRoutes); // Add the report route
+app.use('/api/messages', MessagesRoutes); // Add the messages route
+app.use('/api/order_address', order_addressRoutes); // Add the order address route
 // Add the upload route for image uploads
 console.log('Adding upload route...');
 app.use('/api/upload', uploadRoutes);  // Register the upload route

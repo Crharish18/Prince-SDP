@@ -9,6 +9,7 @@ import Signup from './Pages/CustomerSignup';
 import Checkout from './Pages/Checkout';
 import Profile from './Pages/Profile';     
 import Services from './Pages/Services';
+import Contact from './Pages/Contacts'; 
 import './App.css';
 
 
@@ -26,6 +27,7 @@ function App() {
         <Route path="/Checkout" element={<Checkout />} />
         <Route path="/Profile" element={<Profile />} />
         <Route path="/Services" element={<Services />} />
+        <Route path="/Contact" element={<Contact />} />
         {/* Add more routes here as needed */}
       </Routes>
     </Router>

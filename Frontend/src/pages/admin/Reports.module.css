@@ -1,0 +1,326 @@
+.ReportsContainer {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+    overflow-x: hidden;
+  }
+  
+  .ReportsContent {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    background-color: #e0e0e0;
+    padding: 20px;
+    overflow-x: hidden;
+  }
+  
+  .InnerContainer {
+    width: 100%;
+    margin-top: 70px;
+    
+  }
+  .TopSection {
+    width: 100%;
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+  
+  .ReportControls {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+  }
+  
+  .ReportTypeSection {
+    width: 300px;
+  }
+  
+  .ReportTypeSection label {
+    font-weight: 600;
+    margin-bottom: 8px;
+    display: block;
+  }
+  
+  .CompareToggle {
+    display: flex;
+    align-items: center;
+  }
+  
+  .CompareToggle label {
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  
+  .CompareToggle input {
+    margin-right: 8px;
+    width: 18px;
+    height: 18px;
+  }
+  
+  .DateRangeSection {
+    width: 100%;
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .DateRangeContainer {
+    width: 100%;
+  }
+  
+  .DateRangeContainer h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 15px;
+    color: #2770b4;
+  }
+  
+  .DateInputs {
+    display: flex;
+    gap: 20px;
+  }
+  
+  .DateField {
+    flex: 1;
+  }
+  
+  .DateField label {
+    font-weight: 600;
+    margin-bottom: 8px;
+    display: block;
+  }
+  
+  .DateInputWrapper {
+    position: relative;
+  }
+  
+  .CalendarIcon {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    color: #666;
+  }
+  
+  .ErrorMessage {
+    width: 100%;
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 10px 15px;
+    border-radius: 5px;
+    margin-top: 15px;
+    border: 1px solid #f5c6cb;
+  }
+  
+  .GenerateSection {
+    width: 100%;
+    display: flex;
+    justify-content: flex-start;
+    gap: 15px;
+    margin-top: 20px;
+  }
+  
+  .GenerateSection button {
+    padding: 10px 20px;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .ButtonIcon {
+    font-size: 18px;
+  }
+  
+  .Spinner {
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  .ReportPreviewContainer {
+    width: 100%;
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    margin-top: 20px;
+    min-height: 300px;
+  }
+  
+  .PreviewHeader {
+    border-bottom: 1px solid #eee;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+  }
+  
+  .PreviewHeader h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 5px;
+  }
+  
+  .PreviewHeader p {
+    color: #666;
+    margin: 0;
+  }
+  
+  .LoadingContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+  }
+  
+  .LoadingSpinner {
+    font-size: 40px;
+    color: #2770b4;
+    animation: spin 1s linear infinite;
+    margin-bottom: 15px;
+  }
+  
+  .PreviewContent {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+  }
+  
+  .ReportInfo {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
+  }
+  
+  .ReportInfo h4 {
+    font-size: 18px;
+    margin-bottom: 10px;
+    color: #2770b4;
+  }
+  
+  .ReportInfo p {
+    margin: 5px 0;
+  }
+  
+  .SummarySection {
+    margin-top: 10px;
+  }
+  
+  .SummarySection h5 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #2770b4;
+    margin-bottom: 15px;
+  }
+  
+  .SummaryGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+  }
+  
+  .SummaryCard {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    text-align: center;
+  }
+  
+  .SummaryCard h6 {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 10px;
+  }
+  
+  .SummaryValue {
+    font-size: 24px;
+    font-weight: 700;
+    color: #2770b4;
+    margin: 0;
+  }
+  
+  .ComparisonValue {
+    font-size: 14px;
+    margin-top: 5px;
+    color: #28a745;
+  }
+  
+  .TopItemsSection {
+    margin-top: 10px;
+  }
+  
+  .TopItemsSection h5 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #2770b4;
+    margin-bottom: 15px;
+  }
+  
+  .TopItemsTable {
+    border-radius: 5px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  }
+  
+  .TopItemsTable table {
+    margin-bottom: 0;
+  }
+  
+  .TopItemsTable thead {
+    background-color: #2770b4;
+    color: white;
+  }
+  
+  .ChartSection {
+    margin-top: 20px;
+  }
+  
+  .ChartSection h5 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #2770b4;
+    margin-bottom: 15px;
+  }
+  
+  .ChartContainer {
+    background-color: white;
+    border-radius: 5px;
+    padding: 15px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    height: 300px;
+  }
+  
+  .EmptyPreview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+    border: 1px dashed #ccc;
+  }
+  
+  .EmptyPreview p {
+    color: #666;
+  }
+  

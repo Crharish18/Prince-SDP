@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import Sidebar from "../../components/sidebar";
+import Sidebar from "../../components/Sidebar";
 import Header from "../../components/Header";
 import './dashboard.css';
 import { Bar } from 'react-chartjs-2'; // Import Bar chart

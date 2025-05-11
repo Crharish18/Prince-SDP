@@ -7,31 +7,9 @@ import styles from './Customer.module.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import ViewModal from "../../components/Viewmodal"; 
 import EditModal from "../../components/EditModal"; 
-import AddEntityModal from "../../components/AddEntityModal";
 
 function Customers() {
   const [customers, setCustomers] = useState([]);
-  const [showModal, setShowModal] = useState(false);
-  const [newCustomer, setNewCustomer] = useState({
-    first_name: '',
-    last_name: '',
-    phone_num: '',
-    national_id: '',
-    address: '',
-     dob: '',
-    password: ''
-  });
-
-  const [validationErrors, setValidationErrors] = useState({
-    first_name: '',
-    last_name: '',
-    phone_num: '',
-    national_id: '',
-    address: '',
-     dob: '',
-    password: ''
-  });
-
   const [searchText, setSearchText] = useState("");
   const [searchColumn, setSearchColumn] = useState("");
   const [showViewModal, setShowViewModal] = useState(false); 
@@ -48,7 +26,6 @@ function Customers() {
         console.error('Error fetching customers:', error);
       });
   }, []);
-
 
   const formatDate = (dob) => {
     const date = new Date(dob);
@@ -71,52 +48,6 @@ function Customers() {
     const value = customer[searchColumn]?.toString().toLowerCase();
     return value && value.includes(searchText.toLowerCase());
   });
-
-  const handleAddCustomerClick = () => {
-    setNewCustomer({
-      first_name: '',
-      last_name: '',
-      phone_num: '',
-      national_id: '',
-      address: '',
-      dob: '',
-      password: ''  // Reset password field as well
-    });
-    setShowModal(true);
-  };
-  
-
-  const handleCloseModal = () => {
-    setShowModal(false);
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setNewCustomer({
-      ...newCustomer,
-      [name]: value,
-    });
-  };
-
-  const handleSaveNewCustomer = () => {
-    let errors = {};
-    if (!newCustomer.first_name || newCustomer.first_name.length < 3) {
-      errors.first_name = "First name must be at least 3 characters long.";
-    }
-
-    setValidationErrors(errors);
-
-    if (Object.keys(errors).length === 0) {
-      axios.post("http://localhost:5000/api/customers", newCustomer)
-        .then(response => {
-          setCustomers([...customers, response.data]);
-          setShowModal(false);
-        })
-        .catch(error => {
-          console.error("Error adding customer:", error);
-        });
-    }
-  };
 
   const handleViewCustomer = (customer) => {
     setSelectedCustomer(customer);
@@ -169,7 +100,6 @@ function Customers() {
       });
   };
   
-
   const handleEditInputChange = (e) => {
     const { name, value } = e.target;
     setEditedCustomer({
@@ -181,8 +111,6 @@ function Customers() {
   const handleCloseEditModal = () => {
     setShowEditModal(false);
   };
-
-  
 
   return (
     <div className={styles.ManageCustomerContainer}>
@@ -213,9 +141,6 @@ function Customers() {
                 placeholder={`Search by ${searchColumn}...`}
               />
               <div className={styles.BtnContainer}>
-                <button className="btn btn-primary" style={{ width: '150px', marginLeft:"10px" }} onClick={handleAddCustomerClick}>
-                  Add Customer
-                </button>
                 <button className="btn btn-secondary" style={{ width: '150px', marginLeft:"10px" }}>Report</button>
               </div>
             </div>
@@ -245,49 +170,30 @@ function Customers() {
                       <td>{customer.address}</td>
                       <td>{customer.national_id}</td>
                       <td>
-                         <FaEye
-                         style={{ marginRight: "10px", cursor: "pointer", color: "#2770b4" }}
-                         onClick={() => handleViewCustomer(customer)} 
-                          />
+                        <FaEye
+                          style={{ marginRight: "10px", cursor: "pointer", color: "#2770b4" }}
+                          onClick={() => handleViewCustomer(customer)} 
+                        />
                         <FaEdit
-                         style={{ marginRight: "10px", cursor: "pointer", color: "#f0ad4e" }}
+                          style={{ marginRight: "10px", cursor: "pointer", color: "#f0ad4e" }}
                           onClick={() => handleEditCustomer(customer)} 
-                          />
-                          <FaTrash
+                        />
+                        <FaTrash
                           style={{ cursor: "pointer", color: "#d9534f" }}
                           onClick={() => handleDeleteCustomer(customer.customer_id)} 
-                          />
+                        />
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="5">No customers found</td>
+                    <td colSpan="7">No customers found</td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
         </div>
-
-        <AddEntityModal
-          showModal={showModal}
-          handleClose={handleCloseModal}
-          handleSave={handleSaveNewCustomer}
-          entityTitle="Customer"
-          entityData={newCustomer}
-          entityFields={[
-            { label: "First Name", name: "first_name", type: "text" },
-            { label: "Last Name", name: "last_name", type: "text" },
-            { label: "Phone Number", name: "phone_num", type: "text" },
-            { label: "National ID", name: "national_id", type: "text" },
-            { label: "Address", name: "address", type: "text" },
-            { label: "Date of Birth", name: "dob", type: "date" },
-            { label: "Password", name: "password", type: "password" }
-          ]}
-          handleInputChange={handleInputChange}
-          validationErrors={validationErrors}
-/>
 
         <ViewModal
           showViewModal={showViewModal}

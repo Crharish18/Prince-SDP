@@ -1,10 +1,11 @@
 import React from 'react';
-import { User, Package, Bell, LogOut, ChevronRight, Edit2, Star } from 'lucide-react';
+import { User, Package, Bell, LogOut, ChevronRight, Edit2, Star, Heart } from 'lucide-react';
 
 const ProfileSidebar = ({ activeTab, setActiveTab, customerData, loading, ordersCount }) => {
   const menuItems = [
     { icon: User, label: 'My Profile', id: 'profile' },
     { icon: Package, label: 'My Orders', id: 'orders' },
+    { icon: Heart, label: 'My Wishlist', id: 'wishlist' },
     { icon: Bell, label: 'Notifications', id: 'notifications' }
   ];
 

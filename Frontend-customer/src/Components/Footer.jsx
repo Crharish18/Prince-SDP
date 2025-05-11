@@ -13,7 +13,7 @@ const Footer = () => {
           <div className='ml-[-60px] text-left'>
             <h3 className="text-2xl font-bold mb-6 border-b border-green-400 pb-2 inline-block">Prince Lanka</h3>
             <p className="text-green-100 mb-6">
-              Providing quality products and services since 2020. Your trusted partner for sustainable solutions.
+              Providing quality products and services since 2020. Your trusted partner for sustainable agricultural solutions.
             </p>
             <div className="flex space-x-4 ">
               <a href="#" className="bg-white text-green-600 rounded-full p-2 hover:bg-green-200 transition duration-300">
