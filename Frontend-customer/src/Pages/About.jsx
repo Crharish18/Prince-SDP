@@ -4,6 +4,8 @@ import Footer from '../Components/Footer';
 import ShopImage1 from '../assets/ShopImage1.jpeg';
 import ShopImage2 from '../assets/ShopImage2.jpeg';
 import ShopImage3 from '../assets/ShopImage3.jpeg'; 
+import Mahes from '../assets/Mahes.jpeg';
+import Suren from '../assets/Suren.jpeg';
 
 const About = () => {
   return (
@@ -38,12 +40,12 @@ const About = () => {
             {
               name: "Maheshwaran",
               role: "Owner",
-              image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80"
+              image: Mahes
             },
             {
               name: "Surendhar",
               role: "Owner",
-              image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80"
+              image: Suren
             }
           ].map(function (member) {
             return (

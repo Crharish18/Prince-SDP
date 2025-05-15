@@ -8,6 +8,10 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import ViewModal from "../../components/Viewmodal"; 
 import EditModal from "../../components/EditModal"; 
 import AddEntityModal from "../../components/AddEntityModal";
+import PrintModal from "../../components/PrintModal";
+import { jsPDF } from "jspdf";
+import 'jspdf-autotable';  // This is an additional library to handle tables in PDFs
+import logodash from "../../assets/PicturesAdmin/logoWhite.png";
 
 function Admin() {
   const [admins, setAdmins] = useState([]);
@@ -44,6 +48,7 @@ function Admin() {
   const [selectedAdmin, setSelectedAdmin] = useState(null); 
   const [showEditModal, setShowEditModal] = useState(false); 
   const [editedAdmin, setEditedAdmin] = useState({}); 
+  const [showPrintModal, setShowPrintModal] = useState(false);
 
   useEffect(() => {
     axios
@@ -55,6 +60,14 @@ function Admin() {
         console.error('Error fetching admin:', error);
       });
   }, []);
+
+  const formatDate = (dob) => {
+    const date = new Date(dob);
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0'); 
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
 
   const handleSearchColumnChange = (e) => {
     setSearchColumn(e.target.value);  
@@ -217,6 +230,10 @@ function Admin() {
     setSelectedAdmin(null);
   };
 
+  const handleDownloadPDF = () => {
+    setShowPrintModal(true);
+  };
+
   return (
     <div className={styles.AdminContainer} >
       <Sidebar />
@@ -251,7 +268,7 @@ function Admin() {
                 <button className="btn btn-primary" style={{ width: '150px', marginLeft:"10px" }} onClick={handleAddAdminClick}>
                   Add Admin
                 </button>
-                <button className="btn btn-secondary" style={{ width: '150px', marginLeft:"10px" }}>Print</button>
+                <button className="btn btn-secondary" style={{ width: '150px', marginLeft:"10px" }} onClick={handleDownloadPDF}>Print</button>
               </div>
             </div>
           </div>
@@ -340,7 +357,7 @@ function Admin() {
             { label: "Email", name: "email" },
             { label: "Phone Number", name: "phonenum" },
             { label: "Role", name: "role" },
-            { label: "Date of Birth", name: "dob" },
+            { label: "Date of Birth", name: "dob", format: formatDate },
             { label: "National ID", name: "natID" },
             { label: "Address", name: "address" }
           ]}
@@ -354,6 +371,27 @@ function Admin() {
           handleClose={() => setShowEditModal(false)}
           handleSaveEditEntity={handleSaveEditAdmin}
           handleEditInputChange={handleEditInputChange}
+        />
+
+        <PrintModal
+          show={showPrintModal}
+          handleClose={() => setShowPrintModal(false)}
+          title="Print Admin Report"
+          data={filteredAdmins}
+          fields={[
+            { label: "USERID", field: "userid" },
+            { label: "Username", field: "username" },
+            { label: "First Name", field: "first_name" },
+            { label: "Last Name", field: "last_name" },
+            { label: "Email", field: "email" },
+            { label: "Phone Number", field: "phonenum" },
+            { label: "Role", field: "role" },
+            { label: "Date of Birth", field: "dob", format: (date) => date ? new Date(date).toLocaleDateString() : "" },
+            { label: "National ID", field: "natID" },
+            { label: "Address", field: "address" }
+          ]}
+          filename="admin_report.pdf"
+          reportTitle="Admin Details Report"
         />
       </div>
     </div>

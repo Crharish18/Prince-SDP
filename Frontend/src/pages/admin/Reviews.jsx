@@ -6,6 +6,10 @@ import Header from "../../components/Header";
 import styles from './Reviews.module.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import ViewModal from "../../components/Viewmodal"; 
+import PrintModal from "../../components/PrintModal";
+import { jsPDF } from "jspdf";
+import 'jspdf-autotable';
+import logodash from "../../assets/PicturesAdmin/logoWhite.png";
 
 function Reviews() {
   const [reviews, setReviews] = useState([]);
@@ -14,6 +18,7 @@ function Reviews() {
   const [searchColumn, setSearchColumn] = useState("");
   const [showViewModal, setShowViewModal] = useState(false); 
   const [selectedReview, setSelectedReview] = useState(null); 
+  const [showPrintModal, setShowPrintModal] = useState(false);
 
   useEffect(() => {
     // Fetch reviews
@@ -150,6 +155,16 @@ function Reviews() {
     );
   };
 
+  const handleDownloadPDF = () => {
+    setShowPrintModal(true);
+  };
+
+  // Prepare data for printing with product names
+  const reviewsWithProductNames = filteredReviews.map(review => ({
+    ...review,
+    product_name: products[review.product_id]?.name || "Unknown Product"
+  }));
+
   return (
     <div className={styles.ManageReviewsContainer}>
       <Sidebar />
@@ -179,7 +194,7 @@ function Reviews() {
                 placeholder={`Search by ${searchColumn}...`}
               />
               <div className={styles.BtnContainer}>
-                <button className="btn btn-secondary" style={{ width: '150px', marginLeft:"10px" }}>Report</button>
+                <button className="btn btn-secondary" style={{ width: '150px', marginLeft:"10px" }} onClick={handleDownloadPDF}>Print</button>
               </div>
             </div>
           </div>
@@ -234,11 +249,32 @@ function Reviews() {
           entityTitle="Review"
           entityFields={[
             { label: "Review ID", name: "review_id" },
+            { label: "Product", name: "product_name" },
+            { label: "Order ID", name: "order_id" },
+            { label: "Rating", name: "rating" },
             { label: "Review Text", name: "review_text", fullWidth: true },
+            { label: "Date", name: "created_at", format: formatDate },
             { label: "Images", name: "images", fullWidth: true, 
               format: renderReviewImages
             }
           ]}
+        />
+
+        <PrintModal
+          show={showPrintModal}
+          handleClose={() => setShowPrintModal(false)}
+          title="Print Reviews Report"
+          data={reviewsWithProductNames}
+          fields={[
+            { label: "Review ID", field: "review_id" },
+            { label: "Product", field: "product_name" },
+            { label: "Order ID", field: "order_id" },
+            { label: "Rating", field: "rating" },
+            { label: "Review Text", field: "review_text" },
+            { label: "Date", field: "created_at", format: (date) => formatDate(date) }
+          ]}
+          filename="reviews_report.pdf"
+          reportTitle="Reviews Details Report"
         />
       </div>
     </div>

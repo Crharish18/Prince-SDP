@@ -1,7 +1,14 @@
 // In auth.js
 const express = require('express');
-const { loginUser, getUserProfile, logoutUser, updateUserProfile } = require('../controllers/authControllers');
-const { changePassword } = require('../controllers/authControllers');
+const multer = require('multer');
+const { 
+  loginUser, 
+  getUserProfile, 
+  logoutUser, 
+  updateUserProfile, 
+  changePassword,
+  uploadProfilePicture
+} = require('../controllers/authControllers');
 const { 
   customerLogin, 
   getCustomerProfile, 
@@ -11,11 +18,14 @@ const {
   checkWishlist,
   getCustomerWishlist,
   getCustomerAddresses,
-    addCustomerAddress,
-    updateCustomerAddress
+  addCustomerAddress,
+  updateCustomerAddress
 } = require('../controllers/CustomerauthController');
 
 const router = express.Router();
+
+// Set up multer for memory storage
+const upload = multer({ storage: multer.memoryStorage() });
 
 // Login route
 router.post('/login', loginUser);
@@ -31,6 +41,9 @@ router.get('/profile', getUserProfile);
 router.put('/profile', updateUserProfile);
 router.post('/change-password', changePassword);
 
+// New route for profile picture upload
+router.post('/upload-profile-picture', upload.single('profileImage'), uploadProfilePicture);
+
 // Customer profile routes
 router.get('/customer-profile', getCustomerProfile);
 router.put('/customer-profile', updateCustomerProfile);
@@ -42,12 +55,10 @@ router.get('/customer-orders', getCustomerOrders);
 router.post('/toggle-wishlist', toggleWishlist);
 router.get('/check-wishlist/:productId', checkWishlist);
 router.get('/customer-wishlist', getCustomerWishlist);
+
 // Customer address routes
 router.get('/customer-addresses', getCustomerAddresses);
 router.post('/customer-addresses', addCustomerAddress);
 router.put('/customer-addresses/:addressId', updateCustomerAddress);
-
-
-
 
 module.exports = router;

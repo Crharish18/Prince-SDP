@@ -7,6 +7,10 @@ import styles from './Customer.module.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import ViewModal from "../../components/Viewmodal"; 
 import EditModal from "../../components/EditModal"; 
+import PrintModal from "../../components/PrintModal";
+import { jsPDF } from "jspdf";
+import 'jspdf-autotable';
+import logodash from "../../assets/PicturesAdmin/logoWhite.png";
 
 function Customers() {
   const [customers, setCustomers] = useState([]);
@@ -16,6 +20,7 @@ function Customers() {
   const [selectedCustomer, setSelectedCustomer] = useState(null); 
   const [showEditModal, setShowEditModal] = useState(false); 
   const [editedCustomer, setEditedCustomer] = useState({});
+  const [showPrintModal, setShowPrintModal] = useState(false);
 
   useEffect(() => {
     axios.get('http://localhost:5000/api/customers')
@@ -28,11 +33,22 @@ function Customers() {
   }, []);
 
   const formatDate = (dob) => {
-    const date = new Date(dob);
-    const year = date.getFullYear();
-    const month = (date.getMonth() + 1).toString().padStart(2, '0'); 
-    const day = date.getDate().toString().padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    if (!dob) return "N/A";
+    
+    try {
+      const date = new Date(dob);
+      
+      // Check if date is valid
+      if (isNaN(date.getTime())) return "N/A";
+      
+      const year = date.getFullYear();
+      const month = (date.getMonth() + 1).toString().padStart(2, '0'); 
+      const day = date.getDate().toString().padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return "N/A";
+    }
   };
   
   const handleSearchColumnChange = (e) => {
@@ -112,6 +128,10 @@ function Customers() {
     setShowEditModal(false);
   };
 
+  const handleDownloadPDF = () => {
+    setShowPrintModal(true);
+  };
+
   return (
     <div className={styles.ManageCustomerContainer}>
       <Sidebar />
@@ -120,7 +140,6 @@ function Customers() {
         <div className={styles.InnerContainer} style={{ marginLeft: "10px", width: "100%" }}>
           <div className={styles.TopSection}>
             <h1 className="section-title" style={{ fontSize: '28px', fontWeight: 'bold' }}>Manage Customers</h1>
-
             <div className={styles.SearchWrapper}>
               <select
                 className="form-control"
@@ -141,7 +160,7 @@ function Customers() {
                 placeholder={`Search by ${searchColumn}...`}
               />
               <div className={styles.BtnContainer}>
-                <button className="btn btn-secondary" style={{ width: '150px', marginLeft:"10px" }}>Report</button>
+                <button className="btn btn-secondary" style={{ width: '150px', marginLeft:"10px" }} onClick={handleDownloadPDF}>Print</button>
               </div>
             </div>
           </div>
@@ -226,6 +245,24 @@ function Customers() {
           handleClose={handleCloseEditModal}
           handleSaveEditEntity={handleSaveEditCustomer}
           handleEditInputChange={handleEditInputChange}
+        />
+
+        <PrintModal
+          show={showPrintModal}
+          handleClose={() => setShowPrintModal(false)}
+          title="Print Customer Report"
+          data={filteredCustomers}
+          fields={[
+            { label: "Customer ID", field: "customer_id" },
+            { label: "First Name", field: "first_name" },
+            { label: "Last Name", field: "last_name" },
+            { label: "Phone Number", field: "phone_num" },
+            { label: "Address", field: "address" },
+            { label: "National ID", field: "national_id" },
+            { label: "Date of Birth", field: "dob", format: (date) => date ? new Date(date).toLocaleDateString() : "N/A" }
+          ]}
+          filename="customer_report.pdf"
+          reportTitle="Customer Details Report"
         />
       </div>
     </div>

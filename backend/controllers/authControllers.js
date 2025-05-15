@@ -1,6 +1,8 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const db = require('../config/db');  // Ensure the database connection is correctly imported
+const multer = require('multer');
+const cloudinary = require('../config/cloudinary'); // Ensure this path is correct
 
 const loginUser = (req, res) => {
   const { email, password } = req.body;
@@ -118,12 +120,12 @@ const updateUserProfile = (req, res) => {
     }
 
     const userId = decoded.id;
-    const { first_name, last_name, email, phonenum, address, natID, dob } = req.body;
+    const { first_name, last_name, email, phonenum, address, natID, dob, profile_picture_path } = req.body;
 
-    // Update the user's profile in the database
+    // Update the user's profile in the database, including profile_picture_path
     db.query(
-      'UPDATE users SET first_name = ?, last_name = ?, email = ?, phonenum = ?, address = ?, natID = ?, dob = ? WHERE userid = ?',
-      [first_name, last_name, email, phonenum, address, natID, dob, userId],
+      'UPDATE users SET first_name = ?, last_name = ?, email = ?, phonenum = ?, address = ?, natID = ?, dob = ?, profile_picture_path = ? WHERE userid = ?',
+      [first_name, last_name, email, phonenum, address, natID, dob, profile_picture_path, userId],
       (err, result) => {
         if (err) {
           return res.status(500).json({ error: err.message });
@@ -144,6 +146,47 @@ const updateUserProfile = (req, res) => {
         });
       }
     );
+  });
+};
+
+// Upload profile picture to Cloudinary
+const uploadProfilePicture = (req, res) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) {
+    return res.status(401).json({ message: 'No token provided' });
+  }
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(403).json({ message: 'Invalid token' });
+    }
+
+    const userId = decoded.id;
+
+    // Check if file exists in the request
+    if (!req.file) {
+      return res.status(400).json({ message: 'No image file provided' });
+    }
+
+    // Upload to Cloudinary
+    cloudinary.uploader.upload_stream(
+      { 
+        resource_type: 'image',
+        folder: 'profile_pictures'
+      },
+      (error, result) => {
+        if (error) {
+          console.error('Cloudinary upload error:', error);
+          return res.status(500).json({ message: 'Error uploading to Cloudinary' });
+        }
+
+        // Return the Cloudinary URL to the client
+        res.json({ 
+          secure_url: result.secure_url,
+          message: 'Profile picture uploaded successfully'
+        });
+      }
+    ).end(req.file.buffer);
   });
 };
 
@@ -194,9 +237,11 @@ const changePassword = (req, res) => {
 };
 
 
-module.exports = { loginUser, getUserProfile, logoutUser, updateUserProfile, changePassword };
-
-
-
-
-
+module.exports = { 
+  loginUser, 
+  getUserProfile, 
+  logoutUser, 
+  updateUserProfile, 
+  changePassword,
+  uploadProfilePicture 
+};

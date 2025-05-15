@@ -216,7 +216,7 @@ function Supplier() {
                 <button className="btn btn-primary" style={{ width: '150px', marginLeft:"10px" }} onClick={handleAddSupplierClick}>
                   Add Supplier
                 </button>
-                <button className="btn btn-secondary" style={{ width: '150px', marginLeft:"10px" }}>Report</button>
+                <button className="btn btn-secondary" style={{ width: '150px', marginLeft:"10px" }}>Print</button>
               </div>
             </div>
           </div>

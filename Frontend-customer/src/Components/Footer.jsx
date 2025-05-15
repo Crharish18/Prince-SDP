@@ -100,7 +100,7 @@ const Footer = () => {
                 <div className="bg-green-600 p-2 rounded-full">
                   <MapPin size={20} className="text-white" />
                 </div>
-                <p className="text-green-100">No 22,Courtlodge, Kandapola</p>
+                <p className="text-green-100">No 21,Courtlodge, Kandapola</p>
               </div>
               <div className="flex items-center space-x-3">
                 <div className="bg-green-600 p-2 rounded-full">
@@ -112,7 +112,7 @@ const Footer = () => {
                 <div className="bg-green-600 p-2 rounded-full">
                   <Mail size={20} className="text-white" />
                 </div>
-                <a href="mailto:info@princelanka.com" className="text-green-100 hover:text-white transition duration-300">info@princelanka.com</a>
+                <a href="mailto:info@princelanka.com" className="text-green-100 hover:text-white transition duration-300">princelankaagenciespvtltd@gmail.com</a>
               </div>
             </div>
           </div>

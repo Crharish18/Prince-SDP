@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { FaTrash } from "react-icons/fa";
+import { FaEye, FaTrash } from "react-icons/fa";
 import Sidebar from "../../components/Sidebar";
 import Header from "../../components/Header";
 import styles from './Activity_log.module.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import ViewModal from "../../components/Viewmodal";
+import PrintModal from "../../components/PrintModal";
+import { jsPDF } from "jspdf";
+import 'jspdf-autotable';
+import logodash from "../../assets/PicturesAdmin/logoWhite.png";
 
 function ActivityLog() {
   const [logs, setLogs] = useState([]);
@@ -13,6 +17,7 @@ function ActivityLog() {
   const [searchColumn, setSearchColumn] = useState("");
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedLog, setSelectedLog] = useState(null);
+  const [showPrintModal, setShowPrintModal] = useState(false);
 
   useEffect(() => {
     axios.get('http://localhost:5000/api/activitylog')
@@ -84,6 +89,10 @@ function ActivityLog() {
     }
   };
 
+  const handleDownloadPDF = () => {
+    setShowPrintModal(true);
+  };
+
   return (
     <div className={styles.ManageActivityLogContainer}>
       <Sidebar />
@@ -112,7 +121,7 @@ function ActivityLog() {
                 placeholder={`Search by ${searchColumn}...`}
               />
               <div className={styles.BtnContainer}>
-                <button className="btn btn-secondary" style={{ width: '150px', marginLeft:"10px" }}>Report</button>
+                <button className="btn btn-secondary" style={{ width: '150px', marginLeft:"10px" }} onClick={handleDownloadPDF}>Print</button>
               </div>
             </div>
           </div>
@@ -131,12 +140,16 @@ function ActivityLog() {
               <tbody>
                 {filteredLogs.length > 0 ? (
                   filteredLogs.map((log) => (
-                    <tr key={log.log_id} onClick={() => handleViewLog(log)} style={{ cursor: 'pointer' }}>
+                    <tr key={log.log_id}>
                       <td>{log.log_id}</td>
                       <td>{log.user_id}</td>
                       <td>{log.action}</td>
                       <td>{formatTimestamp(log.timestamp)}</td>
-                      <td onClick={(e) => e.stopPropagation()}>
+                      <td>
+                        <FaEye
+                          style={{ marginRight: "10px", cursor: "pointer", color: "#2770b4" }}
+                          onClick={() => handleViewLog(log)} 
+                        />
                         <FaTrash
                           style={{ cursor: "pointer", color: "#d9534f" }}
                           onClick={() => handleDeleteLog(log.log_id)} 
@@ -165,6 +178,21 @@ function ActivityLog() {
             { label: "Action", name: "action" },
             { label: "Timestamp", name: "timestamp", format: formatTimestamp }
           ]}
+        />
+
+        <PrintModal
+          show={showPrintModal}
+          handleClose={() => setShowPrintModal(false)}
+          title="Print Activity Logs Report"
+          data={filteredLogs}
+          fields={[
+            { label: "Log ID", field: "log_id" },
+            { label: "User ID", field: "user_id" },
+            { label: "Action", field: "action" },
+            { label: "Timestamp", field: "timestamp", format: (date) => formatTimestamp(date) }
+          ]}
+          filename="activity_logs_report.pdf"
+          reportTitle="Activity Logs Report"
         />
       </div>
     </div>

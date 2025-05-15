@@ -6,42 +6,48 @@ const OrderItemsModal = ({ showOrderItemsModal, orderItems, handleClose }) => {
 
   return (
     <div className="modal-overlay1">
-      <div className="modal-content1">
+      <div className="modal-content1" style={{ width: "800px", maxWidth: "90%" }}>
         <h2 className="modal-title1">Order Items</h2>
         
-        <table className="table table-striped">
-          <thead>
-            <tr>
-              <th>Item ID</th>
-              <th>Product Name</th>
-              <th>Quantity</th>
-              <th>Price</th>
-            </tr>
-          </thead>
-          <tbody>
-            {orderItems.length > 0 ? (
-              orderItems.map((item) => (
-                <tr key={item.order_item_id}>
-                  <td>{item.order_item_id}</td>
-                  <td>{item.product_name}</td>
-                  <td>{item.qty}</td>
-                  <td>{item.price}</td>
-                </tr>
-              ))
-            ) : (
+        <div style={{ overflowX: "auto", width: "100%" }}>
+          <table className="table table-striped" style={{ width: "100%" }}>
+            <thead>
               <tr>
-                <td colSpan="4">No items found for this order</td>
+                <th style={{ padding: "12px 15px", textAlign: "center", width: "10%" }}>Product ID</th>
+                <th style={{ padding: "12px 15px", textAlign: "left", width: "30%" }}>Product Name</th>
+                <th style={{ padding: "12px 15px", textAlign: "center", width: "10%" }}>Quantity</th>
+                <th style={{ padding: "12px 15px", textAlign: "right", width: "15%" }}>Price</th>
+                <th style={{ padding: "12px 15px", textAlign: "right", width: "15%" }}>Discount</th>
+                <th style={{ padding: "12px 15px", textAlign: "right", width: "20%" }}>Final Price</th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {orderItems.length > 0 ? (
+                orderItems.map((item) => (
+                  <tr key={item.order_item_id}>
+                    <td style={{ padding: "12px 15px", textAlign: "center" }}>{item.product_id}</td>
+                    <td style={{ padding: "12px 15px", textAlign: "left" }}>{item.product_name}</td>
+                    <td style={{ padding: "12px 15px", textAlign: "center" }}>{item.qty}</td>
+                    <td style={{ padding: "12px 15px", textAlign: "right" }}>Rs {parseFloat(item.price).toFixed(2)}</td>
+                    <td style={{ padding: "12px 15px", textAlign: "right" }}>Rs {parseFloat(item.discount).toFixed(2)}</td>
+                    <td style={{ padding: "12px 15px", textAlign: "right" }}>Rs {parseFloat(item.final_price).toFixed(2)}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="6" style={{ textAlign: "center", padding: "15px" }}>No items found for this order</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
 
-        <div className="btn-container">
+        <div className="btn-container" style={{ display: "flex", justifyContent: "center", marginTop: "20px" }}>
           <button
             type="button"
             className="btn btn-secondary"
             onClick={handleClose} // ✅ Close the modal
-            style={{ marginLeft: "200px", width: "150px" }}
+            style={{ width: "150px" }}
           >
             Close
           </button>
