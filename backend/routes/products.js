@@ -161,7 +161,7 @@ router.put('/:product_id', upload.single('image'), (req, res) => {
           const query = `UPDATE products SET name=?, description=?, price=?, stock_qty=?, image_url=?, category_id=?, discount_percentage=?, min_quantity=? WHERE product_id=?`;
   
           connection.query(query, [
-            name, 
+            name,
             description || '',
             price, 
             stock_qty, 
@@ -213,14 +213,44 @@ router.put('/:product_id', upload.single('image'), (req, res) => {
         }
       });
     }
-  });
+});
+
+// Add this route to check stock availability
+router.post('/check-stock', (req, res) => {
+    const { product_id, quantity } = req.body;
+    
+    if (!product_id || !quantity) {
+        return res.status(400).json({ message: 'Product ID and quantity are required' });
+    }
+    
+    const query = 'SELECT stock_qty FROM products WHERE product_id = ?';
+    
+    connection.query(query, [product_id], (err, results) => {
+        if (err) {
+            console.error('Error checking stock:', err);
+            return res.status(500).json({ message: 'Database error' });
+        }
+        
+        if (results.length === 0) {
+            return res.status(404).json({ message: 'Product not found' });
+        }
+        
+        const availableStock = results[0].stock_qty;
+        const isAvailable = quantity <= availableStock;
+        
+        res.json({
+            available: isAvailable,
+            requested: quantity,
+            in_stock: availableStock
+        });
+    });
+});
   
 // DELETE: Remove a product
 router.delete('/:product_id', (req, res) => {
     const { product_id } = req.params;
 
     const query = 'DELETE FROM products WHERE product_id = ?';
-
     connection.query(query, [product_id], (err, results) => {
         if (err) {
             console.error('Error deleting product:', err);

@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const db = require('../config/db');  // Ensure the database connection is correctly imported
+const cloudinary = require('cloudinary').v2; // Import cloudinary
 
 // Customer login route
 const customerLogin = (req, res) => {
@@ -40,10 +41,9 @@ const customerLogin = (req, res) => {
         token, 
         role: 'customer', 
         username: customer.first_name,
-        userId: customer.customer_id,  // Added userId
-        email: customer.email          // Added email if needed
+        userId: customer.customer_id,
+        email: customer.email
       });
-      
     });
   });
 };
@@ -60,7 +60,7 @@ const getCustomerProfile = (req, res) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const customerId = decoded.id;
     
-    db.query('SELECT customer_id, first_name, last_name, email, phone_num, national_id, dob, address FROM customer WHERE customer_id = ?', 
+    db.query('SELECT customer_id, first_name, last_name, email, phone_num, national_id, dob, address, profile_pic FROM customer WHERE customer_id = ?', 
       [customerId], 
       (err, result) => {
         if (err) {
@@ -146,6 +146,58 @@ const updateCustomerProfile = (req, res) => {
     
   } catch (err) {
     return res.status(401).json({ message: 'Invalid token' });
+  }
+};
+
+// Upload customer profile picture
+const customerUploadProfilePicture = async (req, res) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  
+  if (!token) {
+    return res.status(401).json({ message: 'No token provided' });
+  }
+  
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const customerId = decoded.id;
+    
+    // Check if file exists
+    if (!req.file) {
+      return res.status(400).json({ message: 'No image file provided' });
+    }
+    
+    // Convert buffer to base64 string for Cloudinary
+    const fileBuffer = req.file.buffer;
+    const fileStr = `data:${req.file.mimetype};base64,${fileBuffer.toString('base64')}`;
+    
+    // Upload image to Cloudinary
+    const uploadResult = await cloudinary.uploader.upload(fileStr, {
+      folder: 'customer_profiles',
+      resource_type: 'auto'
+    });
+    
+    const imageUrl = uploadResult.secure_url;
+    
+    // Update customer profile with new image URL
+    db.query(
+      'UPDATE customer SET profile_pic = ? WHERE customer_id = ?',
+      [imageUrl, customerId],
+      (err, updateResult) => {
+        if (err) {
+          console.error('Database update error:', err);
+          return res.status(500).json({ error: 'Error updating profile picture in database' });
+        }
+        
+        // Return success with the updated profile data
+        res.json({
+          message: 'Profile picture updated successfully',
+          profile_pic: imageUrl
+        });
+      }
+    );
+  } catch (err) {
+    console.error('Error uploading profile picture:', err);
+    return res.status(500).json({ message: 'Error uploading profile picture' });
   }
 };
 
@@ -346,7 +398,6 @@ const getCustomerWishlist = (req, res) => {
   }
 };
 
-
 // Get customer addresses
 const getCustomerAddresses = (req, res) => {
   const token = req.headers.authorization?.split(' ')[1];
@@ -483,9 +534,6 @@ const updateCustomerAddress = (req, res) => {
   }
 };
 
-
-
-
 module.exports = { 
   customerLogin, 
   getCustomerProfile, 
@@ -496,5 +544,6 @@ module.exports = {
   getCustomerWishlist,
   getCustomerAddresses,
   addCustomerAddress,
-  updateCustomerAddress
+  updateCustomerAddress,
+  customerUploadProfilePicture
 };

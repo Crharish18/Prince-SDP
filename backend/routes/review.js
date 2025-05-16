@@ -7,11 +7,17 @@ const cloudinary = require('../config/cloudinary'); // Make sure this path is co
 
 // Get all reviews with their images
 router.get('/', (req, res) => {
-    const query = `
+    const productId = req.query.product_id;
+    let query = `
         SELECT reviews.*, review_images.image_url
         FROM reviews
         LEFT JOIN review_images ON reviews.review_id = review_images.review_id
     `;
+
+    // If product_id is provided, filter by it
+    if (productId) {
+        query += ` WHERE reviews.product_id = ${connection.escape(productId)}`;
+    }
 
     connection.query(query, (err, results) => {
         if (err) {
@@ -20,7 +26,7 @@ router.get('/', (req, res) => {
         } else {
             // Group reviews by review_id and associate their images
             const groupedReviews = results.reduce((acc, row) => {
-                const { review_id, order_id, product_id, rating, review_text, image_url } = row;
+                const { review_id, order_id, product_id, rating, review_text, created_at, image_url } = row;
 
                 if (!acc[review_id]) {
                     acc[review_id] = {
@@ -29,6 +35,7 @@ router.get('/', (req, res) => {
                         product_id,
                         rating,
                         review_text,
+                        created_at,
                         images: []
                     };
                 }
@@ -44,6 +51,60 @@ router.get('/', (req, res) => {
             const reviewsWithImages = Object.values(groupedReviews);
             res.json(reviewsWithImages);
         }
+    });
+});
+
+// Get reviews for a specific product with customer information
+router.get('/product/:productId', (req, res) => {
+    const { productId } = req.params;
+    
+    const query = `
+        SELECT r.*, c.first_name, c.last_name, c.profile_pic, ri.image_url
+        FROM reviews r
+        JOIN \`order\` o ON r.order_id = o.order_id
+        JOIN customer c ON o.customer_id = c.customer_id
+        LEFT JOIN review_images ri ON r.review_id = ri.review_id
+        WHERE r.product_id = ?
+    `;
+
+    connection.query(query, [productId], (err, results) => {
+        if (err) {
+            console.error('Error fetching reviews with customer info:', err);
+            return res.status(500).json({ error: err.message });
+        }
+        
+        // Group reviews by review_id and associate their images
+        const groupedReviews = results.reduce((acc, row) => {
+            const { 
+                review_id, order_id, product_id, rating, review_text, created_at,
+                first_name, last_name, profile_pic, image_url 
+            } = row;
+
+            if (!acc[review_id]) {
+                acc[review_id] = {
+                    review_id,
+                    order_id,
+                    product_id,
+                    rating,
+                    review_text,
+                    created_at,
+                    first_name,
+                    last_name,
+                    profile_pic,
+                    images: []
+                };
+            }
+
+            if (image_url) {
+                acc[review_id].images.push(image_url);
+            }
+
+            return acc;
+        }, {});
+
+        // Convert grouped reviews object back to an array
+        const reviewsWithCustomerInfo = Object.values(groupedReviews);
+        res.json(reviewsWithCustomerInfo);
     });
 });
 

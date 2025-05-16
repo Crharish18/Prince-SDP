@@ -1,13 +1,68 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { User, Package, Bell, LogOut, ChevronRight, Edit2, Star, Heart } from 'lucide-react';
+import axios from 'axios';
 
-const ProfileSidebar = ({ activeTab, setActiveTab, customerData, loading, ordersCount }) => {
+const ProfileSidebar = ({ activeTab, setActiveTab, customerData, loading, ordersCount, onProfileUpdate }) => {
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
+  
   const menuItems = [
     { icon: User, label: 'My Profile', id: 'profile' },
     { icon: Package, label: 'My Orders', id: 'orders' },
     { icon: Heart, label: 'My Wishlist', id: 'wishlist' },
     { icon: Bell, label: 'Notifications', id: 'notifications' }
   ];
+
+  const handleProfilePictureClick = () => {
+    fileInputRef.current.click();
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Check file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+
+    // Check file size (limit to 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File size should be less than 5MB');
+      return;
+    }
+
+    try {
+      setUploading(true);
+      const formData = new FormData();
+      formData.append('profileImage', file);
+
+      const token = localStorage.getItem('customerToken');
+      if (!token) {
+        setUploading(false);
+        return;
+      }
+
+      const response = await axios.post('http://localhost:5000/api/auth/customer-upload-profile-picture', formData, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      // Call the callback to update the parent component's state
+      if (onProfileUpdate) {
+        onProfileUpdate(response.data);
+      }
+      
+      setUploading(false);
+    } catch (error) {
+      console.error('Error uploading profile picture:', error);
+      setUploading(false);
+      alert('Failed to upload profile picture. Please try again.');
+    }
+  };
 
   return (
     <div className="md:col-span-3">
@@ -17,13 +72,42 @@ const ProfileSidebar = ({ activeTab, setActiveTab, customerData, loading, orders
           <div className="relative inline-block mb-6">
             <div className="absolute -inset-1 bg-gradient-to-r from-green-400 to-green-600 rounded-full blur opacity-25"></div>
             <div className="relative">
-              <img
-                src={customerData?.avatar || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80"}
-                alt={customerData?.first_name || "User"}
-                className="w-32 h-32 rounded-full object-cover mx-auto ring-4 ring-white"
+              {customerData?.profile_pic ? (
+                <img
+                  src={customerData.profile_pic}
+                  alt={customerData?.first_name || "User"}
+                  className="w-32 h-32 rounded-full object-cover mx-auto ring-4 ring-white"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.style.display = 'none';
+                    e.target.nextElementSibling.style.display = 'flex';
+                  }}
+                />
+              ) : (
+                <div className="w-32 h-32 rounded-full mx-auto ring-4 ring-white bg-gray-200 flex items-center justify-center">
+                  <User className="h-16 w-16 text-gray-500" />
+                </div>
+              )}
+              
+              {/* Hidden file input */}
+              <input 
+                type="file" 
+                ref={fileInputRef}
+                className="hidden"
+                accept="image/*"
+                onChange={handleFileChange}
               />
-              <button className="absolute bottom-0 right-0 bg-green-500 p-3 rounded-full text-white hover:bg-green-600 transition shadow-lg">
-                <Edit2 className="h-5 w-5" />
+              
+              <button 
+                className="absolute bottom-0 right-0 bg-green-500 p-3 rounded-full text-white hover:bg-green-600 transition shadow-lg"
+                onClick={handleProfilePictureClick}
+                disabled={uploading}
+              >
+                {uploading ? (
+                  <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  <Edit2 className="h-5 w-5" />
+                )}
               </button>
             </div>
           </div>

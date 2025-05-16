@@ -2,6 +2,20 @@ const express = require('express');
 const router = express.Router();
 const connection = require('../config/db'); // Import database connection
 const bcrypt = require('bcryptjs'); // For password hashing
+const nodemailer = require('nodemailer'); // For sending emails
+const crypto = require('crypto'); // For generating random verification codes
+
+// Store verification codes temporarily (in production, use a database or Redis)
+const verificationCodes = {};
+
+// Configure nodemailer
+const transporter = nodemailer.createTransport({
+    service: 'gmail', // Replace with your email service
+    auth: {
+        user: process.env.EMAIL_USER, // Use environment variables
+        pass: process.env.EMAIL_PASSWORD
+    }
+});
 
 // ✅ GET: Fetch all customers
 router.get('/', (req, res) => {
@@ -55,8 +69,6 @@ router.post('/', async (req, res) => {
         res.status(500).send('Error hashing password');
     }
 });
-
-
 
 // ✅ PUT: Update a customer and set updated_at timestamp
 router.put('/:customer_id', async (req, res) => {
@@ -116,6 +128,179 @@ router.delete('/:customer_id', (req, res) => {
             }
         }
     });
+});
+
+// ✅ NEW: Check if email exists
+router.post('/check-email', (req, res) => {
+    const { email } = req.body;
+    
+    if (!email) {
+        return res.status(400).json({ error: 'Email is required' });
+    }
+    
+    const query = 'SELECT customer_id, email FROM customer WHERE email = ?';
+    
+    connection.query(query, [email], (err, results) => {
+        if (err) {
+            console.error('Error checking email:', err);
+            return res.status(500).json({ error: 'Error checking email' });
+        }
+        
+        const emailExists = results.length > 0;
+        
+        res.json({ 
+            exists: emailExists,
+            customer_id: emailExists ? results[0].customer_id : null
+        });
+    });
+});
+
+// ✅ NEW: Send verification code
+router.post('/send-verification-code', (req, res) => {
+    const { email } = req.body;
+    
+    if (!email) {
+        return res.status(400).json({ error: 'Email is required' });
+    }
+    
+    // Check if email exists in the database
+    const query = 'SELECT customer_id, first_name FROM customer WHERE email = ?';
+    
+    connection.query(query, [email], (err, results) => {
+        if (err) {
+            console.error('Error checking email:', err);
+            return res.status(500).json({ error: 'Error checking email' });
+        }
+        
+        if (results.length === 0) {
+            return res.status(404).json({ error: 'Email not found' });
+        }
+        
+        const customer = results[0];
+        
+        // Generate a 4-digit verification code
+        const verificationCode = Math.floor(1000 + Math.random() * 9000).toString();
+        
+        // Store the code with the customer ID (with 10-minute expiration)
+        verificationCodes[email] = {
+            code: verificationCode,
+            customer_id: customer.customer_id,
+            expires: Date.now() + 10 * 60 * 1000 // 10 minutes
+        };
+        
+        // Send the verification code via email
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject: 'Password Reset Verification Code',
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px;">
+                    <h2 style="color: #2e7d32;">Password Reset Request</h2>
+                    <p>Hello ${customer.first_name || 'there'},</p>
+                    <p>We received a request to reset your password. Please use the following verification code to continue:</p>
+                    <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; text-align: center; margin: 20px 0;">
+                        <h1 style="margin: 0; color: #2e7d32; letter-spacing: 5px;">${verificationCode}</h1>
+                    </div>
+                    <p>This code will expire in 10 minutes.</p>
+                    <p>If you didn't request a password reset, please ignore this email.</p>
+                    <p>Thank you,<br>Prince Lanka Agencies</p>
+                </div>
+            `
+        };
+        
+        transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+                console.error('Error sending email:', error);
+                return res.status(500).json({ error: 'Error sending verification code' });
+            }
+            
+            res.json({ message: 'Verification code sent successfully' });
+        });
+    });
+});
+
+// ✅ NEW: Verify code
+router.post('/verify-code', (req, res) => {
+    const { email, code } = req.body;
+    
+    if (!email || !code) {
+        return res.status(400).json({ error: 'Email and verification code are required' });
+    }
+    
+    const storedData = verificationCodes[email];
+    
+    if (!storedData) {
+        return res.status(400).json({ error: 'No verification code found for this email' });
+    }
+    
+    if (Date.now() > storedData.expires) {
+        delete verificationCodes[email];
+        return res.status(400).json({ error: 'Verification code has expired' });
+    }
+    
+    if (storedData.code !== code) {
+        return res.status(400).json({ error: 'Invalid verification code' });
+    }
+    
+    // Code is valid, generate a temporary token for password reset
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    
+    // Store the token with the customer ID (with 30-minute expiration)
+    verificationCodes[email].resetToken = resetToken;
+    verificationCodes[email].expires = Date.now() + 30 * 60 * 1000; // 30 minutes
+    
+    res.json({ 
+        message: 'Verification successful',
+        resetToken,
+        customer_id: storedData.customer_id
+    });
+});
+
+// ✅ NEW: Reset password
+router.post('/reset-password', async (req, res) => {
+    const { email, resetToken, newPassword } = req.body;
+    
+    if (!email || !resetToken || !newPassword) {
+        return res.status(400).json({ error: 'Email, reset token, and new password are required' });
+    }
+    
+    const storedData = verificationCodes[email];
+    
+    if (!storedData || storedData.resetToken !== resetToken) {
+        return res.status(400).json({ error: 'Invalid or expired reset token' });
+    }
+    
+    if (Date.now() > storedData.expires) {
+        delete verificationCodes[email];
+        return res.status(400).json({ error: 'Reset token has expired' });
+    }
+    
+    try {
+        // Hash the new password
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        
+        // Update the password in the database
+        const query = 'UPDATE customer SET password = ?, updated_at = NOW() WHERE customer_id = ?';
+        
+        connection.query(query, [hashedPassword, storedData.customer_id], (err, results) => {
+            if (err) {
+                console.error('Error resetting password:', err);
+                return res.status(500).json({ error: 'Error resetting password' });
+            }
+            
+            if (results.affectedRows === 0) {
+                return res.status(404).json({ error: 'Customer not found' });
+            }
+            
+            // Clean up the verification code
+            delete verificationCodes[email];
+            
+            res.json({ message: 'Password reset successful' });
+        });
+    } catch (err) {
+        console.error('Error hashing password:', err);
+        res.status(500).json({ error: 'Error resetting password' });
+    }
 });
 
 // ✅ Export the router

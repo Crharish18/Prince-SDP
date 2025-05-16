@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import HeaderPages from '../Components/HeaderPages';
 import Footer from '../Components/Footer';
-import { Minus, Plus, Heart, Share2, Info } from 'lucide-react';
+import { Minus, Plus, Heart, Share2, Info, Star, User } from 'lucide-react';
 
 const ProductDetail = () => {
   const { productId } = useParams();
@@ -12,6 +12,8 @@ const ProductDetail = () => {
   const [quantity, setQuantity] = useState(1);  
   const [totalPrice, setTotalPrice] = useState(0);
   const [isInWishlist, setIsInWishlist] = useState(false);
+  const [reviews, setReviews] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -26,6 +28,25 @@ const ProductDetail = () => {
     };
 
     fetchProduct();
+  }, [productId]);
+
+  useEffect(() => {
+    const fetchReviews = async () => {
+      try {
+        setReviewsLoading(true);
+        // Fetch reviews for this specific product with customer information
+        const response = await axios.get(`http://localhost:5000/api/reviews/product/${productId}`);
+        setReviews(response.data);
+      } catch (error) {
+        console.error('Error fetching reviews:', error);
+      } finally {
+        setReviewsLoading(false);
+      }
+    };
+
+    if (productId) {
+      fetchReviews();
+    }
   }, [productId]);
 
   useEffect(() => {
@@ -69,7 +90,10 @@ const ProductDetail = () => {
   };
 
   const increaseQuantity = () => {
-    setQuantity(quantity + 1);
+    // Check if increasing would exceed available stock
+    if (product && quantity < product.stock_qty) {
+      setQuantity(quantity + 1);
+    }
   };
 
   const toggleWishlist = async () => {
@@ -111,6 +135,12 @@ const ProductDetail = () => {
         alert("No user data found.");
         return;
       }
+      
+      // Check if requested quantity exceeds stock
+      if (quantity > product.stock_qty) {
+        alert(`Cannot add more than ${product.stock_qty} items to the cart.`);
+        return;
+      }
   
       // Send request to backend to add product to the cart
       const response = await axios.post('http://localhost:5000/api/cart', {
@@ -136,6 +166,28 @@ const ProductDetail = () => {
 
   if (!product) return null;
 
+  // Function to display stock status based on quantity
+  const renderStockStatus = () => {
+    if (product.stock_qty <= 0) {
+      return 'Out of Stock';
+    } else if (product.stock_qty <= 10) {
+      return `In Stock (${product.stock_qty} available)`;
+    } else {
+      return 'In Stock';
+    }
+  };
+
+  // Format date to a readable format
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
   return (
     <div>
       <HeaderPages />
@@ -151,7 +203,7 @@ const ProductDetail = () => {
                   className="w-[400px] h-[400px] object-contain rounded-lg mt-[60px] transition-transform transform hover:scale-105 shadow-xl shadow-green-400/50"
                 />
                 <div className="absolute top-4 right-4 space-x-2">
-                  <button 
+                  <button
                     onClick={toggleWishlist}
                     className={`p-2 rounded-full shadow-md ${isInWishlist ? 'bg-red-100' : 'bg-white hover:bg-gray-100'}`}
                   >
@@ -168,7 +220,9 @@ const ProductDetail = () => {
                   <h1 className="text-3xl font-semibold mb-2">{product.name}</h1>
                   <div className="flex items-center space-x-4 mt-[15px]">
                     <span className="text-2xl font-bold">Rs.{parseFloat(totalPrice).toFixed(2)}</span>
-                    <span className="text-sm text-gray-500 text-green-500 font-bold text-[21px]">In Stock</span>
+                    <span className="text-sm text-gray-500 text-green-500 font-bold text-[21px]">
+                      {renderStockStatus()}
+                    </span>
                   </div>
                 </div>
 
@@ -221,7 +275,8 @@ const ProductDetail = () => {
                       <span className="px-4 py-2 border-x">{quantity}</span>
                       <button
                         onClick={increaseQuantity}
-                        className="p-2 hover:bg-gray-100"
+                        className={`p-2 hover:bg-gray-100 ${quantity >= product.stock_qty ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        disabled={quantity >= product.stock_qty}
                       >
                         <Plus className="h-4 w-4" />
                       </button>
@@ -231,13 +286,95 @@ const ProductDetail = () => {
                   <div className="space-y-3">
                     <button
                       onClick={addToCart}
-                      className="w-full bg-green-500 text-white py-3 rounded-md hover:bg-green-600 transition"
+                      className={`w-full py-3 rounded-md transition ${
+                        product.stock_qty > 0 
+                          ? 'bg-green-500 text-white hover:bg-green-600' 
+                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      }`}
+                      disabled={product.stock_qty === 0}
                     >
-                      Add to Cart - Rs.{(totalPrice).toFixed(2)}
+                      {product.stock_qty > 0 
+                        ? `Add to Cart - Rs.${(totalPrice).toFixed(2)}` 
+                        : 'Out of Stock'}
                     </button>
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+          
+          {/* Reviews Section - Now with customer names and profile pics */}
+          <div className="bg-white rounded-lg shadow-sm p-6 mt-8">
+            <h2 className="text-2xl font-bold mb-8">Customer Reviews</h2>
+
+            {/* Individual Reviews */}
+            <div className="space-y-8">
+              {reviewsLoading ? (
+                <p className="text-gray-500">Loading reviews...</p>
+              ) : reviews.length === 0 ? (
+                <p className="text-gray-500">No reviews available for this product.</p>
+              ) : (
+                reviews.map((review) => (
+                  <div key={review.review_id} className="border-b pb-8">
+                    <div className="flex items-start mb-4">
+                      {review.profile_pic ? (
+                        <img
+                          src={review.profile_pic}
+                          alt={`${review.first_name} ${review.last_name}`}
+                          className="w-12 h-12 rounded-full object-cover"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.style.display = 'none';
+                            e.target.nextElementSibling.style.display = 'flex';
+                          }}
+                        />
+                      ) : null}
+                      <div 
+                        className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-green-600 font-bold"
+                        style={{ display: review.profile_pic ? 'none' : 'flex' }}
+                      >
+                        <User className="h-6 w-6" />
+                      </div>
+                      <div className="ml-4">
+                        <h4 className="font-medium text-left">{review.first_name} {review.last_name}</h4>
+                        <div className="flex items-center mt-1">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                              key={star}
+                              className={`h-4 w-4 ${
+                                star <= review.rating
+                                  ? 'text-yellow-400 fill-current'
+                                  : 'text-gray-300'
+                              }`}
+                            />
+                          ))}
+                          <span className="text-xs text-gray-500 ml-2">
+                            {formatDate(review.created_at)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <p className="text-gray-600 mb-4 text-left">{review.review_text}</p>
+
+                    {/* Review Images */}
+                    {review.images && review.images.length > 0 && (
+                      <div className="flex gap-4">
+                        {review.images.map((image, index) => (
+                          <div key={index} className="relative group">
+                            <img
+                              src={image}
+                              alt={`Review ${index + 1}`}
+                              className="w-24 h-24 object-cover rounded-lg"
+                            />
+                            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-opacity duration-200 rounded-lg"></div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

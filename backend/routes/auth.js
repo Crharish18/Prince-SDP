@@ -1,4 +1,3 @@
-// In auth.js
 const express = require('express');
 const multer = require('multer');
 const { 
@@ -19,8 +18,9 @@ const {
   getCustomerWishlist,
   getCustomerAddresses,
   addCustomerAddress,
-  updateCustomerAddress
-} = require('../controllers/CustomerauthController');
+  updateCustomerAddress,
+  customerUploadProfilePicture
+} = require('../controllers/CustomerAuthController');
 
 const router = express.Router();
 
@@ -47,6 +47,9 @@ router.post('/upload-profile-picture', upload.single('profileImage'), uploadProf
 // Customer profile routes
 router.get('/customer-profile', getCustomerProfile);
 router.put('/customer-profile', updateCustomerProfile);
+
+// Customer profile picture upload route
+router.post('/customer-upload-profile-picture', upload.single('profileImage'), customerUploadProfilePicture);
 
 // Customer orders route
 router.get('/customer-orders', getCustomerOrders);

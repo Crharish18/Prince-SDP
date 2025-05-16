@@ -10,6 +10,7 @@ import Checkout from './Pages/Checkout';
 import Profile from './Pages/Profile';     
 import Services from './Pages/Services';
 import Contact from './Pages/Contacts'; 
+import ForgotPassword from './Pages/ForgotPassword';
 import './App.css';
 
 
@@ -28,6 +29,7 @@ function App() {
         <Route path="/Profile" element={<Profile />} />
         <Route path="/Services" element={<Services />} />
         <Route path="/Contact" element={<Contact />} />
+        <Route path="/ForgotPassword" element={<ForgotPassword />} />
         {/* Add more routes here as needed */}
       </Routes>
     </Router>

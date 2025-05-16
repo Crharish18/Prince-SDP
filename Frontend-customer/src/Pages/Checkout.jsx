@@ -138,6 +138,11 @@ const Checkout = ({ onBack }) => {
   
   const [showNewShippingForm, setShowNewShippingForm] = useState(false);
   const [showNewBillingForm, setShowNewBillingForm] = useState(false);
+  
+  // PDF preview states
+  const [pdfUrl, setPdfUrl] = useState('');
+  const [orderId, setOrderId] = useState(null);
+  
   const [formData, setFormData] = useState({
     newShippingAddress: {
       fullname: '',
@@ -177,7 +182,6 @@ const Checkout = ({ onBack }) => {
 
         const response = await axios.get(`http://localhost:5000/api/cart/${customerId}`);
         setCartItems(response.data);  // Update cart items
-
         // Calculate total based on the total_price field from cart table
         const calculatedTotal = response.data.reduce(
           (sum, item) => sum + Number(item.total_price), 
@@ -247,159 +251,181 @@ const Checkout = ({ onBack }) => {
     fetchAddresses();
   }, []);
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-
-  try {
-    const token = localStorage.getItem('customerToken');
-    if (!token) {
-      alert("Please log in.");
-      return;
-    }
-
-    const decodedToken = JSON.parse(atob(token.split('.')[1]));
-    const customerId = decodedToken.id;
-    
-    // Get the selected shipping and billing addresses
-    let shippingAddress;
-    let billingAddress;
-    
-    if (tempShippingAddress) {
-      shippingAddress = tempShippingAddress;
-    } else {
-      shippingAddress = addresses.shipping.find(addr => addr.address_id === selectedShippingAddress);
-    }
-    
-    if (tempBillingAddress) {
-      billingAddress = tempBillingAddress;
-    } else {
-      billingAddress = addresses.billing.find(addr => addr.address_id === selectedBillingAddress);
-    }
-    
-    if (!shippingAddress) {
-      alert("Please select or add a shipping address.");
-      return;
-    }
-    
-    if (!billingAddress) {
-      alert("Please select or add a billing address.");
-      return;
-    }
-
-    // Set the shipping method - match the enum values exactly
-    const shipMethod = selectedShipping === 'standard shipping' ? 'standard shipping' : 'pickup';
-
-    // Calculate all required values
-    const subtotal = cartItems.reduce((sum, item) => sum + (Number(item.price) * item.quantity), 0);
-    const totalDiscount = cartItems.reduce((sum, item) => sum + Number(item.discount || 0), 0);
-    const totalPrice = Number(total) + Number(shippingCost);
-    
-    // Create the order with only the required fields that match the server expectations
-    const orderData = {
-      customer_id: customerId,
-      price: subtotal,
-      total_discount: totalDiscount,
-      total_price: totalPrice,
-      status: 'Pending'
-    };
-
-    console.log("Sending order data:", orderData);
-    
-    const orderResponse = await axios.post('http://localhost:5000/api/orders', orderData);
-
-    if (orderResponse.status === 201) {
-      const orderId = orderResponse.data.order_id;
-      
-      // Save shipping address to order_address table
-      const shippingAddressData = {
-        order_id: orderId,
-        fullname: shippingAddress.fullname,
-        street: shippingAddress.street,
-        apartment: shippingAddress.apartment || '',
-        city: shippingAddress.city,
-        province: shippingAddress.province,
-        postal_code: shippingAddress.postal_code,
-        country: shippingAddress.country,
-        shipment_method: shipMethod,
-        type: 'shipping'
-      };
-      
-      await axios.post('http://localhost:5000/api/order_address', shippingAddressData);
-      
-      // Save billing address to order_address table
-      const billingAddressData = {
-        order_id: orderId,
-        fullname: billingAddress.fullname,
-        street: billingAddress.street,
-        apartment: billingAddress.apartment || '',
-        city: billingAddress.city,
-        province: billingAddress.province,
-        postal_code: billingAddress.postal_code,
-        country: billingAddress.country,
-        shipment_method: shipMethod,
-        type: 'billing'
-      };
-      
-      await axios.post('http://localhost:5000/api/order_address', billingAddressData);
-
-      // Insert order items into the order_item table
-      const orderItems = cartItems.map(item => ({
-        order_id: orderId,
-        product_id: item.product_id,
-        qty: item.quantity,
-        price: Number(item.price) * item.quantity, // Unit price × quantity (before discount)
-        discount: Number(item.discount || 0), // Total discount for this product (not multiplied)
-        final_price: Number(item.total_price) // Final price after discount
-      }));
-
-      // POST the order items
-      const orderItemsResponse = await axios.post('http://localhost:5000/api/order_items', orderItems);
-
-      if (orderItemsResponse.status === 201) {
-        // Reduce inventory using FIFO method
-        const inventoryItems = cartItems.map(item => ({
-          product_id: item.product_id,
-          qty: item.quantity
-        }));
-        
-        await axios.post('http://localhost:5000/api/inventory/reduce-stock', { items: inventoryItems });
-        
-        // Generate PDF invoice
-        generateInvoicePDF({
-          orderId,
-          cartItems,
-          total,
-          shippingCost,
-          grandTotal: totalPrice,
-          shipMethod,
-        });
-        
-        // Clear cart after successful order
-        await axios.delete(`http://localhost:5000/api/cart/customer/${customerId}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-
-        alert('Order placed successfully!');
-        // Optionally: Redirect to order confirmation page
-        window.location.href = '/order-confirmation';
-      } else {
-        alert('Failed to save order items.');
+  // Clean up PDF URL when component unmounts
+  useEffect(() => {
+    return () => {
+      if (pdfUrl) {
+        URL.revokeObjectURL(pdfUrl);
       }
-    } else {
-      alert('Failed to place the order.');
-    }
-  } catch (error) {
-    console.error('Error placing order:', error);
-    if (error.response) {
-      console.error('Response data:', error.response.data);
-      console.error('Response status:', error.response.status);
-    }
-    alert('Failed to place order: ' + (error.response?.data?.error || error.message));
-  }
-};
+    };
+  }, [pdfUrl]);
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  
+    try {
+      const token = localStorage.getItem('customerToken');
+      if (!token) {
+        alert("Please log in.");
+        return;
+      }
+
+      const decodedToken = JSON.parse(atob(token.split('.')[1]));
+      const customerId = decodedToken.id;
+      
+      // Get the billing address
+      let billingAddress;
+      
+      if (tempBillingAddress) {
+        billingAddress = tempBillingAddress;
+      } else {
+        billingAddress = addresses.billing.find(addr => addr.address_id === selectedBillingAddress);
+      }
+      
+      if (!billingAddress) {
+        alert("Please select or add a billing address.");
+        return;
+      }
+
+      // Only validate shipping address if not using pickup
+      if (selectedShipping === 'standard shipping') {
+        let shippingAddress;
+        
+        if (tempShippingAddress) {
+          shippingAddress = tempShippingAddress;
+        } else {
+          shippingAddress = addresses.shipping.find(addr => addr.address_id === selectedShippingAddress);
+        }
+        
+        if (!shippingAddress) {
+          alert("Please select or add a shipping address.");
+          return;
+        }
+      }
+
+      // Set the shipping method - match the enum values exactly
+      const shipMethod = selectedShipping === 'standard shipping' ? 'standard shipping' : 'pickup';
+
+      // Calculate all required values
+      const subtotal = cartItems.reduce((sum, item) => sum + (Number(item.price) * item.quantity), 0);
+      const totalDiscount = cartItems.reduce((sum, item) => sum + Number(item.discount || 0), 0);
+      const totalPrice = Number(total) + Number(shippingCost);
+      
+      // Create the order with only the required fields that match the server expectations
+      const orderData = {
+        customer_id: customerId,
+        price: subtotal,
+        total_discount: totalDiscount,
+        total_price: totalPrice,
+        status: 'Pending'
+      };
+      
+      console.log("Sending order data:", orderData);
+      
+      const orderResponse = await axios.post('http://localhost:5000/api/orders', orderData);
+
+      if (orderResponse.status === 201) {
+        const newOrderId = orderResponse.data.order_id;
+        setOrderId(newOrderId);
+        
+        // Only save shipping address if not using pickup
+        if (selectedShipping === 'standard shipping') {
+          // Get the shipping address
+          let shippingAddress;
+          
+          if (tempShippingAddress) {
+            shippingAddress = tempShippingAddress;
+          } else {
+            shippingAddress = addresses.shipping.find(addr => addr.address_id === selectedShippingAddress);
+          }
+          
+          // Save shipping address to order_address table
+          const shippingAddressData = {
+            order_id: newOrderId,
+            fullname: shippingAddress.fullname,
+            street: shippingAddress.street,
+            apartment: shippingAddress.apartment || '',
+            city: shippingAddress.city,
+            province: shippingAddress.province,
+            postal_code: shippingAddress.postal_code,
+            country: shippingAddress.country,
+            shipment_method: shipMethod,
+            type: 'shipping'
+          };
+          
+          await axios.post('http://localhost:5000/api/order_address', shippingAddressData);
+        }
+        
+        // Save billing address to order_address table
+        const billingAddressData = {
+          order_id: newOrderId,
+          fullname: billingAddress.fullname,
+          street: billingAddress.street,
+          apartment: billingAddress.apartment || '',
+          city: billingAddress.city,
+          province: billingAddress.province,
+          postal_code: billingAddress.postal_code,
+          country: billingAddress.country,
+          shipment_method: shipMethod,
+          type: 'billing'
+        };
+        
+        await axios.post('http://localhost:5000/api/order_address', billingAddressData);
+
+        // Insert order items into the order_item table
+        const orderItems = cartItems.map(item => ({
+          order_id: newOrderId,
+          product_id: item.product_id,
+          qty: item.quantity,
+          price: Number(item.price) * item.quantity, // Unit price × quantity (before discount)
+          discount: Number(item.discount || 0), // Total discount for this product (not multiplied)
+          final_price: Number(item.total_price) // Final price after discount
+        }));
+
+        // POST the order items
+        const orderItemsResponse = await axios.post('http://localhost:5000/api/order_items', orderItems);
+
+        if (orderItemsResponse.status === 201) {
+          // Reduce inventory using FIFO method
+          const inventoryItems = cartItems.map(item => ({
+            product_id: item.product_id,
+            qty: item.quantity
+          }));
+          
+          await axios.post('http://localhost:5000/api/inventory/reduce-stock', { items: inventoryItems });
+          
+          // Generate PDF invoice with preview in new window
+          generateInvoicePDFWithPreview({
+            orderId: newOrderId,
+            cartItems,
+            total,
+            shippingCost,
+            grandTotal: totalPrice,
+            shipMethod,
+          });
+          
+          // Clear cart after successful order
+          await axios.delete(`http://localhost:5000/api/cart/customer/${customerId}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+
+          // Redirect happens after user views PDF in new window
+        } else {
+          alert('Failed to save order items.');
+        }
+      } else {
+        alert('Failed to place the order.');
+      }
+    } catch (error) {
+      console.error('Error placing order:', error);
+      if (error.response) {
+        console.error('Response data:', error.response.data);
+        console.error('Response status:', error.response.status);
+      }
+      alert('Failed to place order: ' + (error.response?.data?.error || error.message));
+    }
+  };
+
   // Update shipping cost based on selected shipping method
   const handleShippingChange = (event) => {
     const selectedMethod = event.target.value;
@@ -473,7 +499,7 @@ const handleSubmit = async (e) => {
     </div>
   );
 
-  function generateInvoicePDF({
+  function generateInvoicePDFWithPreview({
     orderId,
     cartItems,
     total,
@@ -535,349 +561,370 @@ const handleSubmit = async (e) => {
     );
     doc.text("www.princelanka.com | +94 763810245", 14, 292);
   
-    doc.save(`Invoice_Order_${orderId}.pdf`);
+    // Create a blob and open it in a new window
+    const pdfBlob = doc.output('blob');
+    const url = URL.createObjectURL(pdfBlob);
+    
+    // Store the URL for cleanup later
+    setPdfUrl(url);
+    
+    // Open PDF in a new window
+    const newWindow = window.open(url, '_blank');
+    
+    // If the window was blocked, alert the user
+    if (!newWindow) {
+      alert("The invoice was generated but the popup was blocked. Please allow popups to view your invoice.");
+    }
+    
+    // Redirect to order confirmation after a short delay
+    setTimeout(() => {
+      window.location.href = '/order-confirmation';
+    }, 2000);
   }
 
   return (
     <div>
-    <div className="min-h-screen bg-gray-50 pt-16 ">
-      <HeaderPages />
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <button
-          onClick={onBack}
-          className="flex items-center text-gray-600 hover:text-gray-900 mb-8"
-        >
-          <ArrowLeft className="h-5 w-5 mr-2" />
-          Back to Cart
-        </button>
+      <div className="min-h-screen bg-gray-50 pt-16">
+        <HeaderPages />
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <button
+            onClick={onBack}
+            className="flex items-center text-gray-600 hover:text-gray-900 mb-8"
+          >
+            <ArrowLeft className="h-5 w-5 mr-2" />
+            Back to Cart
+          </button>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Left Column - Forms */}
-          <div className="space-y-8">
-            {/* Shipping Address */}
-            <div className="bg-white p-6 rounded-lg shadow-sm">
-              <div className="flex items-center mb-6">
-                <MapPin className="h-6 w-6 text-green-500 mr-2" />
-                <h2 className="text-xl font-semibold text-left">Shipping Address</h2>
-              </div>
-              
-              {addressesLoading ? (
-                <div className="text-center py-4">
-                  <p>Loading addresses...</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {/* Saved addresses */}
-                  {addresses.shipping.length > 0 && (
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-700 mb-2 text-left">Saved Addresses</h3>
-                      <div className="space-y-3">
-                        {addresses.shipping.map(address => (
-                          <SavedAddressCard
-                            key={address.address_id}
-                            address={address}
-                            selected={selectedShippingAddress === address.address_id && !tempShippingAddress}
-                            onSelect={() => {
-                              setSelectedShippingAddress(address.address_id);
-                              setTempShippingAddress(null);
-                              setShowNewShippingForm(false);
-                            }}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Temporary address if exists */}
-                  {tempShippingAddress && (
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-700 mb-2 text-left">Temporary Address</h3>
-                      <SavedAddressCard
-                        address={tempShippingAddress}
-                        selected={true}
-                        onSelect={() => {}} // Already selected
-                      />
-                    </div>
-                  )}
-                  
-                  {/* Add new address option - only show if no temporary address exists */}
-                  {!tempShippingAddress && (
-                    <div
-                      className={`border rounded-lg p-4 cursor-pointer transition ${
-                        showNewShippingForm ? 'border-green-500 bg-green-50' : 'hover:border-gray-400'
-                      }`}
-                      onClick={() => {
-                        setShowNewShippingForm(!showNewShippingForm);
-                      }}
-                    >
-                      <div className="flex items-center">
-                        <Plus className="h-5 w-5 text-green-500 mr-2" />
-                        <span className="font-medium text-left">Use a Different Address</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* New address form */}
-                  {showNewShippingForm && (
-                    <div className="mt-4">
-                      <AddressFormComponent
-                        type="Shipping"
-                        initialData={formData.newShippingAddress}
-                        onSave={(data) => handleSaveTempAddress(data, 'Shipping')}
-                        onCancel={() => setShowNewShippingForm(false)}
-                      />
-                    </div>
-                  )}
-                  
-                  {/* No addresses message */}
-                  {addresses.shipping.length === 0 && !tempShippingAddress && !showNewShippingForm && (
-                    <div className="text-center py-4">
-                      <p className="text-gray-500 italic">No shipping addresses available.</p>
-                      <button
-                        onClick={() => setShowNewShippingForm(true)}
-                        className="mt-2 text-green-500 hover:text-green-600"
-                      >
-                        Add a shipping address
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Billing Address */}
-            <div className="bg-white p-6 rounded-lg shadow-sm">
-              <div className="flex items-center mb-6">
-                <CreditCard className="h-6 w-6 text-green-500 mr-2" />
-                <h2 className="text-xl font-semibold text-left">Billing Address</h2>
-              </div>
-              
-              {addressesLoading ? (
-                <div className="text-center py-4">
-                  <p>Loading addresses...</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {/* Saved addresses */}
-                  {addresses.billing.length > 0 && (
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-700 mb-2 text-left">Saved Addresses</h3>
-                      <div className="space-y-3">
-                        {addresses.billing.map(address => (
-                          <SavedAddressCard
-                            key={address.address_id}
-                            address={address}
-                            selected={selectedBillingAddress === address.address_id && !tempBillingAddress}
-                            onSelect={() => {
-                              setSelectedBillingAddress(address.address_id);
-                              setTempBillingAddress(null);
-                              setShowNewBillingForm(false);
-                            }}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Temporary address if exists */}
-                  {tempBillingAddress && (
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-700 mb-2 text-left">Temporary Address</h3>
-                      <SavedAddressCard
-                        address={tempBillingAddress}
-                        selected={true}
-                        onSelect={() => {}} // Already selected
-                      />
-                    </div>
-                  )}
-                  
-                  {/* Add new address option - only show if no temporary address exists */}
-                  {!tempBillingAddress && (
-                    <div
-                      className={`border rounded-lg p-4 cursor-pointer transition ${
-                        showNewBillingForm ? 'border-green-500 bg-green-50' : 'hover:border-gray-400'
-                      }`}
-                      onClick={() => {
-                        setShowNewBillingForm(!showNewBillingForm);
-                      }}
-                    >
-                      <div className="flex items-center">
-                        <Plus className="h-5 w-5 text-green-500 mr-2" />
-                        <span className="font-medium text-left">Use a Different Address</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* New address form */}
-                  {showNewBillingForm && (
-                    <div className="mt-4">
-                      <AddressFormComponent
-                        type="Billing"
-                        initialData={formData.newBillingAddress}
-                        onSave={(data) => handleSaveTempAddress(data, 'Billing')}
-                        onCancel={() => setShowNewBillingForm(false)}
-                      />
-                    </div>
-                  )}
-                  
-                  {/* No addresses message */}
-                  {addresses.billing.length === 0 && !tempBillingAddress && !showNewBillingForm && (
-                    <div className="text-center py-4">
-                      <p className="text-gray-500 italic">No billing addresses available.</p>
-                      <button
-                        onClick={() => setShowNewBillingForm(true)}
-                        className="mt-2 text-green-500 hover:text-green-600"
-                      >
-                        Add a billing address
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Payment Information */}
-            <div className="bg-white p-6 rounded-lg shadow-sm">
-              <div className="flex items-center mb-6">
-                <CreditCard className="h-6 w-6 text-green-500 mr-2" />
-                <h2 className="text-xl font-semibold text-left">Payment Information</h2>
-              </div>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1 text-left">Card Number</label>
-                  <input
-                    type="text"
-                    name="cardNumber"
-                    placeholder="1234 5678 9012 3456"
-                    className="w-full px-3 py-2 border rounded-md focus:ring-green-500 focus:border-green-500 text-left"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1 text-left">Expiry Date</label>
-                    <input
-                      type="text"
-                      name="expiryDate"
-                      placeholder="MM/YY"
-                      className="w-full px-3 py-2 border rounded-md focus:ring-green-500 focus:border-green-500 text-left"
-                    />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Left Column - Forms */}
+            <div className="space-y-8">
+              {/* Shipping Address - Only show if standard shipping is selected */}
+              {selectedShipping === 'standard shipping' && (
+                <div className="bg-white p-6 rounded-lg shadow-sm">
+                  <div className="flex items-center mb-6">
+                    <MapPin className="h-6 w-6 text-green-500 mr-2" />
+                    <h2 className="text-xl font-semibold text-left">Shipping Address</h2>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1 text-left">CVV</label>
-                    <input
-                      type="text"
-                      name="cvv"
-                      placeholder="123"
-                      className="w-full px-3 py-2 border rounded-md focus:ring-green-500 focus:border-green-500 text-left"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Right Column - Order Summary */}
-          <div className="space-y-8">
-            <div className="bg-white p-6 rounded-lg shadow-sm">
-              <h2 className="text-xl font-semibold mb-6 text-left">Order Summary</h2>
-              <div className="space-y-4">
-                  {cartItems.length > 0 ? (
-                    cartItems.map((item) => (
-                      <div key={item.cart_id} className="flex items-center gap-4 text-left" >
-                        <img
-                          src={item.image_url}
-                          alt={item.name}
-                          className="w-16 h-16 object-cover rounded-md"
-                        />
-                        <div className="flex-1">
-                          <h3 className="font-medium">{item.name}</h3>
-                          <p className="text-sm text-gray-500">Quantity: {item.quantity}</p>
-                          <p className="text-sm text-red-500">Discount: Rs.{Number(item.discount || 0).toFixed(2)}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-medium">Rs.{(Number(item.price) * item.quantity).toFixed(2)}</p>
-                          <p className="text-sm text-red-500">-Rs.{Number(item.discount || 0).toFixed(2)}</p>
-                          <p className="font-semibold">Rs.{Number(item.total_price).toFixed(2)}</p>
-                        </div>
-                      </div>
-                    ))
+                  
+                  {addressesLoading ? (
+                    <div className="text-center py-4">
+                      <p>Loading addresses...</p>
+                    </div>
                   ) : (
-                    <p>No items in the cart</p>
+                    <div className="space-y-4">
+                      {/* Saved addresses */}
+                      {addresses.shipping.length > 0 && (
+                        <div>
+                          <h3 className="text-sm font-medium text-gray-700 mb-2 text-left">Saved Addresses</h3>
+                          <div className="space-y-3">
+                            {addresses.shipping.map(address => (
+                              <SavedAddressCard
+                                key={address.address_id}
+                                address={address}
+                                selected={selectedShippingAddress === address.address_id && !tempShippingAddress}
+                                onSelect={() => {
+                                  setSelectedShippingAddress(address.address_id);
+                                  setTempShippingAddress(null);
+                                  setShowNewShippingForm(false);
+                                }}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Temporary address if exists */}
+                      {tempShippingAddress && (
+                        <div>
+                          <h3 className="text-sm font-medium text-gray-700 mb-2 text-left">Temporary Address</h3>
+                          <SavedAddressCard
+                            address={tempShippingAddress}
+                            selected={true}
+                            onSelect={() => {}} // Already selected
+                          />
+                        </div>
+                      )}
+                      
+                      {/* Add new address option - only show if no temporary address exists */}
+                      {!tempShippingAddress && (
+                        <div
+                          className={`border rounded-lg p-4 cursor-pointer transition ${
+                            showNewShippingForm ? 'border-green-500 bg-green-50' : 'hover:border-gray-400'
+                          }`}
+                          onClick={() => {
+                            setShowNewShippingForm(!showNewShippingForm);
+                          }}
+                        >
+                          <div className="flex items-center">
+                            <Plus className="h-5 w-5 text-green-500 mr-2" />
+                            <span className="font-medium text-left">Use a Different Address</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* New address form */}
+                      {showNewShippingForm && (
+                        <div className="mt-4">
+                          <AddressFormComponent
+                            type="Shipping"
+                            initialData={formData.newShippingAddress}
+                            onSave={(data) => handleSaveTempAddress(data, 'Shipping')}
+                            onCancel={() => setShowNewShippingForm(false)}
+                          />
+                        </div>
+                      )}
+                      
+                      {/* No addresses message */}
+                      {addresses.shipping.length === 0 && !tempShippingAddress && !showNewShippingForm && (
+                        <div className="text-center py-4">
+                          <p className="text-gray-500 italic">No shipping addresses available.</p>
+                          <button
+                            onClick={() => setShowNewShippingForm(true)}
+                            className="mt-2 text-green-500 hover:text-green-600"
+                          >
+                            Add a shipping address
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
+              )}
 
-                <div className="border-t mt-6 pt-6 space-y-2">
-                  <div className="flex justify-between text-gray-600">
-                    <span>Subtotal</span>
-                    <span>Rs.{cartItems.reduce((sum, item) => sum + (Number(item.price) * item.quantity), 0).toFixed(2)}</span>
+              {/* Billing Address */}
+              <div className="bg-white p-6 rounded-lg shadow-sm">
+                <div className="flex items-center mb-6">
+                  <CreditCard className="h-6 w-6 text-green-500 mr-2" />
+                  <h2 className="text-xl font-semibold text-left">Billing Address</h2>
+                </div>
+                
+                {addressesLoading ? (
+                  <div className="text-center py-4">
+                    <p>Loading addresses...</p>
                   </div>
-                  <div className="flex justify-between text-red-500">
-                    <span>Discount</span>
-                    <span>-Rs.{cartItems.reduce((sum, item) => sum + Number(item.discount || 0), 0).toFixed(2)}</span>
+                ) : (
+                  <div className="space-y-4">
+                    {/* Saved addresses */}
+                    {addresses.billing.length > 0 && (
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-700 mb-2 text-left">Saved Addresses</h3>
+                        <div className="space-y-3">
+                          {addresses.billing.map(address => (
+                            <SavedAddressCard
+                              key={address.address_id}
+                              address={address}
+                              selected={selectedBillingAddress === address.address_id && !tempBillingAddress}
+                              onSelect={() => {
+                                setSelectedBillingAddress(address.address_id);
+                                setTempBillingAddress(null);
+                                setShowNewBillingForm(false);
+                              }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Temporary address if exists */}
+                    {tempBillingAddress && (
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-700 mb-2 text-left">Temporary Address</h3>
+                        <SavedAddressCard
+                          address={tempBillingAddress}
+                          selected={true}
+                          onSelect={() => {}} // Already selected
+                        />
+                      </div>
+                    )}
+                    
+                    {/* Add new address option - only show if no temporary address exists */}
+                    {!tempBillingAddress && (
+                      <div
+                        className={`border rounded-lg p-4 cursor-pointer transition ${
+                          showNewBillingForm ? 'border-green-500 bg-green-50' : 'hover:border-gray-400'
+                        }`}
+                        onClick={() => {
+                          setShowNewBillingForm(!showNewBillingForm);
+                        }}
+                      >
+                        <div className="flex items-center">
+                          <Plus className="h-5 w-5 text-green-500 mr-2" />
+                          <span className="font-medium text-left">Use a Different Address</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* New address form */}
+                    {showNewBillingForm && (
+                      <div className="mt-4">
+                        <AddressFormComponent
+                          type="Billing"
+                          initialData={formData.newBillingAddress}
+                          onSave={(data) => handleSaveTempAddress(data, 'Billing')}
+                          onCancel={() => setShowNewBillingForm(false)}
+                        />
+                      </div>
+                    )}
+                    
+                    {/* No addresses message */}
+                    {addresses.billing.length === 0 && !tempBillingAddress && !showNewBillingForm && (
+                      <div className="text-center py-4">
+                        <p className="text-gray-500 italic">No billing addresses available.</p>
+                        <button
+                          onClick={() => setShowNewBillingForm(true)}
+                          className="mt-2 text-green-500 hover:text-green-600"
+                        >
+                          Add a billing address
+                        </button>
+                      </div>
+                    )}
                   </div>
-                  <div className="flex justify-between text-gray-600">
-                    <span>After Discount</span>
-                    <span>Rs.{Number(total).toFixed(2)}</span>
+                )}
+              </div>
+
+              {/* Payment Information */}
+              <div className="bg-white p-6 rounded-lg shadow-sm">
+                <div className="flex items-center mb-6">
+                  <CreditCard className="h-6 w-6 text-green-500 mr-2" />
+                  <h2 className="text-xl font-semibold text-left">Payment Information</h2>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1 text-left">Card Number</label>
+                    <input
+                      type="text"
+                      name="cardNumber"
+                      placeholder="1234 5678 9012 3456"
+                      className="w-full px-3 py-2 border rounded-md focus:ring-green-500 focus:border-green-500 text-left"
+                    />
                   </div>
-                  <div className="flex justify-between text-gray-600">
-                    <span>Shipping</span>
-                    <span>Rs.{Number(shippingCost).toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between text-lg font-bold">
-                    <span>Total</span>
-                    <span>Rs.{(Number(total) + Number(shippingCost)).toFixed(2)}</span>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1 text-left">Expiry Date</label>
+                      <input
+                        type="text"
+                        name="expiryDate"
+                        placeholder="MM/YY"
+                        className="w-full px-3 py-2 border rounded-md focus:ring-green-500 focus:border-green-500 text-left"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1 text-left">CVV</label>
+                      <input
+                        type="text"
+                        name="cvv"
+                        placeholder="123"
+                        className="w-full px-3 py-2 border rounded-md focus:ring-green-500 focus:border-green-500 text-left"
+                      />
+                    </div>
                   </div>
                 </div>
-            </div>
-
-            <div className="bg-white p-6 rounded-lg shadow-sm">
-              <div className="flex items-center mb-4">
-                <Truck className="h-6 w-6 text-green-500 mr-2" />
-                <h2 className="text-xl font-semibold text-left">Shipping Method</h2>
-              </div>
-              <div className="space-y-2">
-                <label className="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
-                  <input 
-                    type="radio" 
-                    name="shipping" 
-                    className="mr-3" 
-                    value="standard shipping"
-                    onChange={handleShippingChange}
-                    defaultChecked 
-                  />
-                  <div className="text-left">
-                    <p className="font-medium">Standard Shipping</p>
-                    <p className="text-sm text-gray-500">Rs.500 • 3-5 business days</p>
-                  </div>
-                </label>
-                <label className="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
-                  <input 
-                    type="radio" 
-                    name="shipping" 
-                    className="mr-3" 
-                    value="pickup" 
-                    onChange={handleShippingChange} 
-                  />
-                  <div className="text-left">
-                    <p className="font-medium">Pickup</p>
-                    <p className="text-sm text-gray-500">Free • Monday - Saturday 8.00am to 6.00pm</p>
-                  </div>
-                </label>
               </div>
             </div>
 
-            <button
-              onClick={handleSubmit}
-              className="w-full bg-green-500 text-white py-4 rounded-md hover:bg-green-600 transition font-medium"
-            >
-              Place Order
-            </button>
+            {/* Right Column - Order Summary and Shipping Method */}
+            <div className="space-y-8">
+              {/* Order Summary */}
+              <div className="bg-white p-6 rounded-lg shadow-sm">
+                <h2 className="text-xl font-semibold mb-6 text-left">Order Summary</h2>
+                <div className="space-y-4">
+                    {cartItems.length > 0 ? (
+                      cartItems.map((item) => (
+                        <div key={item.cart_id} className="flex items-center gap-4 text-left" >
+                          <img
+                            src={item.image_url}
+                            alt={item.name}
+                            className="w-16 h-16 object-cover rounded-md"
+                          />
+                          <div className="flex-1">
+                            <h3 className="font-medium">{item.name}</h3>
+                            <p className="text-sm text-gray-500">Quantity: {item.quantity}</p>
+                            <p className="text-sm text-red-500">Discount: Rs.{Number(item.discount || 0).toFixed(2)}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-medium">Rs.{(Number(item.price) * item.quantity).toFixed(2)}</p>
+                            <p className="text-sm text-red-500">-Rs.{Number(item.discount || 0).toFixed(2)}</p>
+                            <p className="font-semibold">Rs.{Number(item.total_price).toFixed(2)}</p>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p>No items in the cart</p>
+                    )}
+                  </div>
+
+                  <div className="border-t mt-6 pt-6 space-y-2">
+                    <div className="flex justify-between text-gray-600">
+                      <span>Subtotal</span>
+                      <span>Rs.{cartItems.reduce((sum, item) => sum + (Number(item.price) * item.quantity), 0).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-red-500">
+                      <span>Discount</span>
+                      <span>-Rs.{cartItems.reduce((sum, item) => sum + Number(item.discount || 0), 0).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-gray-600">
+                      <span>After Discount</span>
+                      <span>Rs.{Number(total).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-gray-600">
+                      <span>Shipping</span>
+                      <span>Rs.{Number(shippingCost).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-lg font-bold">
+                      <span>Total</span>
+                      <span>Rs.{(Number(total) + Number(shippingCost)).toFixed(2)}</span>
+                    </div>
+                  </div>
+              </div>
+
+              {/* Shipping Method - Moved under Order Summary */}
+              <div className="bg-white p-6 rounded-lg shadow-sm">
+                <div className="flex items-center mb-4">
+                  <Truck className="h-6 w-6 text-green-500 mr-2" />
+                  <h2 className="text-xl font-semibold text-left">Shipping Method</h2>
+                </div>
+                <div className="space-y-2">
+                  <label className="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
+                    <input 
+                      type="radio" 
+                      name="shipping" 
+                      className="mr-3" 
+                      value="standard shipping"
+                      onChange={handleShippingChange}
+                      defaultChecked 
+                    />
+                    <div className="text-left">
+                      <p className="font-medium">Standard Shipping</p>
+                      <p className="text-sm text-gray-500">Rs.500 • 3-5 business days</p>
+                    </div>
+                  </label>
+                  <label className="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
+                    <input 
+                      type="radio" 
+                      name="shipping" 
+                      className="mr-3" 
+                      value="pickup" 
+                      onChange={handleShippingChange} 
+                    />
+                    <div className="text-left">
+                      <p className="font-medium">Pickup</p>
+                      <p className="text-sm text-gray-500">Free • Monday - Saturday 8.00am to 6.00pm</p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <button
+                onClick={handleSubmit}
+                className="w-full bg-green-500 text-white py-4 rounded-md hover:bg-green-600 transition font-medium"
+              >
+                Place Order
+              </button>
+            </div>
           </div>
         </div>
       </div>
-      
-    </div>
-    <Footer />
+      <Footer />
     </div>
   );
 };

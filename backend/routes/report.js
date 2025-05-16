@@ -16,97 +16,110 @@ const formatDateForSQL = (dateString) => {
 };
 
 // Helper function to generate sales data for a date range
-const getSalesData = async (startDate, endDate) => {
+const getSalesData = async (startDate, endDate, filters) => {
   try {
-    // Get overall sales summary
-    const salesSummaryQuery = `
-      SELECT 
-        COUNT(DISTINCT o.order_id) as total_orders,
-        SUM(o.total_price) as total_revenue,
-        AVG(o.total_price) as avg_order_value
-      FROM prince.order o
-      WHERE o.created_at BETWEEN ? AND ?
-      AND o.status != 'Cancelled'
-    `;
+    const result = {};
     
-    const [salesSummary] = await connection.promise().query(salesSummaryQuery, [
-      formatDateForSQL(startDate), 
-      formatDateForSQL(endDate)
-    ]);
-    
-    // Get top selling products - updated to calculate revenue correctly
-    const topProductsQuery = `
-      SELECT 
-        p.product_id,
-        p.name,
-        SUM(oi.qty) as quantity,
-        SUM(oi.qty * oi.price) as revenue
-      FROM prince.order o
-      JOIN prince.order_item oi ON o.order_id = oi.order_id
-      JOIN prince.products p ON oi.product_id = p.product_id
-      WHERE o.created_at BETWEEN ? AND ?
-      AND o.status != 'Cancelled'
-      GROUP BY p.product_id
-      ORDER BY revenue DESC
-      LIMIT 5
-    `;
-    
-    const [topProducts] = await connection.promise().query(topProductsQuery, [
-      formatDateForSQL(startDate), 
-      formatDateForSQL(endDate)
-    ]);
-    
-    // Get top selling categories - updated to calculate revenue correctly
-    const topCategoriesQuery = `
-      SELECT 
-        c.category_id,
-        c.category_name as name,
-        SUM(oi.qty) as quantity,
-        SUM(oi.qty * oi.price) as revenue
-      FROM prince.order o
-      JOIN prince.order_item oi ON o.order_id = oi.order_id
-      JOIN prince.products p ON oi.product_id = p.product_id
-      JOIN prince.categories c ON p.category_id = c.category_id
-      WHERE o.created_at BETWEEN ? AND ?
-      AND o.status != 'Cancelled'
-      GROUP BY c.category_id
-      ORDER BY revenue DESC
-      LIMIT 5
-    `;
-    
-    const [topCategories] = await connection.promise().query(topCategoriesQuery, [
-      formatDateForSQL(startDate), 
-      formatDateForSQL(endDate)
-    ]);
-    
-    // Get daily sales data for chart
-    const salesByDayQuery = `
-      SELECT 
-        DATE(o.created_at) as date,
-        SUM(o.total_price) as revenue,
-        COUNT(DISTINCT o.order_id) as orders
-      FROM prince.order o
-      WHERE o.created_at BETWEEN ? AND ?
-      AND o.status != 'Cancelled'
-      GROUP BY DATE(o.created_at)
-      ORDER BY date
-    `;
-    
-    const [salesByDay] = await connection.promise().query(salesByDayQuery, [
-      formatDateForSQL(startDate), 
-      formatDateForSQL(endDate)
-    ]);
-    
-    return {
-      salesSummary: {
+    // Get overall sales summary if needed
+    if (!filters || filters.includeSummary) {
+      const salesSummaryQuery = `
+        SELECT 
+          COUNT(DISTINCT o.order_id) as total_orders,
+          SUM(o.total_price) as total_revenue,
+          AVG(o.total_price) as avg_order_value
+        FROM \`order\` o
+        WHERE o.created_at BETWEEN ? AND ?
+        AND o.status != 'Cancelled'
+      `;
+      
+      const [salesSummary] = await connection.promise().query(salesSummaryQuery, [
+        formatDateForSQL(startDate), 
+        formatDateForSQL(endDate)
+      ]);
+      
+      result.salesSummary = {
         totalOrders: salesSummary[0]?.total_orders || 0,
         totalRevenue: salesSummary[0]?.total_revenue || 0,
         avgOrderValue: salesSummary[0]?.avg_order_value || 0
-      },
-      topProducts,
-      topCategories,
-      salesByDay
-    };
+      };
+    }
+    
+    // Get top selling products if needed
+    if (!filters || filters.includeProducts) {
+      const topProductsQuery = `
+        SELECT 
+          p.product_id,
+          p.name,
+          SUM(oi.qty) as quantity,
+          SUM(oi.final_price) as revenue
+        FROM \`order\` o
+        JOIN order_item oi ON o.order_id = oi.order_id
+        JOIN products p ON oi.product_id = p.product_id
+        WHERE o.created_at BETWEEN ? AND ?
+        AND o.status != 'Cancelled'
+        GROUP BY p.product_id
+        ORDER BY revenue DESC
+        LIMIT 5
+      `;
+      
+      const [topProducts] = await connection.promise().query(topProductsQuery, [
+        formatDateForSQL(startDate), 
+        formatDateForSQL(endDate)
+      ]);
+      
+      result.topProducts = topProducts;
+    }
+    
+    // Get top selling categories if needed
+    if (!filters || filters.includeCategories) {
+      const topCategoriesQuery = `
+        SELECT 
+          c.category_id,
+          c.category_name as name,
+          SUM(oi.qty) as quantity,
+          SUM(oi.final_price) as revenue
+        FROM \`order\` o
+        JOIN order_item oi ON o.order_id = oi.order_id
+        JOIN products p ON oi.product_id = p.product_id
+        JOIN categories c ON p.category_id = c.category_id
+        WHERE o.created_at BETWEEN ? AND ?
+        AND o.status != 'Cancelled'
+        GROUP BY c.category_id
+        ORDER BY revenue DESC
+        LIMIT 5
+      `;
+      
+      const [topCategories] = await connection.promise().query(topCategoriesQuery, [
+        formatDateForSQL(startDate), 
+        formatDateForSQL(endDate)
+      ]);
+      
+      result.topCategories = topCategories;
+    }
+    
+    // Get daily sales data for chart if needed
+    if (!filters || filters.includeCharts) {
+      const salesByDayQuery = `
+        SELECT 
+          DATE(o.created_at) as date,
+          SUM(o.total_price) as revenue,
+          COUNT(DISTINCT o.order_id) as orders
+        FROM \`order\` o
+        WHERE o.created_at BETWEEN ? AND ?
+        AND o.status != 'Cancelled'
+        GROUP BY DATE(o.created_at)
+        ORDER BY date
+      `;
+      
+      const [salesByDay] = await connection.promise().query(salesByDayQuery, [
+        formatDateForSQL(startDate), 
+        formatDateForSQL(endDate)
+      ]);
+      
+      result.salesByDay = salesByDay;
+    }
+    
+    return result;
   } catch (error) {
     console.error('Error getting sales data:', error);
     throw error;
@@ -121,7 +134,7 @@ const getCustomerData = async (startDate, endDate) => {
       SELECT 
         COUNT(*) as total_new_customers,
         DATE(created_at) as date
-      FROM prince.customer
+      FROM customer
       WHERE created_at BETWEEN ? AND ?
       GROUP BY DATE(created_at)
       ORDER BY date
@@ -135,7 +148,7 @@ const getCustomerData = async (startDate, endDate) => {
     // Get total new customers
     const totalNewCustomersQuery = `
       SELECT COUNT(*) as total_new_customers
-      FROM prince.customer
+      FROM customer
       WHERE created_at BETWEEN ? AND ?
     `;
     
@@ -151,8 +164,8 @@ const getCustomerData = async (startDate, endDate) => {
         CONCAT(c.first_name, ' ', c.last_name) as customer_name,
         COUNT(DISTINCT o.order_id) as order_count,
         SUM(o.total_price) as total_spent
-      FROM prince.customer c
-      JOIN prince.order o ON c.customer_id = o.customer_id
+      FROM customer c
+      JOIN \`order\` o ON c.customer_id = o.customer_id
       WHERE o.created_at BETWEEN ? AND ?
       AND o.status != 'Cancelled'
       GROUP BY c.customer_id
@@ -188,7 +201,7 @@ const getInventoryData = async () => {
         p.name,
         p.stock_qty,
         p.price
-      FROM prince.products p
+      FROM products p
       ORDER BY p.stock_qty ASC
       LIMIT 10
     `;
@@ -202,7 +215,7 @@ const getInventoryData = async () => {
         p.name,
         p.stock_qty,
         p.price
-      FROM prince.products p
+      FROM products p
       ORDER BY p.stock_qty DESC
       LIMIT 10
     `;
@@ -217,9 +230,9 @@ const getInventoryData = async () => {
         p.stock_qty,
         p.price,
         SUM(oi.qty) as total_sold
-      FROM prince.products p
-      JOIN prince.order_item oi ON p.product_id = oi.product_id
-      JOIN prince.order o ON oi.order_id = o.order_id
+      FROM products p
+      JOIN order_item oi ON p.product_id = oi.product_id
+      JOIN \`order\` o ON oi.order_id = o.order_id
       WHERE o.status != 'Cancelled'
       GROUP BY p.product_id
       ORDER BY total_sold DESC
@@ -228,30 +241,13 @@ const getInventoryData = async () => {
     
     const [topSellingProducts] = await connection.promise().query(topSellingProductsQuery);
     
-    // Get products expiring soon
-    const expiringProductsQuery = `
-      SELECT 
-        p.product_id,
-        p.name,
-        p.stock_qty,
-        i.expiry_date,
-        DATEDIFF(i.expiry_date, CURDATE()) as days_until_expiry
-      FROM prince.products p
-      JOIN prince.inventory i ON p.product_id = i.product_id
-      WHERE i.expiry_date IS NOT NULL
-      ORDER BY days_until_expiry ASC
-      LIMIT 5
-    `;
-    
-    const [expiringProducts] = await connection.promise().query(expiringProductsQuery);
-    
     // Get total inventory value
     const totalInventoryValueQuery = `
       SELECT 
         SUM(p.stock_qty * p.price) as total_value,
         COUNT(p.product_id) as total_products,
         SUM(p.stock_qty) as total_items
-      FROM prince.products p
+      FROM products p
     `;
     
     const [inventorySummary] = await connection.promise().query(totalInventoryValueQuery);
@@ -264,8 +260,7 @@ const getInventoryData = async () => {
       },
       lowestStockProducts,
       highestStockProducts,
-      topSellingProducts,
-      expiringProducts
+      topSellingProducts
     };
   } catch (error) {
     console.error('Error getting inventory data:', error);
@@ -275,106 +270,108 @@ const getInventoryData = async () => {
 
 // Calculate percentage change between two values
 const calculatePercentageChange = (current, previous) => {
-  if (previous === 0) return current > 0 ? 100 : 0;
+  if (!previous || previous === 0) return 0;
   return ((current - previous) / previous) * 100;
 };
 
-// Get report data
+// Route to get report data
 router.post('/getData', async (req, res) => {
   try {
-    const { reportType, primaryRange, comparisonRange } = req.body;
+    const { reportType, primaryRange, comparisonRange, filters } = req.body;
+    
+    if (!reportType) {
+      return res.status(400).json({ message: 'Report type is required' });
+    }
+    
+    let result = {};
     
     // Handle different report types
-    if (reportType === "Sales Report") {
-      if (!primaryRange || !primaryRange.startDate || !primaryRange.endDate) {
-        return res.status(400).json({ message: 'Primary date range is required' });
-      }
-      
-      // Get primary period data
-      const primaryData = await getSalesData(primaryRange.startDate, primaryRange.endDate);
-      
-      let comparisonData = null;
-      let salesSummaryWithChange = { ...primaryData.salesSummary };
-      
-      // If comparison is enabled, get comparison period data
-      if (comparisonRange && comparisonRange.startDate && comparisonRange.endDate) {
-        comparisonData = await getSalesData(comparisonRange.startDate, comparisonRange.endDate);
-        
-        // Calculate percentage changes
-        salesSummaryWithChange.revenueChange = calculatePercentageChange(
-          Number(primaryData.salesSummary.totalRevenue),
-          Number(comparisonData.salesSummary.totalRevenue)
+    switch (reportType) {
+      case 'Sales Report':
+        // Get primary period data
+        const primaryData = await getSalesData(
+          primaryRange.startDate, 
+          primaryRange.endDate,
+          filters
         );
         
-        salesSummaryWithChange.ordersChange = calculatePercentageChange(
-          Number(primaryData.salesSummary.totalOrders),
-          Number(comparisonData.salesSummary.totalOrders)
+        result = { ...primaryData };
+        
+        // If comparison is requested, get comparison data
+        if (comparisonRange) {
+          const comparisonData = await getSalesData(
+            comparisonRange.startDate, 
+            comparisonRange.endDate,
+            filters
+          );
+          
+          result.comparisonSummary = comparisonData.salesSummary;
+          result.comparisonTopProducts = comparisonData.topProducts;
+          result.comparisonTopCategories = comparisonData.topCategories;
+          result.comparisonSalesByDay = comparisonData.salesByDay;
+          
+          // Calculate percentage changes
+          if (result.salesSummary && result.comparisonSummary) {
+            result.salesSummary.revenueChange = calculatePercentageChange(
+              result.salesSummary.totalRevenue,
+              result.comparisonSummary.totalRevenue
+            );
+            
+            result.salesSummary.ordersChange = calculatePercentageChange(
+              result.salesSummary.totalOrders,
+              result.comparisonSummary.totalOrders
+            );
+            
+            result.salesSummary.avgOrderChange = calculatePercentageChange(
+              result.salesSummary.avgOrderValue,
+              result.comparisonSummary.avgOrderValue
+            );
+          }
+        }
+        break;
+        
+      case 'Customer Report':
+        // Get primary period data
+        const primaryCustomerData = await getCustomerData(
+          primaryRange.startDate, 
+          primaryRange.endDate
         );
         
-        salesSummaryWithChange.avgOrderChange = calculatePercentageChange(
-          Number(primaryData.salesSummary.avgOrderValue),
-          Number(comparisonData.salesSummary.avgOrderValue)
-        );
-      }
-      
-      // Return the data
-      res.json({
-        salesSummary: salesSummaryWithChange,
-        comparisonSummary: comparisonData?.salesSummary || null,
-        topProducts: primaryData.topProducts,
-        comparisonTopProducts: comparisonData?.topProducts || null,
-        topCategories: primaryData.topCategories,
-        comparisonTopCategories: comparisonData?.topCategories || null,
-        salesByDay: primaryData.salesByDay,
-        comparisonSalesByDay: comparisonData?.salesByDay || null
-      });
-    } 
-    else if (reportType === "Customer Report") {
-      if (!primaryRange || !primaryRange.startDate || !primaryRange.endDate) {
-        return res.status(400).json({ message: 'Primary date range is required' });
-      }
-      
-      // Get primary period data
-      const primaryData = await getCustomerData(primaryRange.startDate, primaryRange.endDate);
-      
-      let comparisonData = null;
-      let customerSummaryWithChange = { ...primaryData.customerSummary };
-      
-      // If comparison is enabled, get comparison period data
-      if (comparisonRange && comparisonRange.startDate && comparisonRange.endDate) {
-        comparisonData = await getCustomerData(comparisonRange.startDate, comparisonRange.endDate);
+        result = { ...primaryCustomerData };
         
-        // Calculate percentage changes
-        customerSummaryWithChange.newCustomersChange = calculatePercentageChange(
-          Number(primaryData.customerSummary.totalNewCustomers),
-          Number(comparisonData.customerSummary.totalNewCustomers)
-        );
-      }
-      
-      // Return the data
-      res.json({
-        customerSummary: customerSummaryWithChange,
-        comparisonSummary: comparisonData?.customerSummary || null,
-        newCustomersByDay: primaryData.newCustomersByDay,
-        comparisonNewCustomersByDay: comparisonData?.newCustomersByDay || null,
-        topCustomers: primaryData.topCustomers,
-        comparisonTopCustomers: comparisonData?.topCustomers || null
-      });
-    }
-    else if (reportType === "Inventory Report") {
-      // For inventory report, we don't need date ranges as it shows current inventory
-      const inventoryData = await getInventoryData();
-      
-      // Return the data
-      res.json(inventoryData);
-    }
-    else {
-      return res.status(400).json({ message: 'Invalid report type' });
+        // If comparison is requested, get comparison data
+        if (comparisonRange) {
+          const comparisonCustomerData = await getCustomerData(
+            comparisonRange.startDate, 
+            comparisonRange.endDate
+          );
+          
+          result.comparisonCustomerSummary = comparisonCustomerData.customerSummary;
+          result.comparisonNewCustomersByDay = comparisonCustomerData.newCustomersByDay;
+          result.comparisonTopCustomers = comparisonCustomerData.topCustomers;
+          
+          // Calculate percentage changes
+          if (result.customerSummary && result.comparisonCustomerSummary) {
+            result.customerSummary.newCustomersChange = calculatePercentageChange(
+              result.customerSummary.totalNewCustomers,
+              result.comparisonCustomerSummary.totalNewCustomers
+            );
+          }
+        }
+        break;
+        
+      case 'Inventory Report':
+        result = await getInventoryData();
+        break;
+        
+      default:
+        return res.status(400).json({ message: 'Invalid report type' });
     }
     
+    res.json(result);
   } catch (error) {
-    console.error('Error generating report data:', error);
-    res.status(500).json({ message: 'Failed to generate report data' });
+    console.error('Error generating report:', error);
+    res.status(500).json({ message: 'Error generating report', error: error.message });
   }
 });
 

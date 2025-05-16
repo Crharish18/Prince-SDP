@@ -18,31 +18,31 @@ const Profile = () => {
 
   // Fetch customer data when component mounts
   useEffect(() => {
-    const fetchCustomerData = async () => {
-      try {
-        const token = localStorage.getItem('customerToken');
-        
-        if (!token) {
-          setLoading(false);
-          return;
-        }
-        
-        const response = await axios.get('http://localhost:5000/api/auth/customer-profile', {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-        
-        setCustomerData(response.data);
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching customer data:', error);
-        setLoading(false);
-      }
-    };
-    
     fetchCustomerData();
   }, []);
+
+  const fetchCustomerData = async () => {
+    try {
+      const token = localStorage.getItem('customerToken');
+      
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+      
+      const response = await axios.get('http://localhost:5000/api/auth/customer-profile', {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      
+      setCustomerData(response.data);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching customer data:', error);
+      setLoading(false);
+    }
+  };
 
   // Add this useEffect to fetch orders
   useEffect(() => {
@@ -87,7 +87,6 @@ const Profile = () => {
             return;
           }
           
-          // Replace with your actual API endpoint for wishlist
           const response = await axios.get('http://localhost:5000/api/auth/customer-wishlist', {
             headers: {
               Authorization: `Bearer ${token}`
@@ -112,7 +111,6 @@ const Profile = () => {
       
       if (!token) return;
       
-      // Replace with your actual API endpoint for removing from wishlist
       await axios.delete(`http://localhost:5000/api/auth/customer-wishlist/${itemId}`, {
         headers: {
           Authorization: `Bearer ${token}`
@@ -126,6 +124,14 @@ const Profile = () => {
     }
   };
 
+  // Handle profile update after profile picture upload
+  const handleProfileUpdate = (updatedData) => {
+    setCustomerData({
+      ...customerData,
+      profile_pic: updatedData.profile_pic
+    });
+  };
+
   return (
     <div className='w-[]'>
       <HeaderPages />
@@ -137,7 +143,8 @@ const Profile = () => {
               setActiveTab={setActiveTab} 
               customerData={customerData} 
               loading={loading}
-              ordersCount={orders.length} 
+              ordersCount={orders.length}
+              onProfileUpdate={handleProfileUpdate}
             />
             
             <div className="md:col-span-9">

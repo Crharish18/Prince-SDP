@@ -21,7 +21,7 @@ const Products = () => {
   
   // Price filter state
   const [minPrice, setMinPrice] = useState(0); 
-  const [maxPrice, setMaxPrice] = useState(165000); 
+  const [maxPrice, setMaxPrice] = useState(165000);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [filtered, setFiltered] = useState(false);
 
@@ -54,7 +54,6 @@ const Products = () => {
       setLoadingProducts(true);
       try {
         let response;
-        
         // Check if we have a category filter from URL
         if (urlCategoryId) {
           response = await axios.get(`http://localhost:5000/api/products/category/${urlCategoryId}`);
@@ -150,7 +149,6 @@ const Products = () => {
     } else {
       newSearchParams.delete('search');
     }
-    
     // Keep the category param if it exists
     if (selectedCategory) {
       newSearchParams.set('category', selectedCategory);
@@ -256,6 +254,40 @@ const Products = () => {
     setMaxPrice(parseInt(event.target.value, 10));
   };
 
+  // Add to cart function
+  const addToCart = async (product) => {
+    try {
+      const token = localStorage.getItem('customerToken');
+      const userData = JSON.parse(localStorage.getItem('userData'));
+  
+      if (!token) {
+        alert("Please log in to add items to your cart.");
+        return;
+      }
+  
+      if (!userData) {
+        alert("No user data found.");
+        return;
+      }
+  
+      // Send request to backend to add product to the cart
+      const response = await axios.post('http://localhost:5000/api/cart', {
+        customer_id: userData.id,
+        product_id: product.product_id,
+        quantity: 1, // Always add 1 quantity
+        price: product.price,
+        discount: product.discount_percentage > 0 ? (product.price * (product.discount_percentage / 100)) : 0,
+        status: 'active'
+      });
+  
+      console.log('Product added to cart:', response.data);
+      alert("Product added to cart successfully!");
+    } catch (error) {
+      console.error('Error adding product to cart:', error);
+      alert("Failed to add product to cart. Please try again.");
+    }
+  };
+
   // Find selected category name for breadcrumb
   const selectedCategoryName = categories.find(
     category => category.category_id === selectedCategory
@@ -343,8 +375,7 @@ const Products = () => {
                       className="w-full"
                     />
                   </div>
-
-                  <p className="text-sm text-gray-500 mt-2">Price: Rs.{minPrice} — Rs.{maxPrice}</p>
+                  <p className="text-sm text-gray-500 mt-2">Price: Rs.{minPrice} - Rs.{maxPrice}</p>
 
                   <div className="mt-4 flex justify-between">
                     <button 
@@ -443,8 +474,16 @@ const Products = () => {
                           <div className="text-lg font-semibold">
                             Rs. {isNaN(product.price) || product.price === null ? 'N/A' : parseFloat(product.price).toFixed(2)}
                           </div>
-                          <button className="bg-green-500 text-white px-4 py-2 rounded-md text-sm hover:bg-green-600 transition">
-                            ADD TO CART
+                          <button 
+                            onClick={() => product.stock_qty > 0 && addToCart(product)}
+                            className={`px-4 py-2 rounded-md text-sm transition ${
+                              product.stock_qty > 0 
+                                ? 'bg-green-500 text-white hover:bg-green-600' 
+                                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            }`}
+                            disabled={product.stock_qty <= 0}
+                          >
+                            {product.stock_qty > 0 ? 'ADD TO CART' : 'OUT OF STOCK'}
                           </button>
                         </div>
                         <div className="mt-2 text-sm text-gray-500">
@@ -474,7 +513,7 @@ const Products = () => {
           </div>
         </div>
       </div>
-      <div  >
+      <div>
         <Footer/>
       </div>
     </div>

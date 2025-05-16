@@ -132,6 +132,13 @@ function CustomerLogin() {
                   Sign up now
                 </Link>
               </div>
+
+              {/* Forgot Password Button */}
+              <div className="text-center mt-4">
+                <Link to="/ForgotPassword" className="font-medium text-green-600 hover:text-green-500 transition-colors">
+                  Forgot Password?
+                </Link>
+              </div>
             </form>
           </div>
         </div>

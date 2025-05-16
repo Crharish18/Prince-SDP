@@ -23,6 +23,14 @@ function Reports() {
   const [previewData, setPreviewData] = useState(null);
   const [error, setError] = useState("");
   const [currentDate, setCurrentDate] = useState("");
+  
+  // Report content filters
+  const [reportFilters, setReportFilters] = useState({
+    includeSummary: true,
+    includeProducts: true,
+    includeCategories: true,
+    includeCharts: true
+  });
 
   // Set current date on component mount
   useEffect(() => {
@@ -52,6 +60,14 @@ function Reports() {
 
   const toggleComparison = () => {
     setIsComparing(!isComparing);
+    setPreviewData(null);
+  };
+
+  const handleFilterChange = (filter) => {
+    setReportFilters(prev => ({
+      ...prev,
+      [filter]: !prev[filter]
+    }));
     setPreviewData(null);
   };
 
@@ -95,6 +111,7 @@ function Reports() {
             error={error}
             setError={setError}
             validateInputs={validateInputs}
+            reportFilters={reportFilters}
           />
         );
       case "Customer Report":
@@ -138,6 +155,9 @@ function Reports() {
 
   // Determine if date range selection should be shown
   const showDateRangeSelection = reportType !== "Inventory Report";
+  
+  // Determine if content filters should be shown
+  const showContentFilters = reportType === "Sales Report";
 
   return (
     <div className={styles.ReportsContainer}>
@@ -188,7 +208,7 @@ function Reports() {
                   <div className={styles.DateField}>
                     <label>Start Date</label>
                     <div className={styles.DateInputWrapper}>
-                      <FaCalendarAlt className={styles.CalendarIcon} />
+                      
                       <input
                         type="date"
                         className="form-control"
@@ -200,7 +220,7 @@ function Reports() {
                   <div className={styles.DateField}>
                     <label>End Date</label>
                     <div className={styles.DateInputWrapper}>
-                      <FaCalendarAlt className={styles.CalendarIcon} />
+                     
                       <input
                         type="date"
                         className="form-control"
@@ -259,6 +279,62 @@ function Reports() {
                         disabled
                       />
                     </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Report Content Filters */}
+          {showContentFilters && (
+            <div className={styles.DateRangeSection}>
+              <div className={styles.DateRangeContainer}>
+                <h3>Report Content</h3>
+                <p className="text-muted mb-3">Select the sections to include in your report</p>
+                <div className={styles.FilterOptions}>
+                  <div className={styles.FilterOption}>
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={reportFilters.includeSummary}
+                        onChange={() => handleFilterChange('includeSummary')}
+                        className={styles.FilterCheckbox}
+                      />
+                      <span>Sales Summary</span>
+                    </label>
+                  </div>
+                  <div className={styles.FilterOption}>
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={reportFilters.includeProducts}
+                        onChange={() => handleFilterChange('includeProducts')}
+                        className={styles.FilterCheckbox}
+                      />
+                      <span>Top Products</span>
+                    </label>
+                  </div>
+                  <div className={styles.FilterOption}>
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={reportFilters.includeCategories}
+                        onChange={() => handleFilterChange('includeCategories')}
+                        className={styles.FilterCheckbox}
+                      />
+                      <span>Categories</span>
+                    </label>
+                  </div>
+                  <div className={styles.FilterOption}>
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={reportFilters.includeCharts}
+                        onChange={() => handleFilterChange('includeCharts')}
+                        className={styles.FilterCheckbox}
+                      />
+                      <span>Charts & Graphs</span>
+                    </label>
                   </div>
                 </div>
               </div>
