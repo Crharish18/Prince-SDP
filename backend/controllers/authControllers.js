@@ -23,6 +23,11 @@ const loginUser = (req, res) => {
     }
 
     const user = result[0];
+    
+    // Check if user is active
+    if (user.status !== 'Active') {
+      return res.status(403).json({ message: 'Your account is disabled. Please contact administrator.' });
+    }
 
     // Compare the provided password with the hashed password in the database
     bcrypt.compare(password, user.password, (err, isMatch) => {

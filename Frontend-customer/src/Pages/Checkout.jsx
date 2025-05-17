@@ -402,6 +402,10 @@ const Checkout = ({ onBack }) => {
             shippingCost,
             grandTotal: totalPrice,
             shipMethod,
+            billingAddress,
+            shippingAddress: selectedShipping === 'standard shipping' 
+              ? (tempShippingAddress || addresses.shipping.find(addr => addr.address_id === selectedShippingAddress))
+              : null
           });
           
           // Clear cart after successful order
@@ -506,61 +510,199 @@ const Checkout = ({ onBack }) => {
     shippingCost,
     grandTotal,
     shipMethod,
+    billingAddress,
+    shippingAddress
   }) {
+    console.log("Generating new PDF format");
+    
     const doc = new jsPDF();
-  
-    // Add logo (adjust width/height as needed)
-    doc.addImage(logo, 'PNG', 10, 10, 40, 20);
-  
-    // Company Name and Invoice Title
-    doc.setFontSize(18);
-    doc.text("Prince Lanka Agencies", 60, 20);
-    doc.setFontSize(12);
-    doc.text(`Order ID: ${orderId}`, 150, 15);
-    doc.text(`Date: ${new Date().toLocaleDateString()}`, 150, 22);
-  
-    // Shipping Method
-    doc.setFontSize(13);
-    doc.text("Shipping Method:", 14, 40);
-    doc.setFontSize(11);
-    doc.text(`${shipMethod}`, 14, 46);
-  
-    // Table for Order Items
-    autoTable(doc, {
-      startY: 60,
-      head: [['#', 'Product', 'Qty', 'Price', 'Discount', 'Final Price']],
-      body: cartItems.map((item, idx) => [
-        idx + 1,
-        item.name,
-        item.quantity,
-        `Rs.${Number(item.price).toFixed(2)}`,
-        `Rs.${Number(item.discount || 0).toFixed(2)}`,
-        `Rs.${Number(item.total_price).toFixed(2)}`
-      ]),
-      theme: 'striped',
-      headStyles: { fillColor: [34, 197, 94] }, // Tailwind green-500
-      styles: { halign: 'center' },
-    });
-  
-    // Totals
-    let finalY = doc.lastAutoTable.finalY + 10;
-    doc.setFontSize(12);
-    doc.text(`Subtotal: Rs.${cartItems.reduce((sum, item) => sum + (Number(item.price) * item.quantity), 0).toFixed(2)}`, 130, finalY);
-    doc.text(`Discount: Rs.${cartItems.reduce((sum, item) => sum + Number(item.discount || 0), 0).toFixed(2)}`, 130, finalY + 7);
-    doc.text(`Shipping: Rs.${Number(shippingCost).toFixed(2)}`, 130, finalY + 14);
-    doc.setFontSize(14);
-    doc.text(`Total: Rs.${Number(grandTotal).toFixed(2)}`, 130, finalY + 21);
-  
-    // Footer
+    
+    // Set white background for the entire page
+    doc.setFillColor(255, 255, 255);
+    doc.rect(0, 0, doc.internal.pageSize.getWidth(), doc.internal.pageSize.getHeight(), 'F');
+    
+    // Add blue sidebar on the left
+    doc.setFillColor(0, 83, 156); // Blue color
+    doc.rect(0, 0, 15, doc.internal.pageSize.getHeight(), 'F');
+    
+    // Add purple accent at the bottom of the sidebar
+    doc.setFillColor(128, 0, 128); // Purple color
+    doc.rect(0, doc.internal.pageSize.getHeight() - 40, 15, 40, 'F');
+    
+    // Company name and logo
+    doc.setTextColor(0, 83, 156); // Blue color for company name
+    doc.setFontSize(20);
+    doc.setFont("helvetica", "bold");
+    doc.text("DOTS & LINES", 62, 30);
+    
+    // Company address and contact info
+    doc.setTextColor(70, 70, 70); // Dark gray for address
     doc.setFontSize(10);
-    doc.setTextColor(150);
-    doc.text(
-      "Thank you for shopping with Prince Lanka Agencies!",
-      14,
-      285
-    );
-    doc.text("www.princelanka.com | +94 763810245", 14, 292);
-  
+    doc.setFont("helvetica", "normal");
+    doc.text("2262 Portland Avenue", 62, 40);
+    doc.text("Fond Du Lac, WI 54935", 62, 50);
+    doc.text("920-377-0987", 62, 60);
+    doc.text("www.dotsandlines.com", 62, 70);
+    doc.text("info@dotsandlines.com", 62, 80);
+    
+    // Order details in a gray box
+    doc.setDrawColor(240, 240, 240);
+    doc.setFillColor(247, 247, 247);
+    doc.roundedRect(140, 20, 60, 30, 3, 3, 'FD');
+    doc.setFontSize(10);
+    doc.setTextColor(70, 70, 70);
+    doc.text(`Order: #${orderId}`, 145, 30);
+    doc.text(`Date: ${new Date().toLocaleDateString('en-US', {month: '2-digit', day: '2-digit', year: 'numeric'})}`, 145, 40);
+    
+    // SUMMARY header with blue underline
+    doc.setTextColor(0, 83, 156); // Blue color
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("SUMMARY", 62, 100);
+    doc.setDrawColor(0, 83, 156);
+    doc.setLineWidth(0.5);
+    doc.line(62, 102, 195, 102);
+    
+    // Get customer name from localStorage or use default
+    let customerName = "Customer";
+    try {
+      const userData = JSON.parse(localStorage.getItem('userData'));
+      if (userData && userData.username) {
+        customerName = userData.username;
+      }
+    } catch (e) {
+      console.error("Error getting customer data:", e);
+    }
+    
+    // Shipping and Billing Address headers
+    doc.setTextColor(0, 0, 0); // Black color
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text("SHIPPING ADDRESS", 62, 115);
+    doc.text("BILLING ADDRESS", 140, 115);
+    
+    // Shipping Address details
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    
+    // Use customer name as fallback if no address name is available
+    const shippingName = shippingAddress?.fullname || customerName;
+    const billingName = billingAddress?.fullname || customerName;
+    
+    if (shipMethod === 'standard shipping' && shippingAddress) {
+      doc.text(shippingName, 62, 125);
+      doc.text(shippingAddress.street || "", 62, 132);
+      if (shippingAddress.apartment) {
+        doc.text(shippingAddress.apartment, 62, 139);
+        doc.text(`${shippingAddress.city || ""}, ${shippingAddress.province || ""} ${shippingAddress.postal_code || ""}`, 62, 146);
+        doc.text(shippingAddress.country || "", 62, 153);
+      } else {
+        doc.text(`${shippingAddress.city || ""}, ${shippingAddress.province || ""} ${shippingAddress.postal_code || ""}`, 62, 139);
+        doc.text(shippingAddress.country || "", 62, 146);
+      }
+    } else {
+      doc.text(customerName, 62, 125);
+      doc.text("Pickup", 62, 132);
+    }
+    
+    // Billing Address details
+    if (billingAddress) {
+      doc.text(billingName, 140, 125);
+      doc.text(billingAddress.street || "", 140, 132);
+      if (billingAddress.apartment) {
+        doc.text(billingAddress.apartment, 140, 139);
+        doc.text(`${billingAddress.city || ""}, ${billingAddress.province || ""} ${billingAddress.postal_code || ""}`, 140, 146);
+        doc.text(billingAddress.country || "", 140, 153);
+      } else {
+        doc.text(`${billingAddress.city || ""}, ${billingAddress.province || ""} ${billingAddress.postal_code || ""}`, 140, 139);
+        doc.text(billingAddress.country || "", 140, 146);
+      }
+    }
+    
+    // Product table with blue headers
+    const tableStartY = 165;
+    
+    // Prepare table headers and data
+    const headers = [
+      { content: 'PRODUCT', styles: { fillColor: [0, 83, 156], textColor: [255, 255, 255], halign: 'left' } },
+      { content: 'TYPE', styles: { fillColor: [0, 83, 156], textColor: [255, 255, 255], halign: 'center' } },
+      { content: 'QUANTITY', styles: { fillColor: [0, 83, 156], textColor: [255, 255, 255], halign: 'center' } },
+      { content: 'UNIT PRICE', styles: { fillColor: [0, 83, 156], textColor: [255, 255, 255], halign: 'right' } },
+      { content: 'TOTAL', styles: { fillColor: [0, 83, 156], textColor: [255, 255, 255], halign: 'right' } }
+    ];
+    
+    // Create table data
+    const tableData = cartItems.map((item) => [
+      item.name,
+      'Product', // Assuming all are products, replace with actual type if available
+      item.quantity.toString(),
+      `Rs.${Number(item.price).toFixed(2)}`,
+      `Rs.${Number(item.total_price).toFixed(2)}`
+    ]);
+    
+    // Generate table
+    autoTable(doc, {
+      startY: tableStartY,
+      head: [headers.map(header => header.content)],
+      body: tableData,
+      headStyles: {
+        fillColor: [0, 83, 156], // Blue color
+        textColor: [255, 255, 255],
+        fontStyle: 'bold'
+      },
+      columnStyles: {
+        0: { halign: 'left' },
+        1: { halign: 'center' },
+        2: { halign: 'center' },
+        3: { halign: 'right' },
+        4: { halign: 'right' }
+      },
+      alternateRowStyles: {
+        fillColor: [240, 240, 250] // Light blue-ish for alternate rows
+      },
+      margin: { left: 62, right: 30 }
+    });
+    
+    // Add totals section
+    const finalY = doc.lastAutoTable.finalY + 10;
+    
+    // Right-aligned totals
+    doc.setFontSize(10);
+    doc.setTextColor(70, 70, 70);
+    doc.text("Sub-Total:", 160, finalY);
+    doc.text(`Rs.${Number(total).toFixed(2)}`, 195, finalY, { align: 'right' });
+    
+    doc.text("Shipping Charge:", 160, finalY + 7);
+    doc.text(`Rs.${Number(shippingCost).toFixed(2)}`, 195, finalY + 7, { align: 'right' });
+    
+    doc.text("Promo Code:", 160, finalY + 14);
+    doc.text(`Rs.0`, 195, finalY + 14, { align: 'right' });
+    
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.text("Total:", 160, finalY + 24);
+    doc.text(`Rs.${Number(grandTotal).toFixed(2)}`, 195, finalY + 24, { align: 'right' });
+    
+    // Add social media icons (represented as colored circles)
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const iconY = pageHeight - 20;
+    
+    doc.setFillColor(59, 89, 152); // Facebook blue
+    doc.circle(105, iconY, 4, 'F');
+    
+    doc.setFillColor(29, 161, 242); // Twitter blue
+    doc.circle(115, iconY, 4, 'F');
+    
+    doc.setFillColor(0, 119, 181); // LinkedIn blue
+    doc.circle(125, iconY, 4, 'F');
+    
+    // Footer text
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(100, 100, 100);
+    doc.text("Privacy Policy | Terms & Conditions | Contact", 105, pageHeight - 10, { align: 'center' });
+    doc.text("© Dots and Lines - All Rights Reserved", 105, pageHeight - 5, { align: 'center' });
+    
     // Create a blob and open it in a new window
     const pdfBlob = doc.output('blob');
     const url = URL.createObjectURL(pdfBlob);

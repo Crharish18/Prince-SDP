@@ -37,7 +37,7 @@ router.get('/:id', (req, res) => {
 // POST - Create a new admin
 router.post('/', async (req, res) => {
   try {
-    const { username, firstName, lastName, email, phoneNum, dob, nationalId, address, password } = req.body;
+    const { username, firstName, lastName, email, phoneNum, dob, nationalId, address, password, status } = req.body;
     
     // Hash the password
     const salt = await bcrypt.genSalt(10);
@@ -45,13 +45,13 @@ router.post('/', async (req, res) => {
     
     const query = `
       INSERT INTO users 
-      (username, first_name, last_name, email, phonenum, role, dob, natID, address, password) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (username, first_name, last_name, email, phonenum, role, dob, natID, address, password, status) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
     
     connection.query(
       query, 
-      [username, firstName, lastName, email, phoneNum, 'admin', dob, nationalId, address, hashedPassword],
+      [username, firstName, lastName, email, phoneNum, 'admin', dob, nationalId, address, hashedPassword, status || 'Active'],
       (err, result) => {
         if (err) {
           console.error('Error creating admin:', err);
@@ -83,7 +83,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const adminId = req.params.id;
-    const { username, first_name, last_name, email, phonenum, dob, natID, address } = req.body;
+    const { username, first_name, last_name, email, phonenum, dob, natID, address, status } = req.body;
     
     // First check if the admin exists
     connection.query(
@@ -103,13 +103,13 @@ router.put('/:id', async (req, res) => {
         const updateQuery = `
           UPDATE users 
           SET username = ?, first_name = ?, last_name = ?, email = ?, 
-              phonenum = ?, dob = ?, natID = ?, address = ?, updated_at = CURRENT_TIMESTAMP
+              phonenum = ?, dob = ?, natID = ?, address = ?, status = ?, updated_at = CURRENT_TIMESTAMP
           WHERE userid = ?
         `;
         
         connection.query(
           updateQuery,
-          [username, first_name, last_name, email, phonenum, dob, natID, address, adminId],
+          [username, first_name, last_name, email, phonenum, dob, natID, address, status, adminId],
           (err, result) => {
             if (err) {
               console.error('Error updating admin:', err);
@@ -139,7 +139,7 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// DELETE - Remove an admin
+// Modified DELETE route to update status instead of deleting
 router.delete('/:id', (req, res) => {
   const adminId = req.params.id;
   
@@ -157,16 +157,32 @@ router.delete('/:id', (req, res) => {
         return res.status(404).send('Admin not found');
       }
       
-      // Admin exists, proceed with deletion
+      // Admin exists, update status to "Disable" instead of deleting
       connection.query(
-        'DELETE FROM users WHERE userid = ?',
+        'UPDATE users SET status = "Disable", updated_at = CURRENT_TIMESTAMP WHERE userid = ?',
         [adminId],
         (err, result) => {
           if (err) {
-            console.error('Error deleting admin:', err);
-            res.status(500).send('Error deleting admin');
+            console.error('Error disabling admin:', err);
+            res.status(500).send('Error disabling admin');
           } else {
-            res.json({ message: 'Admin deleted successfully', id: adminId });
+            // Fetch the updated admin to return
+            connection.query(
+              'SELECT * FROM users WHERE userid = ?',
+              [adminId],
+              (err, updatedAdmin) => {
+                if (err) {
+                  console.error('Error fetching updated admin:', err);
+                  res.status(200).json({ message: 'Admin disabled successfully', id: adminId });
+                } else {
+                  res.json({ 
+                    message: 'Admin disabled successfully', 
+                    id: adminId,
+                    admin: updatedAdmin[0]
+                  });
+                }
+              }
+            );
           }
         }
       );

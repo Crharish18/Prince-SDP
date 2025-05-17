@@ -26,7 +26,8 @@ function Admin() {
     dob: '',
     nationalId: '',
     address: '',
-    password: '' 
+    password: '',
+    status: 'Active' // Default status
   });
 
   const [validationErrors, setValidationErrors] = useState({
@@ -39,7 +40,8 @@ function Admin() {
     dob: '',
     nationalId: '',
     address: '',
-    password: ''
+    password: '',
+    status: ''
   });
   
   const [searchText, setSearchText] = useState("");
@@ -83,17 +85,19 @@ function Admin() {
     return value && value.includes(searchText.toLowerCase());
   });
 
-  const adminFields = [
-    { label: "Username", name: "username", type: "text" },
-    { label: "First Name", name: "first_name", type: "text" },
-    { label: "Last Name", name: "last_name", type: "text" },
-    { label: "Email", name: "email", type: "email" },
-    { label: "Phone Number", name: "phonenum", type: "text" },
-    { label: "Role", name: "role", type: "text" },
-    { label: "Date of Birth", name: "dob", type: "date" },
-    { label: "National ID", name: "natID", type: "text" },
-    { label: "Address", name: "address", type: "text" }
-  ];
+ const adminFields = [
+  { label: "Username", name: "username", type: "text" },
+  { label: "First Name", name: "first_name", type: "text" },
+  { label: "Last Name", name: "last_name", type: "text" },
+  { label: "Email", name: "email", type: "email" },
+  { label: "Phone Number", name: "phonenum", type: "text" },
+  { label: "Role", name: "role", type: "text" },
+  { label: "Date of Birth", name: "dob", type: "date" },
+  { label: "National ID", name: "natID", type: "text" },
+  { label: "Address", name: "address", type: "text" },
+  { label: "Status", name: "status", type: "select", options: ["Active", "Disable"] }
+];
+
 
   const handleAddAdminClick = () => {
     setShowModal(true);
@@ -144,6 +148,9 @@ function Admin() {
     if (!newAdmin.password || newAdmin.password.length < 6) {
       errors.password = "Password must be at least 6 characters long.";
     }
+    if (!newAdmin.status) {
+      errors.status = "Status is required.";
+    }
   
     setValidationErrors(errors);
 
@@ -176,17 +183,23 @@ function Admin() {
   };
 
   const handleDeleteAdmin = (adminId) => {
-    axios
-      .delete(`http://localhost:5000/api/admin/${adminId}`)
-      .then((response) => {
-        setAdmins((prevAdmins) =>
-          prevAdmins.filter((admin) => admin.userid !== adminId)
-        );
-      })
-      .catch((error) => {
-        console.error("Error deleting admin:", error);
-      });
-  };
+  axios
+    .delete(`http://localhost:5000/api/admin/${adminId}`)
+    .then((response) => {
+      // Instead of removing the admin from the list, update its status
+      setAdmins((prevAdmins) =>
+        prevAdmins.map((admin) => {
+          if (admin.userid === adminId) {
+            return { ...admin, status: "Disable" };
+          }
+          return admin;
+        })
+      );
+    })
+    .catch((error) => {
+      console.error("Error disabling admin:", error);
+    });
+};
 
   const handleEditAdmin = (admin) => {
     const formattedDob = admin.dob ? admin.dob.split('T')[0] : '';
@@ -256,6 +269,7 @@ function Admin() {
                 <option value="email">Email</option>
                 <option value="phoneNum">PhoneNum</option>
                 <option value="natId">NationalID</option>
+                <option value="status">Status</option>
               </select>
               <input
                 type="text"
@@ -283,6 +297,7 @@ function Admin() {
                   <th>EMAIL</th>
                   <th>PHONENUM</th>
                   <th>NationalID</th>
+                  <th>Status</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -296,6 +311,14 @@ function Admin() {
                       <td>{admin.email}</td>
                       <td>{admin.phonenum}</td>
                       <td>{admin.natID}</td>
+                      <td>
+                        <span style={{ 
+                          color: admin.status === 'Active' ? 'green' : 'red',
+                          fontWeight: 'bold'
+                        }}>
+                          {admin.status}
+                        </span>
+                      </td>
                       <td>
                         <FaEye
                           style={{ marginRight: "10px", cursor: "pointer", color: "#2770b4" }}
@@ -314,7 +337,7 @@ function Admin() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="7">No admins found</td>
+                    <td colSpan="8">No admins found</td>
                   </tr>
                 )}
               </tbody>
@@ -338,7 +361,8 @@ function Admin() {
             { label: "Date of Birth", name: "dob", type: "date" },
             { label: "National ID", name: "nationalId", type: "text" },
             { label: "Address", name: "address", type: "text" },
-            { label: "Password", name: "password", type: "password" }
+            { label: "Password", name: "password", type: "password" },
+            { label: "Status", name: "status", type: "select", options: ["Active", "Disable"] }
           ]}
           handleInputChange={handleInputChange}
           validationErrors={validationErrors}
@@ -359,7 +383,8 @@ function Admin() {
             { label: "Role", name: "role" },
             { label: "Date of Birth", name: "dob", format: formatDate },
             { label: "National ID", name: "natID" },
-            { label: "Address", name: "address" }
+            { label: "Address", name: "address" },
+            { label: "Status", name: "status" }
           ]}
         />
 
@@ -388,7 +413,8 @@ function Admin() {
             { label: "Role", field: "role" },
             { label: "Date of Birth", field: "dob", format: (date) => date ? new Date(date).toLocaleDateString() : "" },
             { label: "National ID", field: "natID" },
-            { label: "Address", field: "address" }
+            { label: "Address", field: "address" },
+            { label: "Status", field: "status" }
           ]}
           filename="admin_report.pdf"
           reportTitle="Admin Details Report"

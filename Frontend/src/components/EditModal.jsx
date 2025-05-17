@@ -62,6 +62,19 @@ const EditModal = ({
                       className="form-control"
                     />
                   </div>
+                ) : field.type === "select" ? (
+                  <select
+                    className="form-control"
+                    name={field.name}
+                    value={entityData[field.name] || ""}
+                    onChange={handleEditInputChange}
+                  >
+                    {field.options && field.options.map((option, optionIndex) => (
+                      <option key={optionIndex} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
                 ) : (
                   <input
                     type={field.type || "text"} // Allow dynamic input types (e.g., text, email, date, etc.)
