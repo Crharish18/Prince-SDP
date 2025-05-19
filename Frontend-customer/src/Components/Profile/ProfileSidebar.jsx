@@ -148,20 +148,6 @@ const ProfileSidebar = ({ activeTab, setActiveTab, customerData, loading, orders
           </button>
         </nav>
       </div>
-
-      {/* Quick Stats */}
-      <div className="grid grid-cols-2 gap-4 mt-6">
-        <div className="bg-white p-4 rounded-xl shadow-sm text-center">
-          <Package className="h-6 w-6 text-green-500 mx-auto mb-2" />
-          <p className="text-2xl font-bold text-gray-800">{ordersCount || 0}</p>
-          <p className="text-sm text-gray-500">Orders</p>
-        </div>
-        <div className="bg-white p-4 rounded-xl shadow-sm text-center">
-          <Star className="h-6 w-6 text-yellow-500 mx-auto mb-2" />
-          <p className="text-2xl font-bold text-gray-800">4.8</p>
-          <p className="text-sm text-gray-500">Rating</p>
-        </div>
-      </div>
     </div>
   );
 };

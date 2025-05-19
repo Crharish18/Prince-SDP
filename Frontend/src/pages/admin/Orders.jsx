@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { FaBoxOpen, FaEdit, FaTrash } from "react-icons/fa"; 
+import { FaBoxOpen, FaEdit, FaTrash, FaSortUp, FaSortDown } from "react-icons/fa"; 
 import Sidebar from "../../components/Sidebar";
 import Header from "../../components/Header";
 import styles from './Order.module.css';
@@ -62,7 +62,6 @@ const EditOrderModal = ({ showModal, order, handleClose, handleSave }) => {
                   readOnly 
                 />
               </div>
-              
               <div className="form-group">
                 <label>Customer ID</label>
                 <input 
@@ -152,7 +151,10 @@ function ManageOrder() {
   const [searchColumn, setSearchColumn] = useState("");
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null); 
-  const [showEditModal, setShowEditModal] = useState(false); 
+  const [showEditModal, setShowEditModal] = useState(false);
+  // Add new state for status filter and date sorting
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [dateSort, setDateSort] = useState(null); // null, 'asc', or 'desc'
 
   // Data fetching
   useEffect(() => {
@@ -213,6 +215,14 @@ function ManageOrder() {
     setSearchText(e.target.value);  
   };
 
+  const handleStatusFilterChange = (e) => {
+    setStatusFilter(e.target.value);
+  };
+
+  const handleDateSortChange = (sortDirection) => {
+    setDateSort(sortDirection);
+  };
+
   const handleAddOrderClick = () => {
     setShowModal(true);
   };
@@ -264,7 +274,6 @@ function ManageOrder() {
 
   const handleViewOrderItems = (order) => {
     setSelectedOrder(order);
-    
     // Fetch order items from backend
     axios.get(`http://localhost:5000/api/order_items/${order.order_id}/items`)
         .then((response) => {
@@ -299,7 +308,7 @@ function ManageOrder() {
     setSelectedOrder(order);
     setShowEditModal(true);
   };
-  
+
   const handleSaveEditOrder = (updatedOrder) => {
     axios
       .put(`http://localhost:5000/api/orders/${updatedOrder.order_id}`, updatedOrder)
@@ -323,12 +332,42 @@ function ManageOrder() {
     setShowPrintModal(true);
   };
 
-  // Data processing
-  const filteredOrders = orders.filter((order) => {
-    if (!searchText || !searchColumn) return true; 
-    const value = order[searchColumn]?.toString().toLowerCase(); 
-    return value && value.includes(searchText.toLowerCase());
-  });
+  // Data processing with added filters
+  const filteredOrders = React.useMemo(() => {
+    // First apply text search filter
+    let filtered = orders.filter((order) => {
+      if (!searchText || !searchColumn) return true;
+      const value = order[searchColumn]?.toString().toLowerCase();
+      return value && value.includes(searchText.toLowerCase());
+    });
+    
+    // Then apply status filter
+    if (statusFilter !== "All") {
+      filtered = filtered.filter(order => order.status === statusFilter);
+    }
+    
+    // Finally apply date sorting
+    if (dateSort) {
+      filtered = [...filtered].sort((a, b) => {
+        const dateA = a.created_at ? new Date(a.created_at) : null;
+        const dateB = b.created_at ? new Date(b.created_at) : null;
+        
+        // Handle null values
+        if (!dateA && !dateB) return 0;
+        if (!dateA) return 1; // null values at the end
+        if (!dateB) return -1;
+        
+        // Sort based on direction
+        if (dateSort === 'asc') {
+          return dateA - dateB; // Oldest first
+        } else {
+          return dateB - dateA; // Newest first
+        }
+      });
+    }
+    
+    return filtered;
+  }, [orders, searchText, searchColumn, statusFilter, dateSort]);
 
   const orderFields = [
     { label: "Customer ID", name: "customer_id", type: "text" },
@@ -373,6 +412,51 @@ function ManageOrder() {
                 <button className="btn btn-secondary" style={{ width: '150px', marginLeft:"10px" }} onClick={handleDownloadPDF}>Print</button>
               </div>
             </div>
+            
+            {/* Add filter controls for status and date sorting */}
+            <div style={{ display: "flex", marginTop: "15px", gap: "20px" }}>
+              <div style={{ display: "flex", alignItems: "center" }}>
+                <span style={{ marginRight: "10px", fontWeight: "bold" }}>Filter by Status:</span>
+                <select
+                  className="form-control"
+                  value={statusFilter}
+                  onChange={handleStatusFilterChange}
+                  style={{ width: "150px" }}
+                >
+                  <option value="All">All Statuses</option>
+                  <option value="Pending" style={{ color: "#ffc107" }}>Pending</option>
+                  <option value="Shipped" style={{ color: "#007bff" }}>Shipped</option>
+                  <option value="Delivered" style={{ color: "#28a745" }}>Delivered</option>
+                  <option value="Cancelled" style={{ color: "#dc3545" }}>Cancelled</option>
+                </select>
+              </div>
+              
+              <div style={{ display: "flex", alignItems: "center" }}>
+                <span style={{ marginRight: "10px", fontWeight: "bold" }}>Sort by Date:</span>
+                <div className="btn-group">
+                  <button 
+                    className={`btn ${dateSort === 'asc' ? 'btn-primary' : 'btn-outline-primary'}`}
+                    onClick={() => handleDateSortChange('asc')}
+                  >
+                    Oldest First <FaSortUp />
+                  </button>
+                  <button 
+                    className={`btn ${dateSort === 'desc' ? 'btn-primary' : 'btn-outline-primary'}`}
+                    onClick={() => handleDateSortChange('desc')}
+                  >
+                    Newest First <FaSortDown />
+                  </button>
+                  {dateSort && (
+                    <button 
+                      className="btn btn-outline-secondary"
+                      onClick={() => handleDateSortChange(null)}
+                    >
+                      Clear Sort
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Orders table */}
@@ -386,7 +470,11 @@ function ManageOrder() {
                   <th>Total Discount</th>
                   <th>Total Price</th>
                   <th>Status</th>
-                  <th>Created At</th>
+                  <th>
+                    Created At
+                    {dateSort === 'asc' && <FaSortUp style={{ marginLeft: "5px" }} />}
+                    {dateSort === 'desc' && <FaSortDown style={{ marginLeft: "5px" }} />}
+                  </th>
                   <th>Updated At</th>
                   <th>Actions</th>
                 </tr>

@@ -18,21 +18,21 @@ router.get('/', (req, res) => {
 
 // Add a new transaction
 router.post('/', (req, res) => {
-    const { order_id, customer_id, amount_paid, payment_method, status } = req.body;
+    const { order_id, amount_paid, status } = req.body;
 
-    if (!order_id || !customer_id || !amount_paid || !payment_method || !status) {
-        return res.status(400).json({ error: 'All fields are required' });
+    if (!order_id || !amount_paid || !status) {
+        return res.status(400).json({ error: 'order_id, amount_paid, and status are required' });
     }
 
-    const query = `INSERT INTO transactions (order_id, customer_id, amount_paid, payment_method, status) 
-                   VALUES (?, ?, ?, ?, ?)`;
+    const query = `INSERT INTO transactions (order_id, amount_paid, status) 
+                   VALUES (?, ?, ?)`;
 
-    connection.query(query, [order_id, customer_id, amount_paid, payment_method, status], (err, results) => {
+    connection.query(query, [order_id, amount_paid, status], (err, results) => {
         if (err) {
             console.error('Error adding transaction:', err);
             res.status(500).send('Error adding transaction');
         } else {
-            res.status(201).json({ transaction_id: results.insertId, order_id, customer_id, amount_paid, payment_method, status });
+            res.status(201).json({ transaction_id: results.insertId, order_id, amount_paid, status });
         }
     });
 });
@@ -56,17 +56,17 @@ router.delete('/:transaction_id', (req, res) => {
 // Update a transaction
 router.put('/:transaction_id', (req, res) => {
     const { transaction_id } = req.params;
-    const { order_id, customer_id, amount_paid, payment_method, status } = req.body;
+    const { order_id, amount_paid, status } = req.body;
 
-    if (!order_id || !customer_id || !amount_paid || !payment_method || !status) {
-        return res.status(400).json({ error: 'All fields are required' });
+    if (!order_id || !amount_paid || !status) {
+        return res.status(400).json({ error: 'order_id, amount_paid, and status are required' });
     }
 
     const query = `UPDATE transactions 
-                   SET order_id=?, customer_id=?, amount_paid=?, payment_method=?, status=? 
+                   SET order_id=?, amount_paid=?, status=? 
                    WHERE transaction_id=?`;
 
-    connection.query(query, [order_id, customer_id, amount_paid, payment_method, status, transaction_id], (err, results) => {
+    connection.query(query, [order_id, amount_paid, status, transaction_id], (err, results) => {
         if (err) {
             console.error('Error updating transaction:', err);
             res.status(500).send('Error updating transaction');
@@ -76,5 +76,4 @@ router.put('/:transaction_id', (req, res) => {
     });
 });
 
-// Export the router so it can be used in the server.js
 module.exports = router;

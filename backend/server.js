@@ -19,6 +19,7 @@ const shipping_detailsRoutes = require('./routes/shipping_details'); // Import t
 const ReportRoutes = require('./routes/report'); // Import the report route
 const MessagesRoutes = require('./routes/messages'); // Import the messages route
 const order_addressRoutes = require('./routes/order_address'); // Import the order address route
+const IMS_Reset_PasswordRoutes = require('./routes/IMS_Reset_Password'); // Import the IMS reset password route
 const app = express();
 const port = process.env.PORT || 5000;
 const uploadRoutes = require('./routes/upload'); // Import the upload route
@@ -59,6 +60,7 @@ app.use('/api/reviews', reviewsRoutes); // Add the reviews route
 app.use('/api/reports', ReportRoutes); // Add the report route
 app.use('/api/messages', MessagesRoutes); // Add the messages route
 app.use('/api/order_address', order_addressRoutes); // Add the order address route
+app.use('/api/IMS_Reset_Password', IMS_Reset_PasswordRoutes); // Add the IMS reset password route
 // Add the upload route for image uploads
 console.log('Adding upload route...');
 app.use('/api/upload', uploadRoutes);  // Register the upload route

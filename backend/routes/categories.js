@@ -32,22 +32,28 @@ router.get('/only6', (req, res) => {
 });
 
 
-  router.post('/', (req, res) => {
-    const { category_name } = req.body;
-  
-    const query = `INSERT INTO categories (category_name) VALUES (?)`;
-  
-    connection.query(query, [category_name], (err, results) => {
-      if (err) {
-        return res.status(500).send('Error adding category');
+    router.post('/', (req, res) => {
+      const { categoryName } = req.body;  // Changed from category_name to categoryName
+      
+      // Validate the category name
+      if (!categoryName || categoryName.trim().length < 3) {
+        return res.status(400).json({ error: 'Category name must be at least 3 characters long.' });
       }
-      res.status(201).json({
-        category_id: results.insertId,
-        category_name,
-        created_at: new Date(),
+
+      const query = `INSERT INTO categories (category_name) VALUES (?)`;
+
+      connection.query(query, [categoryName], (err, results) => {
+        if (err) {
+          console.error('Error adding category:', err);  // Add error logging
+          return res.status(500).send('Error adding category');
+        }
+        res.status(201).json({
+          category_id: results.insertId,
+          category_name: categoryName,
+          created_at: new Date(),
+        });
       });
     });
-  });
 
   // Update a category by ID
 router.put('/:category_id', (req, res) => {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { FaEye, FaTrash, FaStar } from "react-icons/fa";
+import { FaEye, FaTrash, FaStar, FaSortUp, FaSortDown } from "react-icons/fa";
 import Sidebar from "../../components/Sidebar";
 import Header from "../../components/Header";
 import styles from './Reviews.module.css';
@@ -19,9 +19,10 @@ function Reviews() {
   const [showViewModal, setShowViewModal] = useState(false); 
   const [selectedReview, setSelectedReview] = useState(null); 
   const [showPrintModal, setShowPrintModal] = useState(false);
+  // Add date sort state
+  const [dateSort, setDateSort] = useState(null); // null, 'asc', or 'desc'
 
   useEffect(() => {
-    // Fetch reviews
     axios.get('http://localhost:5000/api/reviews')
       .then(response => {
         // Add a default created_at date if it doesn't exist
@@ -82,17 +83,47 @@ function Reviews() {
     setSearchText(e.target.value);
   };
 
-  const filteredReviews = reviews.filter((review) => {
-    if (!searchText || !searchColumn) return true;
+  // Handle date sort change
+  const handleDateSortChange = (sortDirection) => {
+    setDateSort(sortDirection);
+  };
+
+  const filteredAndSortedReviews = React.useMemo(() => {
+    // First filter the reviews
+    let filtered = reviews.filter((review) => {
+      if (!searchText || !searchColumn) return true;
+      
+      if (searchColumn === "product_name") {
+        const productName = products[review.product_id]?.name?.toLowerCase() || "";
+        return productName.includes(searchText.toLowerCase());
+      }
+      
+      const value = review[searchColumn]?.toString().toLowerCase();
+      return value && value.includes(searchText.toLowerCase());
+    });
     
-    if (searchColumn === "product_name") {
-      const productName = products[review.product_id]?.name?.toLowerCase() || "";
-      return productName.includes(searchText.toLowerCase());
+    // Then sort by date if sorting is active
+    if (dateSort) {
+      filtered = [...filtered].sort((a, b) => {
+        const dateA = a.created_at ? new Date(a.created_at) : null;
+        const dateB = b.created_at ? new Date(b.created_at) : null;
+        
+        // Handle null values
+        if (!dateA && !dateB) return 0;
+        if (!dateA) return 1; // null values at the end
+        if (!dateB) return -1;
+        
+        // Sort based on direction
+        if (dateSort === 'asc') {
+          return dateA - dateB; // Oldest first
+        } else {
+          return dateB - dateA; // Newest first
+        }
+      });
     }
     
-    const value = review[searchColumn]?.toString().toLowerCase();
-    return value && value.includes(searchText.toLowerCase());
-  });
+    return filtered;
+  }, [reviews, searchText, searchColumn, dateSort, products]);
 
   const handleViewReview = (review) => {
     console.log("Review being viewed:", review);
@@ -160,7 +191,7 @@ function Reviews() {
   };
 
   // Prepare data for printing with product names
-  const reviewsWithProductNames = filteredReviews.map(review => ({
+  const reviewsWithProductNames = filteredAndSortedReviews.map(review => ({
     ...review,
     product_name: products[review.product_id]?.name || "Unknown Product"
   }));
@@ -197,6 +228,33 @@ function Reviews() {
                 <button className="btn btn-secondary" style={{ width: '150px', marginLeft:"10px" }} onClick={handleDownloadPDF}>Print</button>
               </div>
             </div>
+
+            {/* Date sort controls */}
+            <div className={styles.DateSortContainer}>
+              <span className={styles.SortLabel}>Sort by Date:</span>
+              <div className={styles.SortButtonGroup}>
+                <button 
+                  className={`${styles.SortButton} ${dateSort === 'asc' ? styles.active : styles.inactive}`}
+                  onClick={() => handleDateSortChange('asc')}
+                >
+                  Oldest First <FaSortUp className={styles.SortIcon} />
+                </button>
+                <button 
+                  className={`${styles.SortButton} ${dateSort === 'desc' ? styles.active : styles.inactive}`}
+                  onClick={() => handleDateSortChange('desc')}
+                >
+                  Newest First <FaSortDown className={styles.SortIcon} />
+                </button>
+                {dateSort && (
+                  <button 
+                    className={`${styles.SortButton} ${styles.clear}`}
+                    onClick={() => handleDateSortChange(null)}
+                  >
+                    Clear Sort
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
 
           <div className={styles.TableContainer}>
@@ -207,13 +265,17 @@ function Reviews() {
                   <th>Product</th>
                   <th>Order ID</th>
                   <th>Rating</th>
-                  <th>Date</th>
+                  <th className={styles.SortableHeader}>
+                    Date
+                    {dateSort === 'asc' && <FaSortUp className={styles.SortIcon} />}
+                    {dateSort === 'desc' && <FaSortDown className={styles.SortIcon} />}
+                  </th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredReviews.length > 0 ? (
-                  filteredReviews.map((review) => (
+                {filteredAndSortedReviews.length > 0 ? (
+                  filteredAndSortedReviews.map((review) => (
                     <tr key={review.review_id}>
                       <td>{review.review_id}</td>
                       <td>{products[review.product_id]?.name || "Loading..."}</td>

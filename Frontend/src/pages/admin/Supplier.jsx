@@ -76,8 +76,7 @@ function Supplier() {
   ];
 
   const validateEmail = (email) => {
-    const re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-    return re.test(String(email).toLowerCase());
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email).toLowerCase());
   };
 
   const handleAddSupplierClick = () => {
@@ -86,6 +85,20 @@ function Supplier() {
 
   const handleCloseModal = () => {
     setShowModal(false);
+    // Reset form data
+    setNewSupplier({
+      name: '',
+      phone: '',
+      email: '',
+      address: ''
+    });
+    // Reset validation errors
+    setValidationErrors({
+      name: '',
+      phone: '',
+      email: '',
+      address: ''
+    });
   };
 
   const handleInputChange = (e) => {
@@ -98,18 +111,35 @@ function Supplier() {
 
   const handleSaveNewSupplier = () => {
     let errors = {};
+    
+    // Name validation: only letters and more than 3 characters
     if (!newSupplier.name) {
       errors.name = "Name is required.";
+    } else if (newSupplier.name.length < 3) {
+      errors.name = "Name must be at least 3 characters long.";
+    } else if (!/^[a-zA-Z\s]+$/.test(newSupplier.name)) {
+      errors.name = "Name can only contain letters and spaces.";
     }
+    
+    // Phone validation: only numbers and exactly 10 digits
     if (!newSupplier.phone) {
       errors.phone = "Phone number is required.";
-    } else if (!/^\d{10,15}$/.test(newSupplier.phone)) {
-      errors.phone = "Please enter a valid phone number (10-15 digits).";
+    } else if (!/^\d{10}$/.test(newSupplier.phone)) {
+      errors.phone = "Phone number must be exactly 10 digits.";
     }
+    
+    // Email validation: valid email format
     if (!newSupplier.email) {
       errors.email = "Email is required.";
     } else if (!validateEmail(newSupplier.email)) {
       errors.email = "Please enter a valid email address.";
+    }
+    
+    // Address validation: more than 5 characters
+    if (!newSupplier.address) {
+      errors.address = "Address is required.";
+    } else if (newSupplier.address.length < 5) {
+      errors.address = "Address must be at least 5 characters long.";
     }
   
     setValidationErrors(errors);
@@ -120,6 +150,13 @@ function Supplier() {
         .then((response) => {
           setSuppliers([...suppliers, response.data]);
           setShowModal(false);
+          // Reset form after successful save
+          setNewSupplier({
+            name: '',
+            phone: '',
+            email: '',
+            address: ''
+          });
         })
         .catch((error) => {
           console.error("Error adding supplier:", error);

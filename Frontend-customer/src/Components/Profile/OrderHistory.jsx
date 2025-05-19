@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Package, ChevronDown, MessageSquare, Star, Trash2 } from 'lucide-react';
+import { Package, ChevronDown, MessageSquare, Star, Trash2, FileText } from 'lucide-react';
 import ReviewModal from './ReviewModal';
 import axios from 'axios';
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import logo from '../../assets/logoBlack.png';
 
 const OrderHistory = ({ orders, loading }) => {
   const [expandedOrder, setExpandedOrder] = useState(null);
@@ -10,6 +13,7 @@ const OrderHistory = ({ orders, loading }) => {
   const [orderId, setOrderId] = useState(null);
   const [reviewsMap, setReviewsMap] = useState({});
   const [reviewsLoading, setReviewsLoading] = useState({});
+  const [orderAddresses, setOrderAddresses] = useState({});
 
   const calculateDiscountPercentage = (originalPrice, discount) => {
     if (!originalPrice || originalPrice === 0) return 0;
@@ -62,6 +66,21 @@ const OrderHistory = ({ orders, loading }) => {
     await checkExistingReview(selectedProduct.id, orderId);
   };
 
+  // Fetch order addresses when an order is expanded
+  const fetchOrderAddresses = async (orderId) => {
+    if (orderAddresses[orderId]) return; // Already fetched
+    
+    try {
+      const response = await axios.get(`http://localhost:5000/api/order_address/${orderId}`);
+      setOrderAddresses(prev => ({
+        ...prev,
+        [orderId]: response.data
+      }));
+    } catch (error) {
+      console.error('Error fetching order addresses:', error);
+    }
+  };
+
   useEffect(() => {
     if (expandedOrder && orders) {
       const order = orders.find(o => o.order_id === expandedOrder);
@@ -69,9 +88,244 @@ const OrderHistory = ({ orders, loading }) => {
         order.items.forEach(item => {
           checkExistingReview(item.product_id, order.order_id);
         });
+        fetchOrderAddresses(order.order_id);
       }
     }
   }, [expandedOrder, orders]);
+
+  // Function to generate invoice PDF for a specific order
+  const generateInvoicePDF = (order) => {
+    const addresses = orderAddresses[order.order_id] || [];
+    const billingAddress = addresses.find(addr => addr.type === 'billing');
+    const shippingAddress = addresses.find(addr => addr.type === 'shipping');
+    const shipMethod = shippingAddress?.shipment_method || 'pickup';
+    
+    // Calculate shipping cost based on method
+    const shippingCost = shipMethod === 'standard shipping' ? 500 : 0;
+    
+    // Calculate subtotal (before discount)
+    const subtotal = order.items.reduce((sum, item) => sum + Number(item.price), 0);
+    
+    // Calculate total discount
+    const totalDiscount = order.items.reduce((sum, item) => sum + Number(item.discount || 0), 0);
+    
+    // Generate the PDF
+    const doc = new jsPDF();
+    
+    // Add company logo at the top
+    const imgWidth = 60;
+    const imgHeight = 50;
+    // Add logo if available, otherwise use text
+    try {
+      const logoData = logo;
+      doc.addImage(logoData, 'PNG', 10, -9, imgWidth, imgHeight);
+    } catch (error) {
+      console.error('Error adding logo:', error);
+      doc.setFontSize(20);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Prince Lanka', 15, 25);
+    }
+
+    // Company details with improved styling
+    doc.setFontSize(10);
+    doc.setTextColor(80, 80, 80); // Darker gray for better readability
+    doc.setFont('helvetica', 'normal');
+    doc.text('No 21,', 14, 26);
+    doc.text('Courtlodge, Kandapola', 14, 31);
+    doc.text('Nuwaraeliya, Sri Lanka', 14, 36);
+    doc.text('Tel: +94 77 567 0258', 14, 41);
+    doc.text('Email: princelankaagenciespvtltd@gmail.com', 14, 46);
+    
+    // Add invoice title and order number with improved styling
+    doc.setFontSize(22); // Larger font size for invoice title
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(46, 125, 50); // Green color to match table header
+    doc.text('INVOICE', 170, 13);
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(80, 80, 80);
+    doc.text(`Order #: ${order.order_id}`, 170, 18);
+    doc.text(`Date: ${new Date(order.created_at).toLocaleDateString()}`, 170, 23);
+    
+    // Add horizontal line
+    doc.setDrawColor(46, 125, 50); // Green line to match branding
+    doc.setLineWidth(0.7); // Slightly thicker line
+    doc.line(15, 50, 195, 50);
+    
+    // Customer details section with improved styling
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(46, 125, 50); // Green headers
+    doc.text('Billing Details:', 15, 60);
+    
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(60, 60, 60); // Dark gray for text
+    if (billingAddress) {
+      doc.setFont('helvetica', 'bold');
+      doc.text(billingAddress.fullname, 15, 70);
+      doc.setFont('helvetica', 'normal');
+      doc.text(billingAddress.street, 15, 75);
+      if (billingAddress.apartment) {
+        doc.text(billingAddress.apartment, 15, 80);
+        doc.text(`${billingAddress.city}, ${billingAddress.province} - ${billingAddress.postal_code}`, 15, 85);
+        doc.text(billingAddress.country, 15, 90);
+      } else {
+        doc.text(`${billingAddress.city}, ${billingAddress.province} - ${billingAddress.postal_code}`, 15, 80);
+        doc.text(billingAddress.country, 15, 85);
+      }
+    }
+    
+    // Shipping details section with improved styling
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(46, 125, 50); // Green headers
+    doc.text('Shipping Details:', 110, 60);
+    
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(60, 60, 60); // Dark gray for text
+    if (shipMethod === 'standard shipping' && shippingAddress) {
+      doc.setFont('helvetica', 'bold');
+      doc.text(shippingAddress.fullname, 110, 70);
+      doc.setFont('helvetica', 'normal');
+      doc.text(shippingAddress.street, 110, 75);
+      if (shippingAddress.apartment) {
+        doc.text(shippingAddress.apartment, 110, 80);
+        doc.text(`${shippingAddress.city}, ${shippingAddress.province} - ${shippingAddress.postal_code}`, 110, 85);
+        doc.text(shippingAddress.country, 110, 90);
+      } else {
+        doc.text(`${shippingAddress.city}, ${shippingAddress.province} - ${shippingAddress.postal_code}`, 110, 80);
+        doc.text(shippingAddress.country, 110, 85);
+      }
+      doc.setFont('helvetica', 'italic');
+      doc.text(`Shipping Method: Standard Shipping`, 110, 95);
+    } else {
+      doc.setFont('helvetica', 'bold');
+      doc.text('Pickup from store', 110, 70);
+      doc.setFont('helvetica', 'italic');
+      doc.text('Shipping Method: Pickup', 110, 75);
+    }
+    
+    // Add horizontal line before table
+    doc.setDrawColor(220, 220, 220);
+    doc.setLineWidth(0.5);
+    doc.line(15, 100, 195, 100);
+
+    // Order items table
+    const tableColumn = ['#', 'Product', 'Qty', 'Price', 'Discount', 'Final Price'];
+    const tableRows = [];
+
+    // Add items to table
+    order.items.forEach((item, index) => {
+      const itemData = [
+        (index + 1).toString(),
+        item.product_name || `Product ${item.product_id}`,
+        item.qty.toString(),
+        `Rs.${Number(item.price).toFixed(2)}`,
+        `Rs.${Number(item.discount || 0).toFixed(2)}`,
+        `Rs.${Number(item.final_price).toFixed(2)}`
+      ];
+      tableRows.push(itemData);
+    });
+
+    // Generate the table with improved styling
+    autoTable(doc, {
+      startY: 110,
+      head: [tableColumn],
+      body: tableRows,
+      headStyles: {
+        fillColor: [46, 125, 50],
+        textColor: 255,
+        fontSize: 11,
+        fontStyle: 'bold',
+        halign: 'center',
+        cellPadding: 3
+      },
+      bodyStyles: {
+        fontSize: 10,
+        halign: 'center',
+        cellPadding: 3
+      },
+      columnStyles: {
+        0: { cellWidth: 10 },
+        1: { cellWidth: 70, halign: 'left' },
+        2: { cellWidth: 15 },
+        3: { cellWidth: 30 },
+        4: { cellWidth: 30 },
+        5: { cellWidth: 30 }
+      },
+      alternateRowStyles: {
+        fillColor: [240, 248, 240]
+      },
+      margin: { left: 15, right: 15 }
+    });
+    
+    // Calculate the Y position for the summary section
+    const finalY = doc.lastAutoTable.finalY + 15;
+    
+    // Summary section with improved styling
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(80, 80, 80);
+    
+    // Add a subtle background for the summary section
+    doc.setFillColor(248, 248, 248);
+    doc.rect(130, finalY - 5, 65, 35, 'F');
+    
+    // Subtotal
+    doc.text('Subtotal:', 140, finalY);
+    doc.text(`Rs. ${subtotal.toFixed(2)}`, 195, finalY, { align: 'right' });
+    
+    // Discount
+    doc.setTextColor(220, 53, 69); // Red color for discount
+    doc.text('Discount:', 140, finalY + 7);
+    doc.text(`Rs. ${totalDiscount.toFixed(2)}`, 195, finalY + 7, { align: 'right' });
+    
+    // Shipping
+    doc.setTextColor(80, 80, 80);
+    doc.text('Shipping:', 140, finalY + 14);
+    doc.text(`Rs. ${shippingCost.toFixed(2)}`, 195, finalY + 14, { align: 'right' });
+    
+    // Total with improved styling
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(46, 125, 50); // Green for total
+    doc.setFontSize(12);
+    doc.text('Total:', 140, finalY + 24);
+    doc.text(`Rs. ${Number(order.total_price).toFixed(2)}`, 195, finalY + 24, { align: 'right' });
+    
+    // Add a thank you note with improved styling
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(11);
+    doc.setTextColor(46, 125, 50);
+    doc.text('Thank you for your business!', 105, finalY + 40, { align: 'center' });
+    
+    // Add decorative element
+    doc.setDrawColor(46, 125, 50);
+    doc.setLineWidth(0.5);
+    doc.line(65, finalY + 43, 145, finalY + 43);
+    
+    // Add shipping note if standard shipping is selected
+    if (shipMethod === 'standard shipping') {
+      doc.setFont('helvetica', 'italic');
+      doc.setFontSize(9);
+      doc.setTextColor(220, 53, 69); // Red color for the note
+      doc.text('Note: Shipping charges may increase based on the total weight of the products ordered and will be payable upon delivery.', 
+        105, finalY + 55, { align: 'center', maxWidth: 170 });
+    }
+    
+    // Add footer with improved styling
+    const pageHeight = doc.internal.pageSize.getHeight();
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(100, 100, 100);
+    doc.text('Prince Lanka Agencies- Premium Agricultural Products', 105, pageHeight - 15, { align: 'center' });
+    doc.text('© 2025 Prince Lanka Agencies Pvt(Ltd)', 105, pageHeight - 10, { align: 'center' });
+    
+    // Save the PDF with a filename including the order ID
+    doc.save(`Invoice_Order_${order.order_id}.pdf`);
+  };
 
   return (
     <div className="bg-white rounded-2xl shadow-sm p-8">
@@ -111,7 +365,16 @@ const OrderHistory = ({ orders, loading }) => {
               </div>
               {expandedOrder === order.order_id && (
                 <div className="p-4 border-t">
-                  <h4 className="font-medium mb-4">Order Items</h4>
+                  <div className="flex justify-between items-center mb-4">
+                    <h4 className="font-medium">Order Items</h4>
+                    <button
+                      onClick={() => generateInvoicePDF(order)}
+                      className="flex items-center gap-1 px-3 py-1 bg-green-500 text-white rounded-lg hover:bg-green-600 transition text-sm"
+                    >
+                      <FileText className="h-4 w-4" />
+                      View Bill
+                    </button>
+                  </div>
                   <div className="space-y-4">
                     {order.items.map((item) => {
                       const reviewKey = `${order.order_id}-${item.product_id}`;

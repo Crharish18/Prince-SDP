@@ -40,8 +40,8 @@ function Admin() {
     dob: '',
     nationalId: '',
     address: '',
-    password: '',
-    status: ''
+    password: ''
+    // Removed status from validation errors
   });
   
   const [searchText, setSearchText] = useState("");
@@ -91,19 +91,47 @@ function Admin() {
   { label: "Last Name", name: "last_name", type: "text" },
   { label: "Email", name: "email", type: "email" },
   { label: "Phone Number", name: "phonenum", type: "text" },
-  { label: "Role", name: "role", type: "text" },
   { label: "Date of Birth", name: "dob", type: "date" },
   { label: "National ID", name: "natID", type: "text" },
   { label: "Address", name: "address", type: "text" },
   { label: "Status", name: "status", type: "select", options: ["Active", "Disable"] }
 ];
 
-
   const handleAddAdminClick = () => {
     setShowModal(true);
   };
 
   const handleCloseModal = () => {
+    // Reset the form data when modal is closed
+    setNewAdmin({
+      username: '',
+      firstName: '',
+      lastName: '',
+      email: '',
+      phoneNum: '',
+      role: 'admin', // Keep the hardcoded role
+      dob: '',
+      nationalId: '',
+      address: '',
+      password: '',
+      status: 'Active' // Keep the default status
+    });
+    
+    // Reset validation errors
+    setValidationErrors({
+      username: '',
+      firstName: '',
+      lastName: '',
+      email: '',
+      phoneNum: '',
+      role: '',
+      dob: '',
+      nationalId: '',
+      address: '',
+      password: ''
+    });
+    
+    // Close the modal
     setShowModal(false);
   };
 
@@ -120,45 +148,66 @@ function Admin() {
 
   const handleSaveNewAdmin = () => {
     let errors = {};
+    
+    // Username validation: more than 4 characters and no symbols
     if (!newAdmin.username || newAdmin.username.length < 4) {
       errors.username = "Username must be at least 4 characters long.";
+    } else if (!/^[a-zA-Z0-9]+$/.test(newAdmin.username)) {
+      errors.username = "Username can only contain letters and numbers, no symbols.";
     }
-    if (!newAdmin.firstName || !/^[A-Za-z]+$/.test(newAdmin.firstName)) {
-      errors.firstName = "First name is required and should contain only letters.";
+    
+    // First name validation: only letters and more than 4 letters
+    if (!newAdmin.firstName || newAdmin.firstName.length < 4) {
+      errors.firstName = "First name must be at least 4 characters long.";
+    } else if (!/^[A-Za-z]+$/.test(newAdmin.firstName)) {
+      errors.firstName = "First name should contain only letters.";
     }
-    if (!newAdmin.lastName || !/^[A-Za-z]+$/.test(newAdmin.lastName)) {
-      errors.lastName = "Last name is required and should contain only letters.";
+    
+    // Last name validation: only letters and more than 4 letters
+    if (!newAdmin.lastName || newAdmin.lastName.length < 4) {
+      errors.lastName = "Last name must be at least 4 characters long.";
+    } else if (!/^[A-Za-z]+$/.test(newAdmin.lastName)) {
+      errors.lastName = "Last name should contain only letters.";
     }
+    
+    // Email validation: valid email format
     if (!newAdmin.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newAdmin.email)) {
       errors.email = "Invalid email address.";
     }
-    if (!newAdmin.phoneNum || !/^\d{10,15}$/.test(newAdmin.phoneNum)) {
-      errors.phoneNum = "Phone number must be between 10 and 15 digits.";
+    
+    // Phone number validation: exactly 10 digits
+    if (!newAdmin.phoneNum || !/^\d{10}$/.test(newAdmin.phoneNum)) {
+      errors.phoneNum = "Phone number must be exactly 10 digits.";
     }
-    // Role validation removed since it's hardcoded
+    
+    // Date of Birth validation
     if (!newAdmin.dob) {
       errors.dob = "Date of Birth is required.";
     }
-    if (!newAdmin.nationalId || newAdmin.nationalId.length < 6) {
-      errors.nationalId = "National ID must be at least 6 characters long.";
+    
+    // National ID validation: between 10 to 12 digits
+    if (!newAdmin.nationalId || !/^\d{10,12}$/.test(newAdmin.nationalId)) {
+      errors.nationalId = "National ID must be between 10 to 12 digits.";
     }
+    
+    // Address validation: more than 5 characters
     if (!newAdmin.address || newAdmin.address.length < 5) {
       errors.address = "Address must be at least 5 characters long.";
     }
-    if (!newAdmin.password || newAdmin.password.length < 6) {
-      errors.password = "Password must be at least 6 characters long.";
+    
+    // Password validation: more than 8 characters
+    if (!newAdmin.password || newAdmin.password.length < 8) {
+      errors.password = "Password must be at least 8 characters long.";
     }
-    if (!newAdmin.status) {
-      errors.status = "Status is required.";
-    }
-  
+    
     setValidationErrors(errors);
 
     if (Object.keys(errors).length === 0) {
-      // Ensure role is set to "admin" before saving
+      // Ensure role and status are set correctly before saving
       const adminData = {
         ...newAdmin,
-        role: 'admin'
+        role: 'admin',
+        status: 'Active'
       };
       
       axios
@@ -166,6 +215,21 @@ function Admin() {
         .then((response) => {
           setAdmins([...admins, response.data]);
           setShowModal(false);
+          
+          // Reset form after successful save
+          setNewAdmin({
+            username: '',
+            firstName: '',
+            lastName: '',
+            email: '',
+            phoneNum: '',
+            role: 'admin',
+            dob: '',
+            nationalId: '',
+            address: '',
+            password: '',
+            status: 'Active'
+          });
         })
         .catch((error) => {
           console.error("Error adding admin:", error);
@@ -209,18 +273,79 @@ function Admin() {
   };
   
   const handleSaveEditAdmin = () => {
-    const { password, created_at, updated_at, ...adminData } = editedAdmin;
-    axios
-      .put(`http://localhost:5000/api/admin/${editedAdmin.userid}`, adminData)
-      .then((response) => {
-        setAdmins((prevAdmins) =>
-          prevAdmins.map((admin) => (admin.userid === editedAdmin.userid ? editedAdmin : admin))
-        );
-        setShowEditModal(false);
-      })
-      .catch((error) => {
-        console.error("Error updating admin:", error.response ? error.response.data : error);
-      });
+    // Validate the edited admin data
+    let isValid = true;
+    
+    // Username validation: more than 4 characters and no symbols
+    if (!editedAdmin.username || editedAdmin.username.length < 4 || !/^[a-zA-Z0-9]+$/.test(editedAdmin.username)) {
+      isValid = false;
+      alert("Username must be at least 4 characters long and contain only letters and numbers.");
+      return;
+    }
+    
+    // First name validation: only letters and more than 4 letters
+    if (!editedAdmin.first_name || editedAdmin.first_name.length < 4 || !/^[A-Za-z]+$/.test(editedAdmin.first_name)) {
+      isValid = false;
+      alert("First name must be at least 4 characters long and contain only letters.");
+      return;
+    }
+    
+    // Last name validation: only letters and more than 4 letters
+    if (!editedAdmin.last_name || editedAdmin.last_name.length < 4 || !/^[A-Za-z]+$/.test(editedAdmin.last_name)) {
+      isValid = false;
+      alert("Last name must be at least 4 characters long and contain only letters.");
+      return;
+    }
+    
+    // Email validation: valid email format
+    if (!editedAdmin.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editedAdmin.email)) {
+      isValid = false;
+      alert("Invalid email address.");
+      return;
+    }
+    
+    // Phone number validation: exactly 10 digits
+    if (!editedAdmin.phonenum || !/^\d{10}$/.test(editedAdmin.phonenum)) {
+      isValid = false;
+      alert("Phone number must be exactly 10 digits.");
+      return;
+    }
+    
+    // Date of Birth validation
+    if (!editedAdmin.dob) {
+      isValid = false;
+      alert("Date of Birth is required.");
+      return;
+    }
+    
+    // National ID validation: between 10 to 12 digits
+    if (!editedAdmin.natID || !/^\d{10,12}$/.test(editedAdmin.natID)) {
+      isValid = false;
+      alert("National ID must be between 10 to 12 digits.");
+      return;
+    }
+    
+    // Address validation: more than 5 characters
+    if (!editedAdmin.address || editedAdmin.address.length < 5) {
+      isValid = false;
+      alert("Address must be at least 5 characters long.");
+      return;
+    }
+    
+    if (isValid) {
+      const { password, created_at, updated_at, ...adminData } = editedAdmin;
+      axios
+        .put(`http://localhost:5000/api/admin/${editedAdmin.userid}`, adminData)
+        .then((response) => {
+          setAdmins((prevAdmins) =>
+            prevAdmins.map((admin) => (admin.userid === editedAdmin.userid ? editedAdmin : admin))
+          );
+          setShowEditModal(false);
+        })
+        .catch((error) => {
+          console.error("Error updating admin:", error.response ? error.response.data : error);
+        });
+    }
   };
 
   const handleEditInputChange = (e) => {
@@ -361,8 +486,8 @@ function Admin() {
             { label: "Date of Birth", name: "dob", type: "date" },
             { label: "National ID", name: "nationalId", type: "text" },
             { label: "Address", name: "address", type: "text" },
-            { label: "Password", name: "password", type: "password" },
-            { label: "Status", name: "status", type: "select", options: ["Active", "Disable"] }
+            { label: "Password", name: "password", type: "password" }
+            // Status field removed from the form since it's hardcoded
           ]}
           handleInputChange={handleInputChange}
           validationErrors={validationErrors}
@@ -393,7 +518,7 @@ function Admin() {
           entityData={editedAdmin}
           entityTitle="Admin"
           entityFields={adminFields}
-          handleClose={() => setShowEditModal(false)}
+          handleClose={handleCloseEditModal}
           handleSaveEditEntity={handleSaveEditAdmin}
           handleEditInputChange={handleEditInputChange}
         />

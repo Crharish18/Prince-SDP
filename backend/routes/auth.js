@@ -19,7 +19,8 @@ const {
   getCustomerAddresses,
   addCustomerAddress,
   updateCustomerAddress,
-  customerUploadProfilePicture
+  customerUploadProfilePicture,
+  customerChangePassword
 } = require('../controllers/CustomerAuthController');
 
 const router = express.Router();
@@ -47,6 +48,7 @@ router.post('/upload-profile-picture', upload.single('profileImage'), uploadProf
 // Customer profile routes
 router.get('/customer-profile', getCustomerProfile);
 router.put('/customer-profile', updateCustomerProfile);
+router.post('/customer-change-password', customerChangePassword);
 
 // Customer profile picture upload route
 router.post('/customer-upload-profile-picture', upload.single('profileImage'), customerUploadProfilePicture);

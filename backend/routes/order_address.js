@@ -16,6 +16,21 @@ router.get('/', (req, res) => {
     });
 });
 
+// Get addresses for a specific order - THIS IS THE MISSING ENDPOINT
+router.get('/:order_id', (req, res) => {
+    const { order_id } = req.params;
+    
+    const query = 'SELECT * FROM order_address WHERE order_id = ?';
+    
+    connection.query(query, [order_id], (err, results) => {
+        if (err) {
+            console.error('Error fetching order addresses:', err);
+            return res.status(500).json({ error: 'Error fetching order addresses' });
+        }
+        res.json(results);
+    });
+});
+
 // Add a new order address
 router.post('/', (req, res) => {
     const { order_id, fullname, street, apartment, city, province, postal_code, country, shipment_method, type } = req.body;

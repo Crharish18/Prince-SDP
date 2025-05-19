@@ -22,6 +22,7 @@ const Profile = () => {
 
   const [formData, setFormData] = useState({});
   const [originalFormData, setOriginalFormData] = useState({});
+  const [validationErrors, setValidationErrors] = useState({});
 
   // Initialize form data when userData is loaded
   useEffect(() => {
@@ -46,11 +47,83 @@ const Profile = () => {
     }
   }, [userData]);
 
+  const validateField = (name, value) => {
+    let error = '';
+    
+    switch (name) {
+      case 'first_name':
+      case 'last_name':
+        if (!value || value.trim().length < 3) {
+          error = `${name === 'first_name' ? 'First' : 'Last'} name must be at least 3 characters long.`;
+        } else if (!/^[a-zA-Z\s]+$/.test(value)) {
+          error = `${name === 'first_name' ? 'First' : 'Last'} name can only contain letters and spaces.`;
+        }
+        break;
+      
+      case 'email':
+        if (!value) {
+          error = 'Email is required.';
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+          error = 'Please enter a valid email address.';
+        }
+        break;
+      
+      case 'phonenum':
+        if (!value) {
+          error = 'Phone number is required.';
+        } else if (!/^\d{10}$/.test(value)) {
+          error = 'Phone number must be exactly 10 digits.';
+        }
+        break;
+      
+      case 'address':
+        if (!value || value.trim().length < 5) {
+          error = 'Address must be at least 5 characters long.';
+        }
+        break;
+      
+      case 'natID':
+        if (!value) {
+          error = 'National ID is required.';
+        } else if (value.length < 10 || value.length > 12) {
+          error = 'National ID must be between 10 to 12 characters long.';
+        } else if (!/^[a-zA-Z0-9]+$/.test(value)) {
+          error = 'National ID should not contain symbols.';
+        }
+        break;
+      
+      case 'dob':
+        if (!value) {
+          error = 'Date of Birth is required.';
+        } else {
+          const selectedDate = new Date(value);
+          const today = new Date();
+          
+          if (selectedDate >= today) {
+            error = 'Date of Birth must be in the past.';
+          }
+        }
+        break;
+      
+      default:
+        break;
+    }
+    
+    return error;
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({
       ...formData,
       [name]: value
+    });
+    
+    // Validate the field
+    const error = validateField(name, value);
+    setValidationErrors({
+      ...validationErrors,
+      [name]: error
     });
   };
 
@@ -76,6 +149,8 @@ const Profile = () => {
 
   const handleEditClick = () => {
     setIsEditing(true);
+    // Clear validation errors when starting to edit
+    setValidationErrors({});
   };
 
   const handleCancelEdit = () => {
@@ -86,6 +161,8 @@ const Profile = () => {
       setProfilePhoto(userData.profile_picture_path);
     }
     setIsEditing(false);
+    // Clear validation errors
+    setValidationErrors({});
   };
 
   const handleChangePasswordClick = () => {
@@ -132,7 +209,6 @@ const Profile = () => {
           }
         }
       );
-
       setProfilePhoto(response.data.secure_url);
       // Add the profile picture URL to the form data
       setFormData(prev => ({
@@ -159,8 +235,29 @@ const Profile = () => {
     return `${date.getDate().toString().padStart(2, '0')}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getFullYear()}`;
   };
   
+  const validateForm = () => {
+    const errors = {};
+    
+    // Validate all fields
+    Object.keys(formData).forEach(field => {
+      const error = validateField(field, formData[field]);
+      if (error) {
+        errors[field] = error;
+      }
+    });
+    
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+  
   const handleSaveProfile = () => {
     if (!isEditing) return;
+    
+    // Validate all fields before saving
+    if (!validateForm()) {
+      alert('Please fix the validation errors before saving.');
+      return;
+    }
     
     const token = localStorage.getItem('token');
     
@@ -343,74 +440,109 @@ const Profile = () => {
                 <div style={{ flex: '1 1 calc(50% - 10px)' }}>
                   <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold' }}>First Name</label>
                   <input
-                    className="editable-field"
+                    className={`editable-field ${validationErrors.first_name ? 'error-input' : ''}`}
                     type="text"
                     name="first_name"
                     value={formData.first_name}
                     onChange={handleInputChange}
                   />
+                  {validationErrors.first_name && (
+                    <div className="error-message" style={{ color: 'red', fontSize: '12px' }}>
+                      {validationErrors.first_name}
+                    </div>
+                  )}
                 </div>
                 <div style={{ flex: '1 1 calc(50% - 10px)' }}>
                   <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold' }}>Last Name</label>
                   <input
-                    className="editable-field"
+                    className={`editable-field ${validationErrors.last_name ? 'error-input' : ''}`}
                     type="text"
                     name="last_name"
                     value={formData.last_name}
                     onChange={handleInputChange}
                   />
+                  {validationErrors.last_name && (
+                    <div className="error-message" style={{ color: 'red', fontSize: '12px' }}>
+                      {validationErrors.last_name}
+                    </div>
+                  )}
                 </div>
-
                 <div style={{ flex: '1 1 calc(50% - 10px)' }}>
                   <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold' }}>Email</label>
                   <input
-                    className="editable-field"
+                    className={`editable-field ${validationErrors.email ? 'error-input' : ''}`}
                     type="email"
                     name="email"
                     value={formData.email}
                     onChange={handleInputChange}
                   />
+                  {validationErrors.email && (
+                    <div className="error-message" style={{ color: 'red', fontSize: '12px' }}>
+                      {validationErrors.email}
+                    </div>
+                  )}
                 </div>
                 <div style={{ flex: '1 1 calc(50% - 10px)' }}>
                   <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold' }}>Phone Number</label>
                   <input
-                    className="editable-field"
+                    className={`editable-field ${validationErrors.phonenum ? 'error-input' : ''}`}
                     type="tel"
                     name="phonenum"
                     value={formData.phonenum}
                     onChange={handleInputChange}
                   />
+                  {validationErrors.phonenum && (
+                    <div className="error-message" style={{ color: 'red', fontSize: '12px' }}>
+                      {validationErrors.phonenum}
+                    </div>
+                  )}
                 </div>
 
                 <div style={{ flex: '1 1 calc(50% - 10px)' }}>
                   <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold' }}>Address</label>
                   <input
-                    className="editable-field"
+                    className={`editable-field ${validationErrors.address ? 'error-input' : ''}`}
                     type="text"
                     name="address"
                     value={formData.address}
                     onChange={handleInputChange}
                   />
+                  {validationErrors.address && (
+                    <div className="error-message" style={{ color: 'red', fontSize: '12px' }}>
+                      {validationErrors.address}
+                    </div>
+                  )}
                 </div>
                 <div style={{ flex: '1 1 calc(50% - 10px)' }}>
                   <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold' }}>National ID</label>
                   <input
-                    className="editable-field"
+                    className={`editable-field ${validationErrors.natID ? 'error-input' : ''}`}
                     type="text"
                     name="natID"
                     value={formData.natID}
                     onChange={handleInputChange}
                   />
+                  {validationErrors.natID && (
+                    <div className="error-message" style={{ color: 'red', fontSize: '12px' }}>
+                      {validationErrors.natID}
+                    </div>
+                  )}
                 </div>
                 <div style={{ flex: '1 1 calc(50% - 10px)' }}>
                   <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold' }}>Date of Birth</label>
                   <input
-                    className="editable-field"
+                    className={`editable-field ${validationErrors.dob ? 'error-input' : ''}`}
                     type="date"
                     name="dob"
                     value={formData.dob}
                     onChange={handleInputChange}
+                    max={new Date().toISOString().split('T')[0]}
                   />
+                  {validationErrors.dob && (
+                    <div className="error-message" style={{ color: 'red', fontSize: '12px' }}>
+                      {validationErrors.dob}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

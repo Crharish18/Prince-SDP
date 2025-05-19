@@ -13,14 +13,26 @@ const AddEntityModal = ({
 }) => {
   const [imagePreview, setImagePreview] = useState(null);
   
+  // Track if the modal was previously open
+  const [wasOpen, setWasOpen] = useState(false);
+  
   useEffect(() => {
+    // If modal is closing (was open but now closed)
+    if (wasOpen && !showModal) {
+      // Reset form data by calling handleClose
+      handleClose();
+    }
+    
+    // Update wasOpen state
+    setWasOpen(showModal);
+    
     // Update image preview when entityData changes (for existing products)
     if (entityData && entityData.image_url) {
       setImagePreview(entityData.image_url);
     } else {
       setImagePreview(null);
     }
-  }, [entityData]);
+  }, [entityData, showModal, wasOpen, handleClose]);
   
   if (!showModal) return null;
   
@@ -36,6 +48,14 @@ const AddEntityModal = ({
         onChange(e);
       }
     }
+  };
+  
+  // Modified close handler to reset form data
+  const handleModalClose = () => {
+    // Clear image preview
+    setImagePreview(null);
+    // Call the original close handler
+    handleClose();
   };
   
   return (
@@ -80,7 +100,9 @@ const AddEntityModal = ({
                   >
                     <option value="">Select {field.label}</option>
                     {field.options && field.options.map(opt => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      <option key={typeof opt === 'object' ? opt.value : opt} value={typeof opt === 'object' ? opt.value : opt}>
+                        {typeof opt === 'object' ? opt.label : opt}
+                      </option>
                     ))}
                   </select>
                 ) : (
@@ -106,7 +128,7 @@ const AddEntityModal = ({
             <button
               type="button"
               className="btn btn-secondary"
-              onClick={handleClose}
+              onClick={handleModalClose}
               style={{
                 marginLeft: "0px",
                 width: "140px",

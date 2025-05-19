@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FaCalendarAlt, FaFilePdf, FaChartBar, FaSpinner } from "react-icons/fa";
+import { FaCalendarAlt } from "react-icons/fa";
 import Sidebar from "../../components/Sidebar";
 import Header from "../../components/Header";
 import styles from './Reports.module.css';
@@ -20,15 +20,31 @@ function Reports() {
   });
   const [isComparing, setIsComparing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [previewData, setPreviewData] = useState(null);
   const [error, setError] = useState("");
   const [currentDate, setCurrentDate] = useState("");
   
-  // Report content filters
-  const [reportFilters, setReportFilters] = useState({
+  // Report content filters for Sales Report
+  const [salesReportFilters, setSalesReportFilters] = useState({
     includeSummary: true,
     includeProducts: true,
     includeCategories: true,
+    includeCharts: true
+  });
+  
+  // Report content filters for Customer Report
+  const [customerReportFilters, setCustomerReportFilters] = useState({
+    includeSummary: true,
+    includeNewCustomers: true,
+    includeTopCustomers: true,
+    includeCharts: true
+  });
+  
+  // Report content filters for Inventory Report
+  const [inventoryReportFilters, setInventoryReportFilters] = useState({
+    includeSummary: true,
+    includeLowestStock: true,
+    includeTopSelling: true,
+    includeExpiring: true,
     includeCharts: true
   });
 
@@ -41,7 +57,6 @@ function Reports() {
 
   const handleReportTypeChange = (e) => {
     setReportType(e.target.value);
-    setPreviewData(null);
   };
 
   const handleDateChange = (range, field, value) => {
@@ -60,15 +75,27 @@ function Reports() {
 
   const toggleComparison = () => {
     setIsComparing(!isComparing);
-    setPreviewData(null);
   };
 
-  const handleFilterChange = (filter) => {
-    setReportFilters(prev => ({
+  const handleSalesFilterChange = (filter) => {
+    setSalesReportFilters(prev => ({
       ...prev,
       [filter]: !prev[filter]
     }));
-    setPreviewData(null);
+  };
+  
+  const handleCustomerFilterChange = (filter) => {
+    setCustomerReportFilters(prev => ({
+      ...prev,
+      [filter]: !prev[filter]
+    }));
+  };
+  
+  const handleInventoryFilterChange = (filter) => {
+    setInventoryReportFilters(prev => ({
+      ...prev,
+      [filter]: !prev[filter]
+    }));
   };
 
   const validateInputs = () => {
@@ -106,12 +133,10 @@ function Reports() {
             isComparing={isComparing}
             isLoading={isLoading}
             setIsLoading={setIsLoading}
-            previewData={previewData}
-            setPreviewData={setPreviewData}
             error={error}
             setError={setError}
             validateInputs={validateInputs}
-            reportFilters={reportFilters}
+            reportFilters={salesReportFilters}
           />
         );
       case "Customer Report":
@@ -122,11 +147,10 @@ function Reports() {
             isComparing={isComparing}
             isLoading={isLoading}
             setIsLoading={setIsLoading}
-            previewData={previewData}
-            setPreviewData={setPreviewData}
             error={error}
             setError={setError}
             validateInputs={validateInputs}
+            reportFilters={customerReportFilters}
           />
         );
       case "Inventory Report":
@@ -135,11 +159,10 @@ function Reports() {
             currentDate={currentDate}
             isLoading={isLoading}
             setIsLoading={setIsLoading}
-            previewData={previewData}
-            setPreviewData={setPreviewData}
             error={error}
             setError={setError}
             validateInputs={validateInputs}
+            reportFilters={inventoryReportFilters}
           />
         );
       case "Transaction Report":
@@ -156,8 +179,10 @@ function Reports() {
   // Determine if date range selection should be shown
   const showDateRangeSelection = reportType !== "Inventory Report";
   
-  // Determine if content filters should be shown
-  const showContentFilters = reportType === "Sales Report";
+  // Determine if content filters should be shown and which ones
+  const showSalesContentFilters = reportType === "Sales Report";
+  const showCustomerContentFilters = reportType === "Customer Report";
+  const showInventoryContentFilters = reportType === "Inventory Report";
 
   return (
     <div className={styles.ReportsContainer}>
@@ -208,7 +233,6 @@ function Reports() {
                   <div className={styles.DateField}>
                     <label>Start Date</label>
                     <div className={styles.DateInputWrapper}>
-                      
                       <input
                         type="date"
                         className="form-control"
@@ -220,7 +244,6 @@ function Reports() {
                   <div className={styles.DateField}>
                     <label>End Date</label>
                     <div className={styles.DateInputWrapper}>
-                     
                       <input
                         type="date"
                         className="form-control"
@@ -285,8 +308,8 @@ function Reports() {
             </div>
           )}
           
-          {/* Report Content Filters */}
-          {showContentFilters && (
+          {/* Sales Report Content Filters */}
+          {showSalesContentFilters && (
             <div className={styles.DateRangeSection}>
               <div className={styles.DateRangeContainer}>
                 <h3>Report Content</h3>
@@ -296,8 +319,8 @@ function Reports() {
                     <label>
                       <input
                         type="checkbox"
-                        checked={reportFilters.includeSummary}
-                        onChange={() => handleFilterChange('includeSummary')}
+                        checked={salesReportFilters.includeSummary}
+                        onChange={() => handleSalesFilterChange('includeSummary')}
                         className={styles.FilterCheckbox}
                       />
                       <span>Sales Summary</span>
@@ -307,8 +330,8 @@ function Reports() {
                     <label>
                       <input
                         type="checkbox"
-                        checked={reportFilters.includeProducts}
-                        onChange={() => handleFilterChange('includeProducts')}
+                        checked={salesReportFilters.includeProducts}
+                        onChange={() => handleSalesFilterChange('includeProducts')}
                         className={styles.FilterCheckbox}
                       />
                       <span>Top Products</span>
@@ -318,8 +341,8 @@ function Reports() {
                     <label>
                       <input
                         type="checkbox"
-                        checked={reportFilters.includeCategories}
-                        onChange={() => handleFilterChange('includeCategories')}
+                        checked={salesReportFilters.includeCategories}
+                        onChange={() => handleSalesFilterChange('includeCategories')}
                         className={styles.FilterCheckbox}
                       />
                       <span>Categories</span>
@@ -329,8 +352,131 @@ function Reports() {
                     <label>
                       <input
                         type="checkbox"
-                        checked={reportFilters.includeCharts}
-                        onChange={() => handleFilterChange('includeCharts')}
+                        checked={salesReportFilters.includeCharts}
+                        onChange={() => handleSalesFilterChange('includeCharts')}
+                        className={styles.FilterCheckbox}
+                      />
+                      <span>Charts & Graphs</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Customer Report Content Filters */}
+          {showCustomerContentFilters && (
+            <div className={styles.DateRangeSection}>
+              <div className={styles.DateRangeContainer}>
+                <h3>Report Content</h3>
+                <p className="text-muted mb-3">Select the sections to include in your report</p>
+                <div className={styles.FilterOptions}>
+                  <div className={styles.FilterOption}>
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={customerReportFilters.includeSummary}
+                        onChange={() => handleCustomerFilterChange('includeSummary')}
+                        className={styles.FilterCheckbox}
+                      />
+                      <span>Customer Summary</span>
+                    </label>
+                  </div>
+                  <div className={styles.FilterOption}>
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={customerReportFilters.includeNewCustomers}
+                        onChange={() => handleCustomerFilterChange('includeNewCustomers')}
+                        className={styles.FilterCheckbox}
+                      />
+                      <span>New Customers</span>
+                    </label>
+                  </div>
+                  <div className={styles.FilterOption}>
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={customerReportFilters.includeTopCustomers}
+                        onChange={() => handleCustomerFilterChange('includeTopCustomers')}
+                        className={styles.FilterCheckbox}
+                      />
+                      <span>Top Customers</span>
+                    </label>
+                  </div>
+                  <div className={styles.FilterOption}>
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={customerReportFilters.includeCharts}
+                        onChange={() => handleCustomerFilterChange('includeCharts')}
+                        className={styles.FilterCheckbox}
+                      />
+                      <span>Charts & Graphs</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Inventory Report Content Filters */}
+          {showInventoryContentFilters && (
+            <div className={styles.DateRangeSection}>
+              <div className={styles.DateRangeContainer}>
+                <h3>Report Content</h3>
+                <p className="text-muted mb-3">Select the sections to include in your report</p>
+                <div className={styles.FilterOptions}>
+                  <div className={styles.FilterOption}>
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={inventoryReportFilters.includeSummary}
+                        onChange={() => handleInventoryFilterChange('includeSummary')}
+                        className={styles.FilterCheckbox}
+                      />
+                      <span>Inventory Summary</span>
+                    </label>
+                  </div>
+                  <div className={styles.FilterOption}>
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={inventoryReportFilters.includeLowestStock}
+                        onChange={() => handleInventoryFilterChange('includeLowestStock')}
+                        className={styles.FilterCheckbox}
+                      />
+                      <span>Lowest Stock Products</span>
+                    </label>
+                  </div>
+                  <div className={styles.FilterOption}>
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={inventoryReportFilters.includeTopSelling}
+                        onChange={() => handleInventoryFilterChange('includeTopSelling')}
+                        className={styles.FilterCheckbox}
+                      />
+                      <span>Top Selling Products</span>
+                    </label>
+                  </div>
+                  <div className={styles.FilterOption}>
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={inventoryReportFilters.includeExpiring}
+                        onChange={() => handleInventoryFilterChange('includeExpiring')}
+                        className={styles.FilterCheckbox}
+                      />
+                      <span>Expiring Products</span>
+                    </label>
+                  </div>
+                  <div className={styles.FilterOption}>
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={inventoryReportFilters.includeCharts}
+                        onChange={() => handleInventoryFilterChange('includeCharts')}
                         className={styles.FilterCheckbox}
                       />
                       <span>Charts & Graphs</span>

@@ -21,6 +21,11 @@ const customerLogin = (req, res) => {
     }
 
     const customer = result[0];
+    
+    // Check if customer status is active
+    if (customer.status !== 'active') {
+      return res.status(403).json({ message: 'Your account is deleted/disabled. Register again.' });
+    }
 
     bcrypt.compare(password, customer.password, (err, isMatch) => {
       if (err) {
@@ -441,7 +446,7 @@ const addCustomerAddress = (req, res) => {
     }
     
     const query = `
-      INSERT INTO address 
+      INSERT INTO address
       (customer_id, fullname, street, apartment, city, province, postal_code, country, type) 
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
@@ -534,6 +539,82 @@ const updateCustomerAddress = (req, res) => {
   }
 };
 
+// Change customer password
+const customerChangePassword = async (req, res) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  
+  if (!token) {
+    return res.status(401).json({ message: 'No token provided' });
+  }
+  
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const customerId = decoded.id;
+    
+    const { currentPassword, newPassword, confirmPassword } = req.body;
+    
+    // Check if all required fields are provided
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      return res.status(400).json({ message: 'All password fields are required' });
+    }
+    
+    // Check if new password and confirm password match
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({ message: 'New password and confirm password do not match' });
+    }
+    
+    // Get the customer from the database
+    db.query('SELECT * FROM customer WHERE customer_id = ?', [customerId], (err, result) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+      
+      if (result.length === 0) {
+        return res.status(404).json({ message: 'Customer not found' });
+      }
+      
+      const customer = result[0];
+      
+      // Verify the current password
+      bcrypt.compare(currentPassword, customer.password, async (err, isMatch) => {
+        if (err) {
+          return res.status(500).json({ error: 'Error comparing password' });
+        }
+        
+        if (!isMatch) {
+          return res.status(400).json({ message: 'Current password is incorrect' });
+        }
+        
+        // Hash the new password
+        try {
+          const salt = await bcrypt.genSalt(10);
+          const hashedPassword = await bcrypt.hash(newPassword, salt);
+          
+          // Update the password in the database
+          db.query(
+            'UPDATE customer SET password = ? WHERE customer_id = ?',
+            [hashedPassword, customerId],
+            (err, updateResult) => {
+              if (err) {
+                return res.status(500).json({ error: err.message });
+              }
+              
+              res.json({ message: 'Password updated successfully' });
+            }
+          );
+        } catch (err) {
+          return res.status(500).json({ error: 'Error hashing password' });
+        }
+      });
+    });
+  } catch (err) {
+    return res.status(401).json({ message: 'Invalid token' });
+  }
+};
+
+
+
+
 module.exports = { 
   customerLogin, 
   getCustomerProfile, 
@@ -545,5 +626,7 @@ module.exports = {
   getCustomerAddresses,
   addCustomerAddress,
   updateCustomerAddress,
-  customerUploadProfilePicture
+  customerUploadProfilePicture,
+  customerChangePassword
 };
+

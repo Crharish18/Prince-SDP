@@ -1,5 +1,4 @@
 .login-container {
-  
   display: flex;
   align-items: center;  /* Vertically center */
   justify-content: center;  /* Horizontally center */
@@ -47,7 +46,7 @@
 }
 
 .input-group {
-  margin-bottom: 2.3rem;
+  margin-bottom: 0.8rem;
   text-align: left;
 }
 
@@ -102,4 +101,24 @@
 
 .signup-text a:hover {
   color: #1547e6;
+}
+
+/* New styles for validation */
+.validation-error {
+  color: #ff6b6b;
+  font-size: 0.8rem;
+  text-align: left;
+  margin-top: 0.2rem;
+  margin-bottom: 1rem;
+}
+
+.error-input {
+  border: 1px solid #ff6b6b !important;
+  background-color: rgba(255, 107, 107, 0.05);
+}
+
+.error-message {
+  color: #ff6b6b;
+  margin-top: 1rem;
+  font-size: 0.9rem;
 }

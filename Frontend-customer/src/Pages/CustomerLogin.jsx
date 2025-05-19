@@ -1,17 +1,72 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Sprout, Lock, Mail } from 'lucide-react';
+import { Sprout, Lock, Mail, AlertCircle } from 'lucide-react';
+
 import axios from 'axios';
 
 function CustomerLogin() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
+  const [errors, setErrors] = useState({ email: '', password: '' });
+const [touched, setTouched] = useState({ email: false, password: false });
+
   const navigate = useNavigate(); // Initialize the navigate function to redirect
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-  
+  // Validate email format
+const validateEmail = (email) => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
+
+
+// Update validation on input change
+useEffect(() => {
+  if (touched.email) {
+    if (!email) {
+      setErrors(prev => ({ ...prev, email: 'Email is required' }));
+    } else if (!validateEmail(email)) {
+      setErrors(prev => ({ ...prev, email: 'Please enter a valid email address' }));
+    } else {
+      setErrors(prev => ({ ...prev, email: '' }));
+    }
+  }
+
+  if (touched.password) {
+    if (!password) {
+      setErrors(prev => ({ ...prev, password: 'Password is required' }));
+    
+    } else {
+      setErrors(prev => ({ ...prev, password: '' }));
+    }
+  }
+}, [email, password, touched]);
+
+
+const handleBlur = (field) => {
+  setTouched(prev => ({ ...prev, [field]: true }));
+};
+
+
+    const handleSubmit = async (e) => {
+      e.preventDefault();
+      
+      // Mark all fields as touched to show validation errors
+      setTouched({ email: true, password: true });
+      
+      // Validate all fields before submission
+      const emailError = !email ? 'Email is required' : !validateEmail(email) ? 'Please enter a valid email address' : '';
+      const passwordError = !password ? 'Password is required'  : '';
+      
+      setErrors({ email: emailError, password: passwordError });
+      
+      // If there are validation errors, don't submit
+      if (emailError || passwordError) {
+        return;
+      }
+
+
     try {
       // Send email, password to backend for authentication
       const response = await axios.post('http://localhost:5000/api/auth/Customerlogin', { 
@@ -32,7 +87,12 @@ function CustomerLogin() {
   
     } catch (err) {
       console.error('Error during login:', err);
-      setMessage('Invalid email or password');
+      // Check for specific error messages from the server
+      if (err.response && err.response.data && err.response.data.message) {
+        setMessage(err.response.data.message);
+      } else {
+        setMessage('Invalid email or password');
+      }
     }
   };
   
@@ -78,16 +138,24 @@ function CustomerLogin() {
                       <Mail className="h-5 w-5 text-gray-400" />
                     </div>
                     <input
-                      id="email"
-                      name="email"
-                      type="email"
-                      autoComplete="email"
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="appearance-none relative block w-full px-12 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
-                      placeholder="Enter your email"
-                    />
+                          id="email"
+                          name="email"
+                          type="email"
+                          autoComplete="email"
+                          required
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          onBlur={() => handleBlur('email')}
+                          className={`appearance-none relative block w-full px-12 py-3 border ${errors.email ? 'border-red-500' : 'border-gray-300'} placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm`}
+                          placeholder="Enter your email"
+                        />
+                        {errors.email && touched.email && (
+                          <div className="flex items-center mt-1 text-red-500 text-xs">
+                            <AlertCircle className="h-3 w-3 mr-1" />
+                            {errors.email}
+                          </div>
+                        )}
+
                   </div>
                 </div>
 
@@ -99,17 +167,25 @@ function CustomerLogin() {
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <Lock className="h-5 w-5 text-gray-400" />
                     </div>
-                    <input
-                      id="password"
-                      name="password"
-                      type="password"
-                      autoComplete="current-password"
-                      required
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="appearance-none relative block w-full px-12 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
-                      placeholder="Enter your password"
-                    />
+                          <input
+                                id="password"
+                                name="password"
+                                type="password"
+                                autoComplete="current-password"
+                                required
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                onBlur={() => handleBlur('password')}
+                                className={`appearance-none relative block w-full px-12 py-3 border ${errors.password ? 'border-red-500' : 'border-gray-300'} placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm`}
+                                placeholder="Enter your password"
+                              />
+                              {errors.password && touched.password && (
+                                <div className="flex items-center mt-1 text-red-500 text-xs">
+                                  <AlertCircle className="h-3 w-3 mr-1" />
+                                  {errors.password}
+                                </div>
+                              )}
+
                   </div>
                 </div>
               </div>

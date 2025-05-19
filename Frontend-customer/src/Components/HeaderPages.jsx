@@ -14,6 +14,18 @@ const HeaderPages = () => {
   const [userData, setUserData] = useState(null);
   const navigate = useNavigate();
 
+  // Adding the scroll effect functionality from Header.jsx
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 0);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -78,10 +90,6 @@ const HeaderPages = () => {
                 <Link
                   to="/products"
                   className="text-gray-600 hover:text-green-500"
-                  onClick={e => {
-                    e.preventDefault();
-                    setProductsDropdownOpen(open => !open);
-                  }}
                 >
                   Products
                 </Link>

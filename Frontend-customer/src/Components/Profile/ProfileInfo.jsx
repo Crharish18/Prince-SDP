@@ -158,6 +158,7 @@ const ProfileInfo = ({ customerData, loading }) => {
     country: '',
     type: ''
   });
+  const [passwordLoading, setPasswordLoading] = useState(false);
 
   // Update form data when customer data is loaded
   useEffect(() => {
@@ -223,6 +224,13 @@ const ProfileInfo = ({ customerData, loading }) => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    
+    // Clear error messages when user starts typing in password fields
+    if (['currentPassword', 'newPassword', 'confirmPassword'].includes(name) && updateStatus === 'error') {
+      setUpdateStatus('');
+      setUpdateMessage('');
+    }
+    
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -277,10 +285,87 @@ const ProfileInfo = ({ customerData, loading }) => {
     }
   };
 
-  const handlePasswordChange = (e) => {
+  const handlePasswordChange = async (e) => {
     e.preventDefault();
-    // Handle password change logic here
-    setShowPasswordChange(false);
+    
+    // Validate password inputs
+    if (!formData.currentPassword) {
+      setUpdateStatus('error');
+      setUpdateMessage('Current password is required');
+      return;
+    }
+    
+    if (!formData.newPassword) {
+      setUpdateStatus('error');
+      setUpdateMessage('New password is required');
+      return;
+    }
+    
+    if (formData.newPassword !== formData.confirmPassword) {
+      setUpdateStatus('error');
+      setUpdateMessage('New passwords do not match');
+      return;
+    }
+    
+    try {
+      setPasswordLoading(true);
+      const token = localStorage.getItem('customerToken');
+      
+      if (!token) {
+        setUpdateStatus('error');
+        setUpdateMessage('Authentication required');
+        setPasswordLoading(false);
+        return;
+      }
+      
+      // Call the API to change password
+      const response = await axios.post(
+        'http://localhost:5000/api/auth/customer-change-password',
+        {
+          currentPassword: formData.currentPassword,
+          newPassword: formData.newPassword,
+          confirmPassword: formData.confirmPassword
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+      
+      // Reset password fields
+      setFormData(prev => ({
+        ...prev,
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      }));
+      
+      setUpdateStatus('success');
+      setUpdateMessage('Password updated successfully');
+      setShowPasswordChange(false);
+      setPasswordLoading(false);
+      
+      // Clear message after 3 seconds
+      setTimeout(() => {
+        setUpdateMessage('');
+        setUpdateStatus('');
+      }, 3000);
+      
+    } catch (error) {
+      console.error('Error updating password:', error);
+      setPasswordLoading(false);
+      setUpdateStatus('error');
+      
+      // Extract the error message from the response
+      if (error.response && error.response.data) {
+        // Use the server's error message if available
+        setUpdateMessage(error.response.data.message || 'Error updating password');
+      } else {
+        // Fallback to a generic error message
+        setUpdateMessage('Error updating password. Please try again.');
+      }
+    }
   };
 
   // Address handling functions
@@ -603,12 +688,19 @@ const ProfileInfo = ({ customerData, loading }) => {
                 onClick={() => setShowPasswordChange(!showPasswordChange)}
                 className="bg-gray-100 text-gray-700 px-6 py-2 rounded-xl hover:bg-gray-200 transition"
               >
-                Change Password
+                {showPasswordChange ? 'Cancel' : 'Change Password'}
               </button>
             </div>
 
             {showPasswordChange && (
               <form onSubmit={handlePasswordChange} className="max-w-md space-y-6">
+                {/* Display error message in the password form */}
+                {updateStatus === 'error' && updateMessage && (
+                  <div className="p-4 mb-4 bg-red-100 border-l-4 border-red-500 text-red-700 rounded-lg">
+                    <p>{updateMessage}</p>
+                  </div>
+                )}
+                
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
                   <input
@@ -642,8 +734,16 @@ const ProfileInfo = ({ customerData, loading }) => {
                 <button
                   type="submit"
                   className="w-full bg-green-500 text-white py-3 rounded-xl hover:bg-green-600 transition font-medium"
+                  disabled={passwordLoading}
                 >
-                  Update Password
+                  {passwordLoading ? (
+                    <div className="flex items-center justify-center">
+                      <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                      Updating...
+                    </div>
+                  ) : (
+                    'Update Password'
+                  )}
                 </button>
               </form>
             )}

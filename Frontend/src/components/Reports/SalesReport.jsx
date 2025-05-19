@@ -1,46 +1,17 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState } from "react";
 import axios from "axios";
-import { FaFilePdf, FaChartBar, FaSpinner, FaEye } from "react-icons/fa";
+import { FaFilePdf, FaSpinner, FaEye } from "react-icons/fa";
 import styles from '../../pages/admin/Reports.module.css';
 import Chart from 'chart.js/auto';
 import { jsPDF } from "jspdf";
 import autoTable from 'jspdf-autotable';
 import companyLogo from '../../assets/logoBlack.png'; // Update this path to your actual logo
 
-function SalesReport({ dateRange1, dateRange2, isComparing, isLoading, setIsLoading, previewData, setPreviewData, error, setError, validateInputs, reportFilters }) {
-  const [charts, setCharts] = useState({ sales: null, primaryPie: null, comparisonPie: null });
-  const chartRefs = { sales: useRef(null), primaryPie: useRef(null), comparisonPie: useRef(null) };
+function SalesReport({ dateRange1, dateRange2, isComparing, isLoading, setIsLoading, error, setError, validateInputs, reportFilters }) {
   const [generatingPdf, setGeneratingPdf] = useState(false);
   
   // Helper function to format currency in Sri Lankan Rupees
   const formatCurrency = amount => `Rs ${Number(amount || 0).toFixed(2)}`;
-  
-  // Clean up charts when component unmounts
-  useEffect(() => {
-    return () => Object.values(charts).forEach(chart => chart && chart.destroy());
-  }, [charts]);
-
-  // Preview report data
-  const previewReport = async () => {
-    if (!validateInputs()) return;
-    setIsLoading(true);
-    setError("");
-    
-    try {
-      const response = await axios.post("http://localhost:5000/api/reports/getData", {
-        reportType: "Sales Report",
-        primaryRange: dateRange1,
-        comparisonRange: isComparing ? dateRange2 : null,
-        filters: reportFilters
-      });
-      setPreviewData(response.data);
-    } catch (err) {
-      setError(err.response?.data?.message || "Failed to generate preview");
-      console.error("Preview error:", err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   // Create chart images for PDF
   const createChartImage = (config, width, height) => {
@@ -213,6 +184,79 @@ function SalesReport({ dateRange1, dateRange2, isComparing, isLoading, setIsLoad
         });
         
         finalY = doc.lastAutoTable.finalY + 15;
+        
+        // Add primary pie chart for top products if charts are selected
+        if (reportFilters.includeCharts && data.topProducts.length > 0) {
+          // Create primary pie chart config
+          const primaryPieConfig = {
+            type: 'pie',
+            data: {
+              labels: data.topProducts.map(p => p.name || 'Unknown'),
+              datasets: [{
+                data: data.topProducts.map(p => Number(p.quantity || 0)),
+                backgroundColor: [
+                  'rgba(39, 112, 180, 0.8)', 'rgba(54, 162, 235, 0.8)', 
+                  'rgba(75, 192, 192, 0.8)', 'rgba(153, 102, 255, 0.8)', 
+                  'rgba(255, 159, 64, 0.8)'
+                ],
+                borderColor: 'white',
+                borderWidth: 1
+              }]
+            },
+            options: {
+              responsive: false,
+              plugins: {
+                legend: { position: 'right', labels: { boxWidth: 12, font: { size: 10 } } },
+                title: { display: true, text: 'Primary Period - Top Products by Quantity', font: { size: 12 } }
+              },
+              animation: false
+            }
+          };
+          
+          // Add primary pie chart to PDF
+          const primaryPieImage = await createChartImage(primaryPieConfig, 400, 300);
+          
+          if (isComparing && data.comparisonTopProducts?.length > 0) {
+            // If comparing, add primary pie chart on left side
+            doc.addImage(primaryPieImage, 'PNG', 10, finalY, 90, 70);
+            
+            // Create comparison pie chart config
+            const comparisonPieConfig = {
+              type: 'pie',
+              data: {
+                labels: data.comparisonTopProducts.map(p => p.name || 'Unknown'),
+                datasets: [{
+                  data: data.comparisonTopProducts.map(p => Number(p.quantity || 0)),
+                  backgroundColor: [
+                    'rgba(255, 99, 132, 0.8)', 'rgba(255, 159, 64, 0.8)', 
+                    'rgba(255, 205, 86, 0.8)', 'rgba(75, 192, 192, 0.8)', 
+                    'rgba(54, 162, 235, 0.8)'
+                  ],
+                  borderColor: 'white',
+                  borderWidth: 1
+                }]
+              },
+              options: {
+                responsive: false,
+                plugins: {
+                  legend: { position: 'right', labels: { boxWidth: 12, font: { size: 10 } } },
+                  title: { display: true, text: 'Comparison Period - Top Products by Quantity', font: { size: 12 } }
+                },
+                animation: false
+              }
+            };
+            
+            // Add comparison pie chart to PDF on right side
+            const comparisonPieImage = await createChartImage(comparisonPieConfig, 400, 300);
+            doc.addImage(comparisonPieImage, 'PNG', 105, finalY, 90, 70);
+            
+            finalY += 75;
+          } else {
+            // If not comparing, add primary pie chart centered
+            doc.addImage(primaryPieImage, 'PNG', 50, finalY, 110, 85);
+            finalY += 90;
+          }
+        }
       }
       
       // Check space for categories
@@ -309,140 +353,6 @@ function SalesReport({ dateRange1, dateRange2, isComparing, isLoading, setIsLoad
     }
   };
 
-  // Render charts when preview data changes
-  useEffect(() => {
-    if (!previewData) return;
-    
-    // Clean up existing charts
-    Object.values(charts).forEach(chart => chart && chart.destroy());
-    
-    const newCharts = {};
-    
-    // Only render charts if they're selected in filters
-    if (reportFilters.includeCharts) {
-      // Render sales chart
-      if (previewData.salesSummary) {
-        const ctx = document.getElementById('salesChart');
-        if (ctx) {
-          const primaryRevenue = Number(previewData.salesSummary.totalRevenue);
-          const comparisonRevenue = isComparing && previewData.comparisonSummary 
-            ? Number(previewData.comparisonSummary.totalRevenue) : 0;
-          
-          newCharts.sales = new Chart(ctx, {
-            type: 'bar',
-            data: {
-              labels: isComparing ? ['Primary Period', 'Comparison Period'] : ['Total Revenue'],
-              datasets: [{
-                label: 'Total Revenue',
-                data: isComparing ? [primaryRevenue, comparisonRevenue] : [primaryRevenue],
-                backgroundColor: isComparing 
-                  ? ['rgba(39, 112, 180, 0.7)', 'rgba(255, 99, 132, 0.7)']
-                  : ['rgba(39, 112, 180, 0.7)'],
-                borderColor: isComparing 
-                  ? ['rgb(39, 112, 180)', 'rgb(255, 99, 132)']
-                  : ['rgb(39, 112, 180)'],
-                borderWidth: 1
-              }]
-            },
-            options: {
-              responsive: true,
-              plugins: {
-                legend: { display: false },
-                title: { display: true, text: 'Total Revenue Comparison' }
-              },
-              scales: {
-                y: { beginAtZero: true, title: { display: true, text: 'Revenue (Rs)' } }
-              }
-            }
-          });
-          chartRefs.sales.current = ctx;
-        }
-      }
-      
-      // Render primary pie chart
-      if (previewData.topProducts?.length > 0) {
-        const ctx = document.getElementById('primaryProductsChart');
-        if (ctx) {
-          const productsData = previewData.topProducts.map(p => ({
-            name: p.name || 'Unknown',
-            quantity: Number(p.quantity || 0)
-          }));
-          
-          if (productsData.every(p => p.quantity === 0)) {
-            productsData.forEach((p, i) => { p.quantity = 10 + i * 5; });
-          }
-          
-          newCharts.primaryPie = new Chart(ctx, {
-            type: 'pie',
-            data: {
-              labels: productsData.map(p => p.name),
-              datasets: [{
-                data: productsData.map(p => p.quantity),
-                backgroundColor: [
-                  'rgba(39, 112, 180, 0.8)', 'rgba(54, 162, 235, 0.8)', 
-                  'rgba(75, 192, 192, 0.8)', 'rgba(153, 102, 255, 0.8)', 
-                  'rgba(255, 159, 64, 0.8)'
-                ],
-                borderColor: 'white',
-                borderWidth: 1
-              }]
-            },
-            options: {
-              responsive: true,
-              plugins: {
-                legend: { position: 'right' },
-                title: { display: true, text: 'Primary Period - Top Products by Quantity', align: 'start' }
-              }
-            }
-          });
-          chartRefs.primaryPie.current = ctx;
-        }
-      }
-      
-      // Render comparison pie chart
-      if (previewData.comparisonTopProducts?.length > 0) {
-        const ctx = document.getElementById('comparisonProductsChart');
-        if (ctx) {
-          const productsData = previewData.comparisonTopProducts.map(p => ({
-            name: p.name || 'Unknown',
-            quantity: Number(p.quantity || 0)
-          }));
-          
-          if (productsData.every(p => p.quantity === 0)) {
-            productsData.forEach((p, i) => { p.quantity = 10 + i * 5; });
-          }
-          
-          newCharts.comparisonPie = new Chart(ctx, {
-            type: 'pie',
-            data: {
-              labels: productsData.map(p => p.name),
-              datasets: [{
-                data: productsData.map(p => p.quantity),
-                backgroundColor: [
-                  'rgba(255, 99, 132, 0.8)', 'rgba(255, 159, 64, 0.8)', 
-                  'rgba(255, 205, 86, 0.8)', 'rgba(75, 192, 192, 0.8)', 
-                  'rgba(54, 162, 235, 0.8)'
-                ],
-                borderColor: 'white',
-                borderWidth: 1
-              }]
-            },
-            options: {
-              responsive: true,
-              plugins: {
-                legend: { position: 'right' },
-                title: { display: true, text: 'Comparison Period - Top Products by Quantity', align: 'start' }
-              }
-            }
-          });
-          chartRefs.comparisonPie.current = ctx;
-        }
-      }
-    }
-    
-    setCharts(newCharts);
-  }, [previewData, isComparing, reportFilters]);
-
   return (
     <>
       <div className={styles.GenerateSection}>
@@ -454,169 +364,14 @@ function SalesReport({ dateRange1, dateRange2, isComparing, isLoading, setIsLoad
           {generatingPdf ? <FaSpinner className={styles.Spinner} /> : <FaEye className={styles.ButtonIcon} />} 
           Preview PDF
         </button>
-        <button className="btn btn-secondary" onClick={previewReport} disabled={isLoading || generatingPdf}>
-          {isLoading ? <FaSpinner className={styles.Spinner} /> : <FaChartBar className={styles.ButtonIcon} />} 
-          Preview Data
-        </button>
       </div>
-
-      <div className={styles.ReportPreviewContainer}>
-        <div className={styles.PreviewHeader}>
-          <h3>Report Preview</h3>
-          <p>Select report parameters and click Preview to see data</p>
+      
+      {(isLoading || generatingPdf) && (
+        <div className={styles.LoadingContainer}>
+          <FaSpinner className={styles.LoadingSpinner} />
+          <p>{generatingPdf ? "Generating PDF preview..." : "Processing report data..."}</p>
         </div>
-        
-        {isLoading || generatingPdf ? (
-          <div className={styles.LoadingContainer}>
-            <FaSpinner className={styles.LoadingSpinner} />
-            <p>{generatingPdf ? "Generating PDF preview..." : "Generating report preview..."}</p>
-          </div>
-        ) : previewData ? (
-          <div className={styles.PreviewContent}>
-            <div className={styles.ReportInfo}>
-              <h4>Sales Report</h4>
-              <p>Primary Period: {dateRange1.startDate} to {dateRange1.endDate}</p>
-              {isComparing && <p>Comparison Period: {dateRange2.startDate} to {dateRange2.endDate}</p>}
-            </div>
-            
-            {/* Sales Summary - Conditionally rendered based on filter */}
-            {reportFilters.includeSummary && previewData.salesSummary && (
-              <div className={styles.SummarySection}>
-                <h5>Sales Summary</h5>
-                <div className={styles.SummaryGrid}>
-                  <div className={styles.SummaryCard}>
-                    <h6>Total Revenue</h6>
-                    <p className={styles.SummaryValue}>{formatCurrency(previewData.salesSummary.totalRevenue)}</p>
-                    {previewData.comparisonSummary && (
-                      <p className={styles.ComparisonValue}>
-                        {previewData.salesSummary.revenueChange > 0 ? '↑' : '↓'} 
-                        {Math.abs(previewData.salesSummary.revenueChange).toFixed(2)}%
-                      </p>
-                    )}
-                  </div>
-                  <div className={styles.SummaryCard}>
-                    <h6>Total Orders</h6>
-                    <p className={styles.SummaryValue}>{previewData.salesSummary.totalOrders}</p>
-                    {previewData.comparisonSummary && (
-                      <p className={styles.ComparisonValue}>
-                        {previewData.salesSummary.ordersChange > 0 ? '↑' : '↓'} 
-                        {Math.abs(previewData.salesSummary.ordersChange).toFixed(2)}%
-                      </p>
-                    )}
-                  </div>
-                  <div className={styles.SummaryCard}>
-                    <h6>Avg. Order Value</h6>
-                    <p className={styles.SummaryValue}>{formatCurrency(previewData.salesSummary.avgOrderValue)}</p>
-                    {previewData.comparisonSummary && (
-                      <p className={styles.ComparisonValue}>
-                        {previewData.salesSummary.avgOrderChange > 0 ? '↑' : '↓'} 
-                        {Math.abs(previewData.salesSummary.avgOrderChange).toFixed(2)}%
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            {/* Charts - Conditionally rendered based on filter */}
-            {reportFilters.includeCharts && previewData.salesSummary && (
-              <div className={styles.ChartSection}>
-                <h5>Sales Comparison</h5>
-                <div className={styles.ChartContainer}>
-                  <canvas id="salesChart" width="400" height="200"></canvas>
-                </div>
-              </div>
-            )}
-            
-            {/* Top Products - Conditionally rendered based on filter */}
-            {reportFilters.includeProducts && previewData.topProducts?.length > 0 && (
-              <div className={styles.ProductsSection}>
-                <h5>Top Selling Products</h5>
-                <div className={styles.ProductsContainer}>
-                  <div className={styles.ProductsColumn}>
-                    <h6>Primary Period</h6>
-                    <div className={styles.TopItemsTable}>
-                      <table className="table table-striped">
-                        <thead>
-                          <tr><th>Product</th><th>Quantity</th><th>Revenue</th></tr>
-                        </thead>
-                        <tbody>
-                          {previewData.topProducts.map((product, index) => (
-                            <tr key={index}>
-                              <td>{product.name}</td>
-                              <td>{product.quantity}</td>
-                              <td>{formatCurrency(product.revenue)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                    {reportFilters.includeCharts && (
-                      <div className={styles.PieChartContainer}>
-                        <canvas id="primaryProductsChart" width="300" height="200"></canvas>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {previewData.comparisonTopProducts?.length > 0 && (
-                    <div className={styles.ProductsColumn}>
-                      <h6>Comparison Period</h6>
-                      <div className={styles.TopItemsTable}>
-                        <table className="table table-striped">
-                          <thead>
-                            <tr><th>Product</th><th>Quantity</th><th>Revenue</th></tr>
-                          </thead>
-                          <tbody>
-                            {previewData.comparisonTopProducts.map((product, index) => (
-                              <tr key={index}>
-                                <td>{product.name}</td>
-                                <td>{product.quantity}</td>
-                                <td>{formatCurrency(product.revenue)}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                      {reportFilters.includeCharts && (
-                        <div className={styles.PieChartContainer}>
-                          <canvas id="comparisonProductsChart" width="300" height="200"></canvas>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-            
-            {/* Categories - Conditionally rendered based on filter */}
-            {reportFilters.includeCategories && previewData.topCategories?.length > 0 && (
-              <div className={styles.TopItemsSection}>
-                <h5>Top Selling Categories</h5>
-                <div className={styles.TopItemsTable}>
-                  <table className="table table-striped">
-                    <thead>
-                      <tr><th>Category</th><th>Products Sold</th><th>Revenue</th></tr>
-                    </thead>
-                    <tbody>
-                      {previewData.topCategories.map((category, index) => (
-                        <tr key={index}>
-                          <td>{category.name}</td>
-                          <td>{category.quantity}</td>
-                          <td>{formatCurrency(category.revenue)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className={styles.EmptyPreview}>
-            <p>No report data to display. Click Preview to generate report data.</p>
-          </div>
-        )}
-      </div>
+      )}
     </>
   );
 }

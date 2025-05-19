@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { FaEye, FaTrash } from "react-icons/fa";
+import { FaEye, FaTrash, FaSortUp, FaSortDown } from "react-icons/fa";
 import Sidebar from "../../components/Sidebar";
 import Header from "../../components/Header";
 import styles from './Activity_log.module.css';
@@ -18,6 +18,8 @@ function ActivityLog() {
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedLog, setSelectedLog] = useState(null);
   const [showPrintModal, setShowPrintModal] = useState(false);
+  // Add date sort state
+  const [dateSort, setDateSort] = useState(null); // null, 'asc', or 'desc'
 
   useEffect(() => {
     axios.get('http://localhost:5000/api/activitylog')
@@ -60,11 +62,41 @@ function ActivityLog() {
     setSearchText(e.target.value);
   };
 
-  const filteredLogs = logs.filter((log) => {
-    if (!searchText || !searchColumn) return true;
-    const value = log[searchColumn]?.toString().toLowerCase();
-    return value && value.includes(searchText.toLowerCase());
-  });
+  // Handle date sort change
+  const handleDateSortChange = (sortDirection) => {
+    setDateSort(sortDirection);
+  };
+
+  const filteredAndSortedLogs = React.useMemo(() => {
+    // First filter the logs
+    let filtered = logs.filter((log) => {
+      if (!searchText || !searchColumn) return true;
+      const value = log[searchColumn]?.toString().toLowerCase();
+      return value && value.includes(searchText.toLowerCase());
+    });
+    
+    // Then sort by date if sorting is active
+    if (dateSort) {
+      filtered = [...filtered].sort((a, b) => {
+        const dateA = a.timestamp ? new Date(a.timestamp) : null;
+        const dateB = b.timestamp ? new Date(b.timestamp) : null;
+        
+        // Handle null values
+        if (!dateA && !dateB) return 0;
+        if (!dateA) return 1; // null values at the end
+        if (!dateB) return -1;
+        
+        // Sort based on direction
+        if (dateSort === 'asc') {
+          return dateA - dateB; // Oldest first
+        } else {
+          return dateB - dateA; // Newest first
+        }
+      });
+    }
+    
+    return filtered;
+  }, [logs, searchText, searchColumn, dateSort]);
 
   const handleViewLog = (log) => {
     setSelectedLog(log);
@@ -124,6 +156,33 @@ function ActivityLog() {
                 <button className="btn btn-secondary" style={{ width: '150px', marginLeft:"10px" }} onClick={handleDownloadPDF}>Print</button>
               </div>
             </div>
+
+            {/* Date sort controls */}
+            <div className={styles.DateSortContainer}>
+              <span className={styles.SortLabel}>Sort by Date:</span>
+              <div className={styles.SortButtonGroup}>
+                <button 
+                  className={`${styles.SortButton} ${dateSort === 'asc' ? styles.active : styles.inactive}`}
+                  onClick={() => handleDateSortChange('asc')}
+                >
+                  Oldest First <FaSortUp className={styles.SortIcon} />
+                </button>
+                <button 
+                  className={`${styles.SortButton} ${dateSort === 'desc' ? styles.active : styles.inactive}`}
+                  onClick={() => handleDateSortChange('desc')}
+                >
+                  Newest First <FaSortDown className={styles.SortIcon} />
+                </button>
+                {dateSort && (
+                  <button 
+                    className={`${styles.SortButton} ${styles.clear}`}
+                    onClick={() => handleDateSortChange(null)}
+                  >
+                    Clear Sort
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
 
           <div className={styles.TableContainer}>
@@ -133,13 +192,17 @@ function ActivityLog() {
                   <th>Log ID</th>
                   <th>User ID</th>
                   <th>Action</th>
-                  <th>Timestamp</th>
+                  <th className={styles.SortableHeader}>
+                    Date
+                    {dateSort === 'asc' && <FaSortUp className={styles.SortIcon} />}
+                    {dateSort === 'desc' && <FaSortDown className={styles.SortIcon} />}
+                  </th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredLogs.length > 0 ? (
-                  filteredLogs.map((log) => (
+                {filteredAndSortedLogs.length > 0 ? (
+                  filteredAndSortedLogs.map((log) => (
                     <tr key={log.log_id}>
                       <td>{log.log_id}</td>
                       <td>{log.user_id}</td>
@@ -184,7 +247,7 @@ function ActivityLog() {
           show={showPrintModal}
           handleClose={() => setShowPrintModal(false)}
           title="Print Activity Logs Report"
-          data={filteredLogs}
+          data={filteredAndSortedLogs}
           fields={[
             { label: "Log ID", field: "log_id" },
             { label: "User ID", field: "user_id" },

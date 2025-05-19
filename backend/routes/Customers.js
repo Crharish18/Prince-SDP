@@ -17,9 +17,23 @@ const transporter = nodemailer.createTransport({
     }
 });
 
+// Helper function to format ISO date string to MySQL date format
+const formatDateForMySQL = (dateString) => {
+    if (!dateString) return null;
+    try {
+        // Parse the ISO string to a Date object
+        const date = new Date(dateString);
+        // Format to MySQL date format (YYYY-MM-DD)
+        return date.toISOString().split('T')[0];
+    } catch (error) {
+        console.error('Error formatting date:', error);
+        return null;
+    }
+};
+
 // ✅ GET: Fetch all customers
 router.get('/', (req, res) => {
-    const query = 'SELECT customer_id, first_name, last_name, phone_num, address, national_id, dob, created_at, updated_at FROM customer';
+    const query = 'SELECT customer_id, first_name, last_name, phone_num, address, national_id, dob, created_at, updated_at, status FROM customer';
 
     connection.query(query, (err, results) => {
         if (err) {
@@ -32,7 +46,7 @@ router.get('/', (req, res) => {
 });
 
 router.post('/', async (req, res) => {
-    const { first_name, last_name, phone_num, address, national_id, password, dob, email } = req.body;
+    const { first_name, last_name, phone_num, address, national_id, password, dob, email, status } = req.body;
 
     if (!first_name || !last_name || !phone_num || !national_id || !password || !dob || !email) {
         return res.status(400).json({ error: 'All fields (first name, last name, phone number, national ID, password, dob, and email) are required' });
@@ -41,11 +55,17 @@ router.post('/', async (req, res) => {
     try {
         // Hash the password before storing it
         const hashedPassword = await bcrypt.hash(password, 10);
+        
+        // Format the date for MySQL
+        const formattedDob = formatDateForMySQL(dob);
+        if (!formattedDob) {
+            return res.status(400).json({ error: 'Invalid date format for date of birth' });
+        }
 
-        const query = `INSERT INTO customer (first_name, last_name, phone_num, address, national_id, password, dob, email, created_at, updated_at) 
-                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`;
-
-        connection.query(query, [first_name, last_name, phone_num, address, national_id, hashedPassword, dob, email], (err, results) => {
+        const query = `INSERT INTO customer (first_name, last_name, phone_num, address, national_id, password, dob, email, status, created_at, updated_at) 
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`;
+        
+        connection.query(query, [first_name, last_name, phone_num, address, national_id, hashedPassword, formattedDob, email, status || 'active'], (err, results) => {
             if (err) {
                 console.error('Error adding customer:', err);
                 res.status(500).send('Error adding customer');
@@ -57,10 +77,11 @@ router.post('/', async (req, res) => {
                     phone_num, 
                     address, 
                     national_id, 
-                    dob,
-                    email,  // Include email in the response
-                    created_at: new Date(), // Return the timestamp
-                    updated_at: new Date() // Return the timestamp
+                    dob: formattedDob,
+                    email,
+                    status: status || 'active',
+                    created_at: new Date(),
+                    updated_at: new Date()
                 });
             }
         });
@@ -73,23 +94,29 @@ router.post('/', async (req, res) => {
 // ✅ PUT: Update a customer and set updated_at timestamp
 router.put('/:customer_id', async (req, res) => {
     const { customer_id } = req.params;
-    const { first_name, last_name, phone_num, address, national_id, password, dob } = req.body;
+    const { first_name, last_name, phone_num, address, national_id, password, dob, status } = req.body;
 
     if (!first_name || !last_name || !phone_num || !national_id || !dob) {
         return res.status(400).json({ error: 'First name, last name, phone number, national ID, and DOB are required fields' });
     }
 
     try {
+        // Format the date for MySQL
+        const formattedDob = formatDateForMySQL(dob);
+        if (!formattedDob) {
+            return res.status(400).json({ error: 'Invalid date format for date of birth' });
+        }
+
         let query;
         let queryParams;
 
         if (password) {
             const hashedPassword = await bcrypt.hash(password, 10);
-            query = `UPDATE customer SET first_name=?, last_name=?, phone_num=?, address=?, national_id=?, password=?, dob=?, updated_at=NOW() WHERE customer_id=?`;
-            queryParams = [first_name, last_name, phone_num, address, national_id, hashedPassword, dob, customer_id];
+            query = `UPDATE customer SET first_name=?, last_name=?, phone_num=?, address=?, national_id=?, password=?, dob=?, status=?, updated_at=NOW() WHERE customer_id=?`;
+            queryParams = [first_name, last_name, phone_num, address, national_id, hashedPassword, formattedDob, status || 'active', customer_id];
         } else {
-            query = `UPDATE customer SET first_name=?, last_name=?, phone_num=?, address=?, national_id=?, dob=?, updated_at=NOW() WHERE customer_id=?`;
-            queryParams = [first_name, last_name, phone_num, address, national_id, dob, customer_id];
+            query = `UPDATE customer SET first_name=?, last_name=?, phone_num=?, address=?, national_id=?, dob=?, status=?, updated_at=NOW() WHERE customer_id=?`;
+            queryParams = [first_name, last_name, phone_num, address, national_id, formattedDob, status || 'active', customer_id];
         }
 
         connection.query(query, queryParams, (err, results) => {
@@ -100,31 +127,36 @@ router.put('/:customer_id', async (req, res) => {
                 if (results.affectedRows === 0) {
                     res.status(404).json({ error: 'Customer not found' });
                 } else {
-                    res.status(200).json({ message: 'Customer updated successfully', updated_at: new Date() });
+                    res.status(200).json({ 
+                        message: 'Customer updated successfully', 
+                        updated_at: new Date(),
+                        status: status || 'active'
+                    });
                 }
             }
         });
     } catch (err) {
-        console.error('Error hashing password:', err);
+        console.error('Error in customer update:', err);
         res.status(500).send('Error updating customer');
     }
 });
 
-// ✅ DELETE: Remove a customer
+// ✅ DELETE: Update customer status to 'disable' instead of deleting
 router.delete('/:customer_id', (req, res) => {
     const { customer_id } = req.params;
 
-    const query = 'DELETE FROM customer WHERE customer_id = ?';
+    // Instead of deleting, update status to 'disable'
+    const query = 'UPDATE customer SET status = ?, updated_at = NOW() WHERE customer_id = ?';
 
-    connection.query(query, [customer_id], (err, results) => {
+    connection.query(query, ['disable', customer_id], (err, results) => {
         if (err) {
-            console.error('Error deleting customer:', err);
-            res.status(500).send('Error deleting customer');
+            console.error('Error disabling customer:', err);
+            res.status(500).send('Error disabling customer');
         } else {
             if (results.affectedRows === 0) {
                 res.status(404).json({ error: 'Customer not found' });
             } else {
-                res.status(200).json({ message: 'Customer deleted successfully' });
+                res.status(200).json({ message: 'Customer disabled successfully' });
             }
         }
     });

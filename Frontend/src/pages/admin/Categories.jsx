@@ -22,10 +22,13 @@ function Categories() {
 
   const [searchText, setSearchText] = useState("");
   const [searchColumn, setSearchColumn] = useState("");
-  const [showViewModal, setShowViewModal] = useState(false); 
+  const [showViewModal, setShowViewModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null); 
   const [showEditModal, setShowEditModal] = useState(false); 
   const [editedCategory, setEditedCategory] = useState({});
+  const [editValidationErrors, setEditValidationErrors] = useState({
+    category_name: '',
+  });
 
   // Fetch data from the backend
   useEffect(() => {
@@ -63,6 +66,12 @@ function Categories() {
   // Handle closing the modal
   const handleCloseModal = () => {
     setShowModal(false);
+    setNewCategory({
+      categoryName: '',
+    });
+    setValidationErrors({
+      categoryName: '',
+    });
   };
 
   // Handle category input change
@@ -74,26 +83,36 @@ function Categories() {
     });
   };
 
-  // Save the new category
-  const handleSaveNewCategory = () => {
-    let errors = {};
-    if (!newCategory.categoryName || newCategory.categoryName.length < 3) {
-      errors.categoryName = "Category name must be at least 3 characters long.";
-    }
+ const handleSaveNewCategory = () => {
+  let errors = {};
+  if (!newCategory.categoryName || newCategory.categoryName.length < 3) {
+    errors.categoryName = "Category name must be at least 3 characters long.";
+  } else if (!/^[a-zA-Z0-9 ]+$/.test(newCategory.categoryName)) {
+    errors.categoryName = "Category name can only contain letters, numbers, and spaces.";
+  }
 
-    setValidationErrors(errors);
+  setValidationErrors(errors);
 
-    if (Object.keys(errors).length === 0) {
-      axios.post("http://localhost:5000/api/categories", newCategory)
-        .then(response => {
-          setCategories([...categories, response.data]);
-          setShowModal(false);
-        })
-        .catch(error => {
-          console.error("Error adding category:", error);
+  if (Object.keys(errors).length === 0) {
+    // Send categoryName directly to match the backend
+    const categoryData = {
+      categoryName: newCategory.categoryName
+    };
+    
+    axios.post("http://localhost:5000/api/categories", categoryData)
+      .then(response => {
+        setCategories([...categories, response.data]);
+        setShowModal(false);
+        setNewCategory({
+          categoryName: '',
         });
-    }
-  };
+      })
+      .catch(error => {
+        console.error("Error adding category:", error);
+      });
+  }
+};
+
 
   // View category details
   const handleViewCategory = (category) => {
@@ -124,20 +143,34 @@ function Categories() {
     setSelectedCategory(category);
     setEditedCategory(category);
     setShowEditModal(true);
+    setEditValidationErrors({
+      category_name: '',
+    });
   };
 
   // Save edited category
   const handleSaveEditCategory = () => {
-    axios.put(`http://localhost:5000/api/categories/${editedCategory.category_id}`, editedCategory)
-      .then(response => {
-        setCategories((prevCategories) =>
-          prevCategories.map((cat) => (cat.category_id === editedCategory.category_id ? editedCategory : cat))
-        );
-        setShowEditModal(false);
-      })
-      .catch(error => {
-        console.error("Error updating category:", error);
-      });
+    let errors = {};
+    if (!editedCategory.category_name || editedCategory.category_name.length < 3) {
+      errors.category_name = "Category name must be at least 3 characters long.";
+    } else if (!/^[a-zA-Z0-9 ]+$/.test(editedCategory.category_name)) {
+      errors.category_name = "Category name can only contain letters, numbers, and spaces.";
+    }
+
+    setEditValidationErrors(errors);
+
+    if (Object.keys(errors).length === 0) {
+      axios.put(`http://localhost:5000/api/categories/${editedCategory.category_id}`, editedCategory)
+        .then(response => {
+          setCategories((prevCategories) =>
+            prevCategories.map((cat) => (cat.category_id === editedCategory.category_id ? editedCategory : cat))
+          );
+          setShowEditModal(false);
+        })
+        .catch(error => {
+          console.error("Error updating category:", error);
+        });
+    }
   };
 
   // Handle input change for edited category
@@ -152,6 +185,9 @@ function Categories() {
   // Close edit modal
   const handleCloseEditModal = () => {
     setShowEditModal(false);
+    setEditValidationErrors({
+      category_name: '',
+    });
   };
 
   return (
@@ -250,7 +286,9 @@ function Categories() {
                         onChange={handleInputChange}
                       />
                       {validationErrors.categoryName && (
-                        <div className="error">{validationErrors.categoryName}</div>
+                        <div className="error" style={{ color: 'red', fontSize: '14px', marginTop: '5px' }}>
+                          {validationErrors.categoryName}
+                        </div>
                       )}
                     </div>
                   </div>
@@ -306,6 +344,7 @@ function Categories() {
           handleClose={handleCloseEditModal}
           handleSaveEditEntity={handleSaveEditCategory}
           handleEditInputChange={handleEditInputChange}
+          validationErrors={editValidationErrors}
         />
       </div>
     </div>

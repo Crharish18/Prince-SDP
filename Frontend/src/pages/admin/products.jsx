@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Link } from 'react-router-dom';
-import { FaEye, FaEdit, FaTrash } from "react-icons/fa"; 
+import { FaEye, FaEdit, FaTrash, FaSortUp, FaSortDown } from "react-icons/fa"; 
 import Sidebar from "../../components/Sidebar";
 import Header from "../../components/Header";
 import styles from './products.module.css';
@@ -18,6 +18,8 @@ function ManageProducts() {
   const [showEditModal, setShowEditModal] = useState(false); 
   const [editedProduct, setEditedProduct] = useState({}); 
   const [editImageFile, setEditImageFile] = useState(null);
+  // Add quantity sort state
+  const [quantitySort, setQuantitySort] = useState(null); // null, 'asc', or 'desc'
 
   // Debug check when component mounts
   useEffect(() => {
@@ -38,11 +40,32 @@ function ManageProducts() {
   const handleSearchColumnChange = (e) => setSearchColumn(e.target.value);
   const handleSearchChange = (e) => setSearchText(e.target.value);
 
-  const filteredProducts = products.filter((prod) => {
-    if (!searchText || !searchColumn) return true; 
-    const value = prod[searchColumn]?.toString().toLowerCase(); 
-    return value && value.includes(searchText.toLowerCase());
-  });
+  // Updated filteredProducts to include sorting by quantity
+  const filteredProducts = React.useMemo(() => {
+    // First filter the data
+    let filtered = products.filter((prod) => {
+      if (!searchText || !searchColumn) return true; 
+      const value = prod[searchColumn]?.toString().toLowerCase(); 
+      return value && value.includes(searchText.toLowerCase());
+    });
+    
+    // Then sort by quantity if sorting is active
+    if (quantitySort) {
+      filtered = [...filtered].sort((a, b) => {
+        const qtyA = parseInt(a.stock_qty) || 0;
+        const qtyB = parseInt(b.stock_qty) || 0;
+        
+        // Sort based on direction
+        if (quantitySort === 'asc') {
+          return qtyA - qtyB; // Lowest first
+        } else {
+          return qtyB - qtyA; // Highest first
+        }
+      });
+    }
+    
+    return filtered;
+  }, [products, searchText, searchColumn, quantitySort]);
 
   const handleViewProduct = (product) => {
     setSelectedProduct(product);
@@ -174,6 +197,33 @@ function ManageProducts() {
                 </Link>
               </div>
             </div>
+            
+            {/* Add quantity sort controls */}
+            <div className={styles.QuantitySortContainer}>
+              <span className={styles.SortLabel}>Sort by Quantity:</span>
+              <div className={styles.SortButtonGroup}>
+                <button 
+                  className={`${styles.SortButton} ${quantitySort === 'asc' ? styles.active : styles.inactive}`}
+                  onClick={() => setQuantitySort('asc')}
+                >
+                  Lowest First <FaSortUp className={styles.SortIcon} />
+                </button>
+                <button 
+                  className={`${styles.SortButton} ${quantitySort === 'desc' ? styles.active : styles.inactive}`}
+                  onClick={() => setQuantitySort('desc')}
+                >
+                  Highest First <FaSortDown className={styles.SortIcon} />
+                </button>
+                {quantitySort && (
+                  <button 
+                    className={`${styles.SortButton} ${styles.clear}`}
+                    onClick={() => setQuantitySort(null)}
+                  >
+                    Clear Sort
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
 
           <div className={styles.TableContainer}>
@@ -183,7 +233,11 @@ function ManageProducts() {
                   <th>Product ID</th>
                   <th>Name</th>
                   <th>Price</th>
-                  <th>Stock Quantity</th>
+                  <th>
+                    Stock Quantity
+                    {quantitySort === 'asc' && <FaSortUp style={{ marginLeft: "5px" }} />}
+                    {quantitySort === 'desc' && <FaSortDown style={{ marginLeft: "5px" }} />}
+                  </th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -193,7 +247,7 @@ function ManageProducts() {
                     <tr key={prod.product_id}>
                       <td>{prod.product_id}</td>
                       <td>{prod.name}</td>
-                      <td>${parseFloat(prod.price).toFixed(2)}</td>
+                      <td>Rs.{parseFloat(prod.price).toFixed(2)}</td>
                       <td>{prod.stock_qty}</td>
                       <td>
                         <FaEye 

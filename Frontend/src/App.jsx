@@ -14,6 +14,7 @@ import Inventory from "./pages/admin/Inventory";
 import Reviews from "./pages/admin/Reviews";
 import Reports from "./pages/admin/Reports";
 import ActivityLog from "./pages/admin/Activity_log";
+import ResetPass from "./pages/admin/Reset_Password";
 
 import EDashboard from "./pages/employee/Emp_Dashboard";
 import Emp_Profile from "./pages/employee/Emp_Profile";
@@ -112,7 +113,12 @@ function App() {
           path="/admin/Activitylog" 
           element={token && role === 'admin' ? <ActivityLog /> : <Navigate to="/admin" />} 
         />
-        
+
+
+        <Route 
+                    path="/admin/Reset_Password" 
+                    element={<ResetPass />} 
+                  />
 
 
         {/* ✅ Protected Employee Routes */}

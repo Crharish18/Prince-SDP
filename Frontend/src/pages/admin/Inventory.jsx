@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { FaEye, FaEdit, FaTrash } from "react-icons/fa";
+import { FaEye, FaEdit, FaTrash, FaSortUp, FaSortDown } from "react-icons/fa";
 import Sidebar from "../../components/Sidebar";
 import Header from "../../components/Header";
-import styles from './inventory.module.css'; // Use inventory.module.css
+import styles from './inventory.module.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import ViewModal from "../../components/Viewmodal";
 import EditModal from "../../components/EditModal";
@@ -24,6 +24,8 @@ function Inventory() {
   const [products, setProducts] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [inputProductName, setInputProductName] = useState('');
+  // Add sorting state for expiry date
+  const [expiryDateSort, setExpiryDateSort] = useState(null); // null, 'asc', or 'desc'
   const [newInventory, setNewInventory] = useState({
     qty_added: '',
     user_id: '',
@@ -50,14 +52,28 @@ function Inventory() {
     expiry_date: ''
   });
   
-
+  // Get tomorrow's date for min attribute on date inputs
+  const getTomorrowDate = () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow.toISOString().split('T')[0];
+  };
+  
   const [validationErrors, setValidationErrors] = useState({
+    name: '',
+    price: '',
+    image_url: '',
+    category_id: '',
+    discount_percentage: '',
+    min_quantity: '',
+    description: '',
     qty_added: '',
     user_id: '',
     supplier_id: '',
     product_id: '',
     buying_price_per_unit: '',
-    expiry_date: ''
+    expiry_date: '',
+    image: ''
   });
   const [searchText, setSearchText] = useState("");
   const [searchColumn, setSearchColumn] = useState("");
@@ -67,6 +83,17 @@ function Inventory() {
   const [editedInventory, setEditedInventory] = useState({});
   const [showPrintModal, setShowPrintModal] = useState(false);
   const [modalMode, setModalMode] = useState('new'); // 'new' or 'existing'
+
+  // Toggle expiry date sorting
+  const toggleExpiryDateSort = () => {
+    if (expiryDateSort === null) {
+      setExpiryDateSort('asc');
+    } else if (expiryDateSort === 'asc') {
+      setExpiryDateSort('desc');
+    } else {
+      setExpiryDateSort(null);
+    }
+  };
 
   const renderProductAutocomplete = ({ value, onChange }) => (
     <Autocomplete
@@ -94,7 +121,6 @@ function Inventory() {
             image_url: newValue.image_url,
             product_id: newValue.product_id
           }));
-          
           // Reset image file since we're using an existing product
           setImageFile(null);
         }
@@ -110,9 +136,6 @@ function Inventory() {
     />
   );
   
-  
-
-
   useEffect(() => {
     axios
       .get('http://localhost:5000/api/inventory')
@@ -130,7 +153,6 @@ function Inventory() {
       .catch((error) => console.error('Error fetching categories:', error));
   }, []);
 
-  
   useEffect(() => {
     axios.get('http://localhost:5000/api/suppliers')
       .then((response) => setSuppliers(response.data))
@@ -142,6 +164,7 @@ function Inventory() {
       .then((response) => setProducts(response.data))
       .catch((error) => console.error('Error fetching products:', error));
   }, []);
+
   const handleSearchColumnChange = (e) => {
     setSearchColumn(e.target.value);
   };
@@ -154,16 +177,41 @@ function Inventory() {
     }
   };
   
-
   const handleSearchChange = (e) => {
     setSearchText(e.target.value);
   };
 
-  const filteredInventories = inventories.filter((inv) => {
-    if (!searchText || !searchColumn) return true;
-    const value = inv[searchColumn]?.toString().toLowerCase();
-    return value && value.includes(searchText.toLowerCase());
-  });
+  // Updated filteredInventories to include sorting by expiry date
+  const filteredInventories = React.useMemo(() => {
+    // First filter the data
+    let filtered = inventories.filter((inv) => {
+      if (!searchText || !searchColumn) return true;
+      const value = inv[searchColumn]?.toString().toLowerCase();
+      return value && value.includes(searchText.toLowerCase());
+    });
+    
+    // Then sort by expiry date if sorting is active
+    if (expiryDateSort) {
+      filtered = [...filtered].sort((a, b) => {
+        const dateA = a.expiry_date ? new Date(a.expiry_date) : null;
+        const dateB = b.expiry_date ? new Date(b.expiry_date) : null;
+        
+        // Handle null values
+        if (!dateA && !dateB) return 0;
+        if (!dateA) return 1; // null values at the end
+        if (!dateB) return -1;
+        
+        // Sort based on direction
+        if (expiryDateSort === 'asc') {
+          return dateA - dateB;
+        } else {
+          return dateB - dateA;
+        }
+      });
+    }
+    
+    return filtered;
+  }, [inventories, searchText, searchColumn, expiryDateSort]);
 
   const newProductFields = [
     { label: "Product Name", name: "name", type: "text" },
@@ -182,7 +230,12 @@ function Inventory() {
       options: suppliers.map(sup => ({ value: sup.supplier_id, label: sup.name }))
     },
     { label: "Buying Price Per Unit", name: "buying_price_per_unit", type: "number" },
-    { label: "Expiry Date", name: "expiry_date", type: "date" }
+    { 
+      label: "Expiry Date", 
+      name: "expiry_date", 
+      type: "date",
+      min: getTomorrowDate()
+    }
   ];
   
   const existingProductFields = [
@@ -193,7 +246,6 @@ function Inventory() {
       render: renderProductAutocomplete
     },
     { label: "Price", name: "price", type: "number" },
-   
     {
       label: "Category", name: "category_id", type: "select",
       options: categories.map(cat => ({ value: cat.category_id, label: cat.category_name }))
@@ -207,11 +259,14 @@ function Inventory() {
       options: suppliers.map(sup => ({ value: sup.supplier_id, label: sup.name }))
     },
     { label: "Buying Price Per Unit", name: "buying_price_per_unit", type: "number" },
-    { label: "Expiry Date", name: "expiry_date", type: "date" },
+    { 
+      label: "Expiry Date", 
+      name: "expiry_date", 
+      type: "date",
+      min: getTomorrowDate()
+    },
     { label: "Product Image", name: "image", type: "file", onChange: handleImageFileChange }
   ];
-  
-
 
   const inventoryFields = [
     { label: "Quantity Added", name: "qty_added", type: "number" },
@@ -219,13 +274,52 @@ function Inventory() {
     { label: "Supplier ID", name: "supplier_id", type: "number" },
     { label: "Product ID", name: "product_id", type: "number" },
     { label: "Buying Price Per Unit", name: "buying_price_per_unit", type: "number" },
-    { label: "Expiry Date", name: "expiry_date", type: "date" }
+    { 
+      label: "Expiry Date", 
+      name: "expiry_date", 
+      type: "date",
+      min: getTomorrowDate()
+    }
   ];
-
-  
 
   const handleCloseModal = () => {
     setShowModal(false);
+    // Reset validation errors
+    setValidationErrors({
+      name: '',
+      price: '',
+      image_url: '',
+      category_id: '',
+      discount_percentage: '',
+      min_quantity: '',
+      description: '',
+      qty_added: '',
+      user_id: '',
+      supplier_id: '',
+      product_id: '',
+      buying_price_per_unit: '',
+      expiry_date: '',
+      image: ''
+    });
+    // Reset form data
+    setNewEntity({
+      name: '',
+      price: '',
+      image_url: '',
+      category_id: '',
+      discount_percentage: '',
+      min_quantity: '',
+      description: '',
+      qty_added: '',
+      user_id: '',
+      supplier_id: '',
+      buying_price_per_unit: '',
+      product_id: '',
+      expiry_date: ''
+    });
+    setImageFile(null);
+    setSelectedProduct(null);
+    setInputProductName('');
   };
 
   const handleInputChange = (e) => {
@@ -243,24 +337,88 @@ function Inventory() {
     }
   };
   
-  
-  
-
   const handleSaveNewEntity = () => {
     let errors = {};
     
-    // Basic validation
-    if (!newEntity.name) errors.name = "Product name is required.";
-    if (!newEntity.price || isNaN(newEntity.price)) errors.price = "Price is required and must be a number.";
-    if (!newEntity.qty_added || isNaN(newEntity.qty_added)) errors.qty_added = "Quantity is required and must be a number.";
-    if (!newEntity.user_id) errors.user_id = "User ID is required.";
-    if (!newEntity.supplier_id) errors.supplier_id = "Supplier ID is required.";
-    if (!newEntity.buying_price_per_unit || isNaN(newEntity.buying_price_per_unit)) errors.buying_price_per_unit = "Buying price is required and must be a number.";
-    if (!newEntity.expiry_date) errors.expiry_date = "Expiry date is required.";
+    // Product name validation: more than 5 characters with letters or numbers only
+    if (!newEntity.name || newEntity.name.length <= 5) {
+      errors.name = "Product name must be more than 5 characters.";
+    } else if (!/^[a-zA-Z0-9 ]+$/.test(newEntity.name)) {
+      errors.name = "Product name can only contain letters, numbers, and spaces.";
+    }
+    
+    // Price validation: only numbers
+    if (!newEntity.price) {
+      errors.price = "Price is required.";
+    } else if (isNaN(newEntity.price) || parseFloat(newEntity.price) < 0) {
+      errors.price = "Price must be a positive number.";
+    }
+    
+    // Discount validation: only numbers
+    if (newEntity.discount_percentage && isNaN(newEntity.discount_percentage)) {
+      errors.discount_percentage = "Discount must be a number.";
+    }
+    
+    // Min quantity validation: only numbers
+    if (newEntity.min_quantity && isNaN(newEntity.min_quantity)) {
+      errors.min_quantity = "Minimum quantity must be a number.";
+    }
+    
+    // Description validation: more than 5 characters
+    if (!newEntity.description || newEntity.description.length <= 5) {
+      errors.description = "Description must be more than 5 characters.";
+    }
+    
+    // Quantity added validation: only numbers
+    if (!newEntity.qty_added) {
+      errors.qty_added = "Quantity is required.";
+    } else if (isNaN(newEntity.qty_added) || parseInt(newEntity.qty_added) < 1) {
+      errors.qty_added = "Quantity must be a positive number.";
+    }
+    
+    // Buying price per unit validation: only numbers
+    if (!newEntity.buying_price_per_unit) {
+      errors.buying_price_per_unit = "Buying price is required.";
+    } else if (isNaN(newEntity.buying_price_per_unit) || parseFloat(newEntity.buying_price_per_unit) < 0) {
+      errors.buying_price_per_unit = "Buying price must be a positive number.";
+    }
+    
+    // Category validation: not null
+    if (!newEntity.category_id) {
+      errors.category_id = "Category is required.";
+    }
+    
+    // Supplier validation: not null
+    if (!newEntity.supplier_id) {
+      errors.supplier_id = "Supplier is required.";
+    }
+    
+    // User ID validation: not null
+    if (!newEntity.user_id) {
+      errors.user_id = "User ID is required.";
+    }
+    
+    // Expiry date validation: not null and must be future date
+    if (!newEntity.expiry_date) {
+      errors.expiry_date = "Expiry date is required.";
+    } else {
+      const selectedDate = new Date(newEntity.expiry_date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Reset time part for accurate comparison
+      
+      if (selectedDate <= today) {
+        errors.expiry_date = "Expiry date must be a future date.";
+      }
+    }
     
     // Only require image for new products
     if (modalMode === 'new' && !imageFile) {
       errors.image = "Product image is required for new products.";
+    }
+    
+    // For existing products, validate product_id
+    if (modalMode === 'existing' && !newEntity.product_id) {
+      errors.product_id = "Please select a product.";
     }
     
     setValidationErrors(errors);
@@ -333,7 +491,6 @@ function Inventory() {
     }
   };
   
-
   const handleViewInventory = (inventory) => {
     setSelectedInventory(inventory);
     setShowViewModal(true);
@@ -363,6 +520,47 @@ function Inventory() {
   };
 
   const handleSaveEditInventory = () => {
+    // Add validation for edit inventory
+    let errors = {};
+    
+    // Quantity added validation: only numbers
+    if (!editedInventory.qty_added) {
+      errors.qty_added = "Quantity is required.";
+    } else if (isNaN(editedInventory.qty_added) || parseInt(editedInventory.qty_added) < 1) {
+      errors.qty_added = "Quantity must be a positive number.";
+    }
+    
+    // Buying price per unit validation: only numbers
+    if (!editedInventory.buying_price_per_unit) {
+      errors.buying_price_per_unit = "Buying price is required.";
+    } else if (isNaN(editedInventory.buying_price_per_unit) || parseFloat(editedInventory.buying_price_per_unit) < 0) {
+      errors.buying_price_per_unit = "Buying price must be a positive number.";
+    }
+    
+    // Supplier validation: not null
+    if (!editedInventory.supplier_id) {
+      errors.supplier_id = "Supplier is required.";
+    }
+    
+    // Expiry date validation: not null and must be future date
+    if (!editedInventory.expiry_date) {
+      errors.expiry_date = "Expiry date is required.";
+    } else {
+      const selectedDate = new Date(editedInventory.expiry_date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Reset time part for accurate comparison
+      
+      if (selectedDate <= today) {
+        errors.expiry_date = "Expiry date must be a future date.";
+      }
+    }
+    
+    if (Object.keys(errors).length > 0) {
+      // Display error messages
+      alert(Object.values(errors).join('\n'));
+      return;
+    }
+    
     axios
       .put(`http://localhost:5000/api/inventory/${editedInventory.inventory_id}`, editedInventory)
       .then((response) => {
@@ -429,7 +627,6 @@ function Inventory() {
     setShowModal(true);
   };
   
-
   return (
     <div className={styles.InventoryContainer}>
       <Sidebar />
@@ -483,7 +680,33 @@ function Inventory() {
                   Print
                 </button>
               </div>
-
+            </div>
+            
+            {/* Add expiry date sort controls */}
+            <div style={{ marginTop: "10px", display: "flex", alignItems: "center" }}>
+              <span style={{ marginRight: "10px", fontWeight: "bold" }}>Sort by Expiry Date:</span>
+              <div className="btn-group">
+                <button 
+                  className={`btn ${expiryDateSort === 'asc' ? 'btn-primary' : 'btn-outline-primary'}`}
+                  onClick={() => setExpiryDateSort('asc')}
+                >
+                  Earliest First <FaSortUp />
+                </button>
+                <button 
+                  className={`btn ${expiryDateSort === 'desc' ? 'btn-primary' : 'btn-outline-primary'}`}
+                  onClick={() => setExpiryDateSort('desc')}
+                >
+                  Latest First <FaSortDown />
+                </button>
+                {expiryDateSort && (
+                  <button 
+                    className="btn btn-outline-secondary"
+                    onClick={() => setExpiryDateSort(null)}
+                  >
+                    Clear Sort
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 
@@ -498,7 +721,11 @@ function Inventory() {
                   <th>Product ID</th>
                   <th>Buying Price</th>
                   <th>Added On</th>
-                  <th>Expiry Date</th>
+                  <th>
+                    Expiry Date
+                    {expiryDateSort === 'asc' && <FaSortUp style={{ marginLeft: "5px" }} />}
+                    {expiryDateSort === 'desc' && <FaSortDown style={{ marginLeft: "5px" }} />}
+                  </th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -511,7 +738,7 @@ function Inventory() {
                       <td>{inv.user_id}</td>
                       <td>{inv.supplier_id}</td>
                       <td>{inv.product_id}</td>
-                      <td>{inv.buying_price_per_unit}</td>
+                      <td> Rs.{inv.buying_price_per_unit}</td>
                       <td>{inv.added_on ? new Date(inv.added_on).toLocaleString() : ""}</td>
                       <td>{inv.expiry_date ? new Date(inv.expiry_date).toLocaleDateString() : ""}</td>
                       <td>
@@ -552,8 +779,6 @@ function Inventory() {
             handleImageFileChange={handleImageFileChange}
           />
 
-
-
         <ViewModal
           showViewModal={showViewModal}
           selectedEntity={selectedInventory}
@@ -565,7 +790,7 @@ function Inventory() {
             { label: "User ID", name: "user_id" },
             { label: "Supplier ID", name: "supplier_id" },
             { label: "Product ID", name: "product_id" },
-            { label: "Buying Price", name: "buying_price_per_unit" },
+             { label: "Buying Price", name: "buying_price_per_unit", format: (price) => `Rs. ${price}` },
             { label: "Added On", name: "added_on", format: (date) => date ? new Date(date).toLocaleString() : "" },
             { label: "Expiry Date", name: "expiry_date", format: (date) => date ? new Date(date).toLocaleDateString() : "" }
           ]}
@@ -599,7 +824,6 @@ function Inventory() {
           filename="inventory_report.pdf"
           reportTitle="Inventory Details Report"
         />
-
       </div>
     </div>
   );

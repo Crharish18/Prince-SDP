@@ -142,7 +142,6 @@ const Checkout = ({ onBack }) => {
   // PDF preview states
   const [pdfUrl, setPdfUrl] = useState('');
   const [orderId, setOrderId] = useState(null);
-  
   const [formData, setFormData] = useState({
     newShippingAddress: {
       fullname: '',
@@ -179,7 +178,6 @@ const Checkout = ({ onBack }) => {
         }
         const decodedToken = JSON.parse(atob(token.split('.')[1])); // Decode JWT token to get user info
         const customerId = decodedToken.id;
-
         const response = await axios.get(`http://localhost:5000/api/cart/${customerId}`);
         setCartItems(response.data);  // Update cart items
         // Calculate total based on the total_price field from cart table
@@ -261,34 +259,86 @@ const Checkout = ({ onBack }) => {
   }, [pdfUrl]);
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    try {
-      const token = localStorage.getItem('customerToken');
-      if (!token) {
-        alert("Please log in.");
-        return;
-      }
+  try {
+    const token = localStorage.getItem('customerToken');
+    if (!token) {
+      alert("Please log in.");
+      return;
+    }
 
-      const decodedToken = JSON.parse(atob(token.split('.')[1]));
-      const customerId = decodedToken.id;
+    const decodedToken = JSON.parse(atob(token.split('.')[1]));
+    const customerId = decodedToken.id;
+    
+    // Get the billing address
+    let billingAddress;
+    
+    if (tempBillingAddress) {
+      billingAddress = tempBillingAddress;
+    } else {
+      billingAddress = addresses.billing.find(addr => addr.address_id === selectedBillingAddress);
+    }
+    
+    if (!billingAddress) {
+      alert("Please select or add a billing address.");
+      return;
+    }
+
+    // Only validate shipping address if not using pickup
+    if (selectedShipping === 'standard shipping') {
+      let shippingAddress;
       
-      // Get the billing address
-      let billingAddress;
-      
-      if (tempBillingAddress) {
-        billingAddress = tempBillingAddress;
+      if (tempShippingAddress) {
+        shippingAddress = tempShippingAddress;
       } else {
-        billingAddress = addresses.billing.find(addr => addr.address_id === selectedBillingAddress);
+        shippingAddress = addresses.shipping.find(addr => addr.address_id === selectedShippingAddress);
       }
       
-      if (!billingAddress) {
-        alert("Please select or add a billing address.");
+      if (!shippingAddress) {
+        alert("Please select or add a shipping address.");
         return;
       }
+    }
 
-      // Only validate shipping address if not using pickup
+    // Set the shipping method - match the enum values exactly
+    const shipMethod = selectedShipping === 'standard shipping' ? 'standard shipping' : 'pickup';
+
+    // Calculate all required values
+    const subtotal = cartItems.reduce((sum, item) => sum + (Number(item.price) * item.quantity), 0);
+    const totalDiscount = cartItems.reduce((sum, item) => sum + Number(item.discount || 0), 0);
+    const totalPrice = Number(total) + Number(shippingCost);
+    
+    // Create the order with only the required fields that match the server expectations
+    const orderData = {
+      customer_id: customerId,
+      price: subtotal,
+      total_discount: totalDiscount,
+      total_price: totalPrice,
+      status: 'Pending'
+    };
+    
+    console.log("Sending order data:", orderData);
+    
+    const orderResponse = await axios.post('http://localhost:5000/api/orders', orderData);
+
+    if (orderResponse.status === 201) {
+      const newOrderId = orderResponse.data.order_id;
+      setOrderId(newOrderId);
+      
+      // Create a transaction record for this order
+      const transactionData = {
+        order_id: newOrderId,
+        amount_paid: totalPrice,
+        status: 'Success'
+      };
+      
+      // Save the transaction
+      await axios.post('http://localhost:5000/api/transactions', transactionData);
+      
+      // Only save shipping address if not using pickup
       if (selectedShipping === 'standard shipping') {
+        // Get the shipping address
         let shippingAddress;
         
         if (tempShippingAddress) {
@@ -297,138 +347,90 @@ const Checkout = ({ onBack }) => {
           shippingAddress = addresses.shipping.find(addr => addr.address_id === selectedShippingAddress);
         }
         
-        if (!shippingAddress) {
-          alert("Please select or add a shipping address.");
-          return;
-        }
-      }
-
-      // Set the shipping method - match the enum values exactly
-      const shipMethod = selectedShipping === 'standard shipping' ? 'standard shipping' : 'pickup';
-
-      // Calculate all required values
-      const subtotal = cartItems.reduce((sum, item) => sum + (Number(item.price) * item.quantity), 0);
-      const totalDiscount = cartItems.reduce((sum, item) => sum + Number(item.discount || 0), 0);
-      const totalPrice = Number(total) + Number(shippingCost);
-      
-      // Create the order with only the required fields that match the server expectations
-      const orderData = {
-        customer_id: customerId,
-        price: subtotal,
-        total_discount: totalDiscount,
-        total_price: totalPrice,
-        status: 'Pending'
-      };
-      
-      console.log("Sending order data:", orderData);
-      
-      const orderResponse = await axios.post('http://localhost:5000/api/orders', orderData);
-
-      if (orderResponse.status === 201) {
-        const newOrderId = orderResponse.data.order_id;
-        setOrderId(newOrderId);
-        
-        // Only save shipping address if not using pickup
-        if (selectedShipping === 'standard shipping') {
-          // Get the shipping address
-          let shippingAddress;
-          
-          if (tempShippingAddress) {
-            shippingAddress = tempShippingAddress;
-          } else {
-            shippingAddress = addresses.shipping.find(addr => addr.address_id === selectedShippingAddress);
-          }
-          
-          // Save shipping address to order_address table
-          const shippingAddressData = {
-            order_id: newOrderId,
-            fullname: shippingAddress.fullname,
-            street: shippingAddress.street,
-            apartment: shippingAddress.apartment || '',
-            city: shippingAddress.city,
-            province: shippingAddress.province,
-            postal_code: shippingAddress.postal_code,
-            country: shippingAddress.country,
-            shipment_method: shipMethod,
-            type: 'shipping'
-          };
-          
-          await axios.post('http://localhost:5000/api/order_address', shippingAddressData);
-        }
-        
-        // Save billing address to order_address table
-        const billingAddressData = {
+        // Save shipping address to order_address table
+        const shippingAddressData = {
           order_id: newOrderId,
-          fullname: billingAddress.fullname,
-          street: billingAddress.street,
-          apartment: billingAddress.apartment || '',
-          city: billingAddress.city,
-          province: billingAddress.province,
-          postal_code: billingAddress.postal_code,
-          country: billingAddress.country,
+          fullname: shippingAddress.fullname,
+          street: shippingAddress.street,
+          apartment: shippingAddress.apartment || '',
+          city: shippingAddress.city,
+          province: shippingAddress.province,
+          postal_code: shippingAddress.postal_code,
+          country: shippingAddress.country,
           shipment_method: shipMethod,
-          type: 'billing'
+          type: 'shipping'
         };
         
-        await axios.post('http://localhost:5000/api/order_address', billingAddressData);
+        await axios.post('http://localhost:5000/api/order_address', shippingAddressData);
+      }
+      
+      // Save billing address to order_address table
+      const billingAddressData = {
+        order_id: newOrderId,
+        fullname: billingAddress.fullname,
+        street: billingAddress.street,
+        apartment: billingAddress.apartment || '',
+        city: billingAddress.city,
+        province: billingAddress.province,
+        postal_code: billingAddress.postal_code,
+        country: billingAddress.country,
+        shipment_method: shipMethod,
+        type: 'billing'
+      };
+      
+      await axios.post('http://localhost:5000/api/order_address', billingAddressData);
 
-        // Insert order items into the order_item table
-        const orderItems = cartItems.map(item => ({
-          order_id: newOrderId,
-          product_id: item.product_id,
-          qty: item.quantity,
-          price: Number(item.price) * item.quantity, // Unit price × quantity (before discount)
-          discount: Number(item.discount || 0), // Total discount for this product (not multiplied)
-          final_price: Number(item.total_price) // Final price after discount
-        }));
+      // Insert order items into the order_item table
+      // The inventory reduction will be handled by the order_items endpoint
+      const orderItems = cartItems.map(item => ({
+        order_id: newOrderId,
+        product_id: item.product_id,
+        qty: item.quantity,
+        price: Number(item.price) * item.quantity, // Unit price × quantity (before discount)
+        discount: Number(item.discount || 0), // Total discount for this product (not multiplied)
+        final_price: Number(item.total_price) // Final price after discount
+      }));
 
-        // POST the order items
-        const orderItemsResponse = await axios.post('http://localhost:5000/api/order_items', orderItems);
+      // POST the order items
+      const orderItemsResponse = await axios.post('http://localhost:5000/api/order_items', orderItems);
 
-        if (orderItemsResponse.status === 201) {
-          // Reduce inventory using FIFO method
-          const inventoryItems = cartItems.map(item => ({
-            product_id: item.product_id,
-            qty: item.quantity
-          }));
-          
-          await axios.post('http://localhost:5000/api/inventory/reduce-stock', { items: inventoryItems });
-          
-          // Generate PDF invoice with preview in new window
-          generateInvoicePDFWithPreview({
-            orderId: newOrderId,
-            cartItems,
-            total,
-            shippingCost,
-            grandTotal: totalPrice,
-            shipMethod,
-            billingAddress,
-            shippingAddress: selectedShipping === 'standard shipping' 
-              ? (tempShippingAddress || addresses.shipping.find(addr => addr.address_id === selectedShippingAddress))
-              : null
-          });
-          
-          // Clear cart after successful order
-          await axios.delete(`http://localhost:5000/api/cart/customer/${customerId}`, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
+      if (orderItemsResponse.status === 201) {
+        // Generate PDF invoice with preview in new window
+        generateInvoicePDFWithPreview({
+          orderId: newOrderId,
+          cartItems,
+          total,
+          shippingCost,
+          grandTotal: totalPrice,
+          shipMethod,
+          billingAddress,
+          shippingAddress: selectedShipping === 'standard shipping' 
+            ? (tempShippingAddress || addresses.shipping.find(addr => addr.address_id === selectedShippingAddress))
+            : null
+        });
+        
+        // Clear cart after successful order
+        await axios.delete(`http://localhost:5000/api/cart/customer/${customerId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
 
-          // Redirect happens after user views PDF in new window
-        } else {
-          alert('Failed to save order items.');
-        }
+        // Redirect happens after user views PDF in new window
       } else {
-        alert('Failed to place the order.');
+        alert('Failed to save order items.');
       }
-    } catch (error) {
-      console.error('Error placing order:', error);
-      if (error.response) {
-        console.error('Response data:', error.response.data);
-        console.error('Response status:', error.response.status);
-      }
-      alert('Failed to place order: ' + (error.response?.data?.error || error.message));
+    } else {
+      alert('Failed to place the order.');
     }
-  };
+  } catch (error) {
+    console.error('Error placing order:', error);
+    if (error.response) {
+      console.error('Response data:', error.response.data);
+      console.error('Response status:', error.response.status);
+    }
+    alert('Failed to place order: ' + (error.response?.data?.error || error.message));
+  }
+};
+
 
   // Update shipping cost based on selected shipping method
   const handleShippingChange = (event) => {
@@ -503,226 +505,247 @@ const Checkout = ({ onBack }) => {
     </div>
   );
 
-  function generateInvoicePDFWithPreview({
-    orderId,
-    cartItems,
-    total,
-    shippingCost,
-    grandTotal,
-    shipMethod,
-    billingAddress,
-    shippingAddress
-  }) {
-    console.log("Generating new PDF format");
-    
-    const doc = new jsPDF();
-    
-    // Set white background for the entire page
-    doc.setFillColor(255, 255, 255);
-    doc.rect(0, 0, doc.internal.pageSize.getWidth(), doc.internal.pageSize.getHeight(), 'F');
-    
-    // Add blue sidebar on the left
-    doc.setFillColor(0, 83, 156); // Blue color
-    doc.rect(0, 0, 15, doc.internal.pageSize.getHeight(), 'F');
-    
-    // Add purple accent at the bottom of the sidebar
-    doc.setFillColor(128, 0, 128); // Purple color
-    doc.rect(0, doc.internal.pageSize.getHeight() - 40, 15, 40, 'F');
-    
-    // Company name and logo
-    doc.setTextColor(0, 83, 156); // Blue color for company name
+function generateInvoicePDFWithPreview({
+  orderId,
+  cartItems,
+  total,
+  shippingCost,
+  grandTotal,
+  shipMethod,
+  billingAddress,
+  shippingAddress
+}) {
+  const doc = new jsPDF();
+  
+  // Add company logo at the top
+  const imgWidth = 60;
+  const imgHeight = 50;
+  // Add logo if available, otherwise use text
+  try {
+    const logoData = logo;
+    doc.addImage(logoData, 'PNG', 10, -9, imgWidth, imgHeight);
+  } catch (error) {
+    console.error('Error adding logo:', error);
     doc.setFontSize(20);
-    doc.setFont("helvetica", "bold");
-    doc.text("DOTS & LINES", 62, 30);
-    
-    // Company address and contact info
-    doc.setTextColor(70, 70, 70); // Dark gray for address
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.text("2262 Portland Avenue", 62, 40);
-    doc.text("Fond Du Lac, WI 54935", 62, 50);
-    doc.text("920-377-0987", 62, 60);
-    doc.text("www.dotsandlines.com", 62, 70);
-    doc.text("info@dotsandlines.com", 62, 80);
-    
-    // Order details in a gray box
-    doc.setDrawColor(240, 240, 240);
-    doc.setFillColor(247, 247, 247);
-    doc.roundedRect(140, 20, 60, 30, 3, 3, 'FD');
-    doc.setFontSize(10);
-    doc.setTextColor(70, 70, 70);
-    doc.text(`Order: #${orderId}`, 145, 30);
-    doc.text(`Date: ${new Date().toLocaleDateString('en-US', {month: '2-digit', day: '2-digit', year: 'numeric'})}`, 145, 40);
-    
-    // SUMMARY header with blue underline
-    doc.setTextColor(0, 83, 156); // Blue color
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "bold");
-    doc.text("SUMMARY", 62, 100);
-    doc.setDrawColor(0, 83, 156);
-    doc.setLineWidth(0.5);
-    doc.line(62, 102, 195, 102);
-    
-    // Get customer name from localStorage or use default
-    let customerName = "Customer";
-    try {
-      const userData = JSON.parse(localStorage.getItem('userData'));
-      if (userData && userData.username) {
-        customerName = userData.username;
-      }
-    } catch (e) {
-      console.error("Error getting customer data:", e);
-    }
-    
-    // Shipping and Billing Address headers
-    doc.setTextColor(0, 0, 0); // Black color
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    doc.text("SHIPPING ADDRESS", 62, 115);
-    doc.text("BILLING ADDRESS", 140, 115);
-    
-    // Shipping Address details
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    
-    // Use customer name as fallback if no address name is available
-    const shippingName = shippingAddress?.fullname || customerName;
-    const billingName = billingAddress?.fullname || customerName;
-    
-    if (shipMethod === 'standard shipping' && shippingAddress) {
-      doc.text(shippingName, 62, 125);
-      doc.text(shippingAddress.street || "", 62, 132);
-      if (shippingAddress.apartment) {
-        doc.text(shippingAddress.apartment, 62, 139);
-        doc.text(`${shippingAddress.city || ""}, ${shippingAddress.province || ""} ${shippingAddress.postal_code || ""}`, 62, 146);
-        doc.text(shippingAddress.country || "", 62, 153);
-      } else {
-        doc.text(`${shippingAddress.city || ""}, ${shippingAddress.province || ""} ${shippingAddress.postal_code || ""}`, 62, 139);
-        doc.text(shippingAddress.country || "", 62, 146);
-      }
+    doc.setFont('helvetica', 'bold');
+    doc.text('Prince Lanka', 15, 25);
+  }
+
+  // Company details with improved styling
+  doc.setFontSize(10);
+  doc.setTextColor(80, 80, 80); // Darker gray for better readability
+  doc.setFont('helvetica', 'normal');
+  doc.text('No 21,', 14, 26);
+  doc.text('Courtlodge, Kandapola', 14, 31);
+  doc.text('Nuwaraeliya, Sri Lanka', 14, 36);
+  doc.text('Tel: +94 77 567 0258', 14, 41);
+  doc.text('Email: princelankaagenciespvtltd@gmail.com', 14, 46);
+  
+  // Add invoice title and order number with improved styling
+  doc.setFontSize(22); // Larger font size for invoice title
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(46, 125, 50); // Green color to match table header
+  doc.text('INVOICE', 170, 13);
+  
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(80, 80, 80);
+  doc.text(`Order #: ${orderId}`, 170, 18);
+  doc.text(`Date: ${new Date().toLocaleDateString()}`, 170, 23);
+  
+  // Add horizontal line
+  doc.setDrawColor(46, 125, 50); // Green line to match branding
+  doc.setLineWidth(0.7); // Slightly thicker line
+  doc.line(15, 50, 195, 50);
+  
+  // Customer details section with improved styling
+  doc.setFontSize(13);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(46, 125, 50); // Green headers
+  doc.text('Billing Details:', 15, 60);
+  
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(60, 60, 60); // Dark gray for text
+  if (billingAddress) {
+    doc.setFont('helvetica', 'bold');
+    doc.text(billingAddress.fullname, 15, 70);
+    doc.setFont('helvetica', 'normal');
+    doc.text(billingAddress.street, 15, 75);
+    if (billingAddress.apartment) {
+      doc.text(billingAddress.apartment, 15, 80);
+      doc.text(`${billingAddress.city}, ${billingAddress.province} - ${billingAddress.postal_code}`, 15, 85);
+      doc.text(billingAddress.country, 15, 90);
     } else {
-      doc.text(customerName, 62, 125);
-      doc.text("Pickup", 62, 132);
+      doc.text(`${billingAddress.city}, ${billingAddress.province} - ${billingAddress.postal_code}`, 15, 80);
+      doc.text(billingAddress.country, 15, 85);
     }
-    
-    // Billing Address details
-    if (billingAddress) {
-      doc.text(billingName, 140, 125);
-      doc.text(billingAddress.street || "", 140, 132);
-      if (billingAddress.apartment) {
-        doc.text(billingAddress.apartment, 140, 139);
-        doc.text(`${billingAddress.city || ""}, ${billingAddress.province || ""} ${billingAddress.postal_code || ""}`, 140, 146);
-        doc.text(billingAddress.country || "", 140, 153);
-      } else {
-        doc.text(`${billingAddress.city || ""}, ${billingAddress.province || ""} ${billingAddress.postal_code || ""}`, 140, 139);
-        doc.text(billingAddress.country || "", 140, 146);
-      }
+  }
+  
+  // Shipping details section with improved styling
+  doc.setFontSize(13);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(46, 125, 50); // Green headers
+  doc.text('Shipping Details:', 110, 60);
+  
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(60, 60, 60); // Dark gray for text
+  if (shipMethod === 'standard shipping' && shippingAddress) {
+    doc.setFont('helvetica', 'bold');
+    doc.text(shippingAddress.fullname, 110, 70);
+    doc.setFont('helvetica', 'normal');
+    doc.text(shippingAddress.street, 110, 75);
+    if (shippingAddress.apartment) {
+      doc.text(shippingAddress.apartment, 110, 80);
+      doc.text(`${shippingAddress.city}, ${shippingAddress.province} - ${shippingAddress.postal_code}`, 110, 85);
+      doc.text(shippingAddress.country, 110, 90);
+    } else {
+      doc.text(`${shippingAddress.city}, ${shippingAddress.province} - ${shippingAddress.postal_code}`, 110, 80);
+      doc.text(shippingAddress.country, 110, 85);
     }
-    
-    // Product table with blue headers
-    const tableStartY = 165;
-    
-    // Prepare table headers and data
-    const headers = [
-      { content: 'PRODUCT', styles: { fillColor: [0, 83, 156], textColor: [255, 255, 255], halign: 'left' } },
-      { content: 'TYPE', styles: { fillColor: [0, 83, 156], textColor: [255, 255, 255], halign: 'center' } },
-      { content: 'QUANTITY', styles: { fillColor: [0, 83, 156], textColor: [255, 255, 255], halign: 'center' } },
-      { content: 'UNIT PRICE', styles: { fillColor: [0, 83, 156], textColor: [255, 255, 255], halign: 'right' } },
-      { content: 'TOTAL', styles: { fillColor: [0, 83, 156], textColor: [255, 255, 255], halign: 'right' } }
-    ];
-    
-    // Create table data
-    const tableData = cartItems.map((item) => [
+    doc.setFont('helvetica', 'italic');
+    doc.text(`Shipping Method: Standard Shipping`, 110, 95);
+  } else {
+    doc.setFont('helvetica', 'bold');
+    doc.text('Pickup from store', 110, 70);
+    doc.setFont('helvetica', 'italic');
+    doc.text('Shipping Method: Pickup', 110, 75);
+  }
+  
+  // Add horizontal line before table
+  doc.setDrawColor(220, 220, 220);
+  doc.setLineWidth(0.5);
+  doc.line(15, 100, 195, 100);
+
+  // Order items table
+  const tableColumn = ['#', 'Product', 'Qty', 'Price', 'Discount', 'Final Price'];
+  const tableRows = [];
+
+  // Add items to table
+  cartItems.forEach((item, index) => {
+    const itemData = [
+      (index + 1).toString(),
       item.name,
-      'Product', // Assuming all are products, replace with actual type if available
       item.quantity.toString(),
       `Rs.${Number(item.price).toFixed(2)}`,
+      `Rs.${Number(item.discount || 0).toFixed(2)}`,
       `Rs.${Number(item.total_price).toFixed(2)}`
-    ]);
-    
-    // Generate table
-    autoTable(doc, {
-      startY: tableStartY,
-      head: [headers.map(header => header.content)],
-      body: tableData,
-      headStyles: {
-        fillColor: [0, 83, 156], // Blue color
-        textColor: [255, 255, 255],
-        fontStyle: 'bold'
-      },
-      columnStyles: {
-        0: { halign: 'left' },
-        1: { halign: 'center' },
-        2: { halign: 'center' },
-        3: { halign: 'right' },
-        4: { halign: 'right' }
-      },
-      alternateRowStyles: {
-        fillColor: [240, 240, 250] // Light blue-ish for alternate rows
-      },
-      margin: { left: 62, right: 30 }
-    });
-    
-    // Add totals section
-    const finalY = doc.lastAutoTable.finalY + 10;
-    
-    // Right-aligned totals
-    doc.setFontSize(10);
-    doc.setTextColor(70, 70, 70);
-    doc.text("Sub-Total:", 160, finalY);
-    doc.text(`Rs.${Number(total).toFixed(2)}`, 195, finalY, { align: 'right' });
-    
-    doc.text("Shipping Charge:", 160, finalY + 7);
-    doc.text(`Rs.${Number(shippingCost).toFixed(2)}`, 195, finalY + 7, { align: 'right' });
-    
-    doc.text("Promo Code:", 160, finalY + 14);
-    doc.text(`Rs.0`, 195, finalY + 14, { align: 'right' });
-    
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "bold");
-    doc.text("Total:", 160, finalY + 24);
-    doc.text(`Rs.${Number(grandTotal).toFixed(2)}`, 195, finalY + 24, { align: 'right' });
-    
-    // Add social media icons (represented as colored circles)
-    const pageHeight = doc.internal.pageSize.getHeight();
-    const iconY = pageHeight - 20;
-    
-    doc.setFillColor(59, 89, 152); // Facebook blue
-    doc.circle(105, iconY, 4, 'F');
-    
-    doc.setFillColor(29, 161, 242); // Twitter blue
-    doc.circle(115, iconY, 4, 'F');
-    
-    doc.setFillColor(0, 119, 181); // LinkedIn blue
-    doc.circle(125, iconY, 4, 'F');
-    
-    // Footer text
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(100, 100, 100);
-    doc.text("Privacy Policy | Terms & Conditions | Contact", 105, pageHeight - 10, { align: 'center' });
-    doc.text("© Dots and Lines - All Rights Reserved", 105, pageHeight - 5, { align: 'center' });
-    
-    // Create a blob and open it in a new window
-    const pdfBlob = doc.output('blob');
-    const url = URL.createObjectURL(pdfBlob);
-    
-    // Store the URL for cleanup later
-    setPdfUrl(url);
-    
-    // Open PDF in a new window
-    const newWindow = window.open(url, '_blank');
-    
-    // If the window was blocked, alert the user
-    if (!newWindow) {
-      alert("The invoice was generated but the popup was blocked. Please allow popups to view your invoice.");
-    }
-    
-    // Redirect to order confirmation after a short delay
-    setTimeout(() => {
-      window.location.href = '/order-confirmation';
-    }, 2000);
+    ];
+    tableRows.push(itemData);
+  });
+
+  // Generate the table with improved styling - removed the problematic didDrawPage callback
+  autoTable(doc, {
+    startY: 110,
+    head: [tableColumn],
+    body: tableRows,
+    headStyles: {
+      fillColor: [46, 125, 50],
+      textColor: 255,
+      fontSize: 11,
+      fontStyle: 'bold',
+      halign: 'center',
+      cellPadding: 3
+    },
+    bodyStyles: {
+      fontSize: 10,
+      halign: 'center',
+      cellPadding: 3
+    },
+    columnStyles: {
+      0: { cellWidth: 10 },
+      1: { cellWidth: 70, halign: 'left' },
+      2: { cellWidth: 15 },
+      3: { cellWidth: 30 },
+      4: { cellWidth: 30 },
+      5: { cellWidth: 30 }
+    },
+    alternateRowStyles: {
+      fillColor: [240, 248, 240]
+    },
+    margin: { left: 15, right: 15 }
+    // Removed the didDrawPage callback that was causing errors
+  });
+  
+  // Calculate the Y position for the summary section
+  const finalY = doc.lastAutoTable.finalY + 15;
+  
+  // Summary section with improved styling
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(80, 80, 80);
+  
+  // Add a subtle background for the summary section - using a simpler approach
+  doc.setFillColor(248, 248, 248);
+  doc.rect(130, finalY - 5, 65, 35, 'F');
+  
+  // Subtotal
+  doc.text('Subtotal:', 140, finalY);
+  doc.text(`Rs. ${cartItems.reduce((sum, item) => sum + (Number(item.price) * item.quantity), 0).toFixed(2)}`, 195, finalY, { align: 'right' });
+  
+  // Discount
+  doc.setTextColor(220, 53, 69); // Red color for discount
+  doc.text('Discount:', 140, finalY + 7);
+  doc.text(`Rs. ${cartItems.reduce((sum, item) => sum + Number(item.discount || 0), 0).toFixed(2)}`, 195, finalY + 7, { align: 'right' });
+  
+  // Shipping
+  doc.setTextColor(80, 80, 80);
+  doc.text('Shipping:', 140, finalY + 14);
+  doc.text(`Rs. ${Number(shippingCost).toFixed(2)}`, 195, finalY + 14, { align: 'right' });
+  
+  // Total with improved styling
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(46, 125, 50); // Green for total
+  doc.setFontSize(12);
+  doc.text('Total:', 140, finalY + 24);
+  doc.text(`Rs. ${Number(grandTotal).toFixed(2)}`, 195, finalY + 24, { align: 'right' });
+  
+  // Add a thank you note with improved styling
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(11);
+  doc.setTextColor(46, 125, 50);
+  doc.text('Thank you for your business!', 105, finalY + 40, { align: 'center' });
+  
+  // Add decorative element
+  doc.setDrawColor(46, 125, 50);
+  doc.setLineWidth(0.5);
+  doc.line(65, finalY + 43, 145, finalY + 43);
+  
+  // Add shipping note if standard shipping is selected
+  if (shipMethod === 'standard shipping') {
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(9);
+    doc.setTextColor(220, 53, 69); // Red color for the note
+    doc.text('Note: Shipping charges may increase based on the total weight of the products ordered and will be payable upon delivery.', 
+      105, finalY + 55, { align: 'center', maxWidth: 170 });
   }
+  
+  // Add footer with improved styling
+  const pageHeight = doc.internal.pageSize.getHeight();
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(100, 100, 100);
+  doc.text('Prince Lanka Agencies- Premium Agricultural Products', 105, pageHeight - 15, { align: 'center' });
+  doc.text('© 2025 Prince Lanka Agencies Pvt(Ltd)', 105, pageHeight - 10, { align: 'center' });
+  
+  // Create a blob and open it in a new window
+  const pdfBlob = doc.output('blob');
+  const url = URL.createObjectURL(pdfBlob);
+  
+  // Store the URL for cleanup later
+  setPdfUrl(url);
+  
+  // Open PDF in a new window
+  const newWindow = window.open(url, '_blank');
+  
+  // If the window was blocked, alert the user
+  if (!newWindow) {
+    alert("The invoice was generated but the popup was blocked. Please allow popups to view your invoice.");
+  }
+}
+
+
 
   return (
     <div>
@@ -1020,41 +1043,50 @@ const Checkout = ({ onBack }) => {
               </div>
 
               {/* Shipping Method - Moved under Order Summary */}
-              <div className="bg-white p-6 rounded-lg shadow-sm">
-                <div className="flex items-center mb-4">
-                  <Truck className="h-6 w-6 text-green-500 mr-2" />
-                  <h2 className="text-xl font-semibold text-left">Shipping Method</h2>
-                </div>
-                <div className="space-y-2">
-                  <label className="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
-                    <input 
-                      type="radio" 
-                      name="shipping" 
-                      className="mr-3" 
-                      value="standard shipping"
-                      onChange={handleShippingChange}
-                      defaultChecked 
-                    />
-                    <div className="text-left">
-                      <p className="font-medium">Standard Shipping</p>
-                      <p className="text-sm text-gray-500">Rs.500 • 3-5 business days</p>
+                  <div className="bg-white p-6 rounded-lg shadow-sm">
+                    <div className="flex items-center mb-4">
+                      <Truck className="h-6 w-6 text-green-500 mr-2" />
+                      <h2 className="text-xl font-semibold text-left">Shipping Method</h2>
                     </div>
-                  </label>
-                  <label className="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
-                    <input 
-                      type="radio" 
-                      name="shipping" 
-                      className="mr-3" 
-                      value="pickup" 
-                      onChange={handleShippingChange} 
-                    />
-                    <div className="text-left">
-                      <p className="font-medium">Pickup</p>
-                      <p className="text-sm text-gray-500">Free • Monday - Saturday 8.00am to 6.00pm</p>
+                    <div className="space-y-2">
+                      <label className="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
+                        <input 
+                          type="radio" 
+                          name="shipping" 
+                          className="mr-3" 
+                          value="standard shipping"
+                          onChange={handleShippingChange}
+                          defaultChecked 
+                        />
+                        <div className="text-left">
+                          <p className="font-medium">Standard Shipping</p>
+                          <p className="text-sm text-gray-500">Rs.500 • 3-5 business days</p>
+                        </div>
+                      </label>
+                      <label className="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
+                        <input 
+                          type="radio" 
+                          name="shipping" 
+                          className="mr-3" 
+                          value="pickup" 
+                          onChange={handleShippingChange} 
+                        />
+                        <div className="text-left">
+                          <p className="font-medium">Pickup</p>
+                          <p className="text-sm text-gray-500">Free • Monday - Saturday 8.00am to 6.00pm</p>
+                        </div>
+                      </label>
+                      
+                      {/* Shipping note - only shown when standard shipping is selected */}
+                      {selectedShipping === 'standard shipping' && (
+                        <div className="mt-3 p-3 bg-red-50 border border-red-100 rounded-lg">
+                          <p className="text-sm text-red-600 italic">
+                            Note: Shipping charges may increase based on the total weight of the products ordered and will be payable upon delivery.
+                          </p>
+                        </div>
+                      )}
                     </div>
-                  </label>
-                </div>
-              </div>
+                  </div>
 
               <button
                 onClick={handleSubmit}

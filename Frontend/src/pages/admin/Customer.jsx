@@ -54,7 +54,7 @@ function Customers() {
   const handleSearchColumnChange = (e) => {
     setSearchColumn(e.target.value);
   };
-
+  
   const handleSearchChange = (e) => {
     setSearchText(e.target.value);
   };
@@ -75,15 +75,24 @@ function Customers() {
   };
 
   const handleDeleteCustomer = (customerId) => {
-    axios.delete(`http://localhost:5000/api/customers/${customerId}`)
-      .then(response => {
-        setCustomers((prevCustomers) =>
-          prevCustomers.filter((customer) => customer.customer_id !== customerId)
-        );
-      })
-      .catch(error => {
-        console.error("Error deleting customer:", error);
-      });
+    // Instead of deleting, update status to 'disable'
+    const customerToUpdate = customers.find(c => c.customer_id === customerId);
+    if (customerToUpdate) {
+      const updatedCustomer = { ...customerToUpdate, status: 'disable' };
+      
+      axios.put(`http://localhost:5000/api/customers/${customerId}`, updatedCustomer)
+        .then(response => {
+          setCustomers(prevCustomers => 
+            prevCustomers.map(customer => 
+              customer.customer_id === customerId ? 
+                { ...customer, status: 'disable' } : customer
+            )
+          );
+        })
+        .catch(error => {
+          console.error("Error updating customer status:", error);
+        });
+    }
   };
 
   const handleEditCustomer = (customer) => {
@@ -123,7 +132,7 @@ function Customers() {
       [name]: value,
     });
   };
-
+  
   const handleCloseEditModal = () => {
     setShowEditModal(false);
   };
@@ -151,6 +160,7 @@ function Customers() {
                 <option value="first_name">First Name</option>
                 <option value="last_name">Last Name</option>
                 <option value="phone_num">Phone Number</option>
+                <option value="status">Status</option>
               </select>
               <input
                 type="text"
@@ -175,6 +185,7 @@ function Customers() {
                   <th>Phone Number</th>
                   <th>Address</th>
                   <th>NationalID</th>
+                  <th>Status</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -188,6 +199,14 @@ function Customers() {
                       <td>{customer.phone_num}</td>
                       <td>{customer.address}</td>
                       <td>{customer.national_id}</td>
+                      <td>
+                        <span style={{ 
+                          color: customer.status === 'active' ? 'green' : 'red',
+                          fontWeight: 'bold'
+                        }}>
+                          {customer.status || 'active'}
+                        </span>
+                      </td>
                       <td>
                         <FaEye
                           style={{ marginRight: "10px", cursor: "pointer", color: "#2770b4" }}
@@ -206,7 +225,7 @@ function Customers() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="7">No customers found</td>
+                    <td colSpan="8">No customers found</td>
                   </tr>
                 )}
               </tbody>
@@ -227,6 +246,7 @@ function Customers() {
             { label: "Address", name: "address" },
             { label: "National ID", name: "national_id" },
             { label: "Date of Birth", name: "dob", format: formatDate },
+            { label: "Status", name: "status" }
           ]}
         />
 
@@ -240,7 +260,8 @@ function Customers() {
             { label: "Phone Number", name: "phone_num" },
             { label: "Address", name: "address" },
             { label: "National ID", name: "national_id" },
-            { label: "Date of Birth", name: "dob", format: formatDate },
+            { label: "Date of Birth", name: "dob", type: "date" },
+            { label: "Status", name: "status", type: "select", options: ["active", "disable"] }
           ]}
           handleClose={handleCloseEditModal}
           handleSaveEditEntity={handleSaveEditCustomer}
@@ -259,6 +280,7 @@ function Customers() {
             { label: "Phone Number", field: "phone_num" },
             { label: "Address", field: "address" },
             { label: "National ID", field: "national_id" },
+            { label: "Status", field: "status" },
             { label: "Date of Birth", field: "dob", format: (date) => date ? new Date(date).toLocaleDateString() : "N/A" }
           ]}
           filename="customer_report.pdf"

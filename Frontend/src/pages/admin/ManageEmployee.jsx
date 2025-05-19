@@ -92,10 +92,10 @@ function ManageEmployee() {
     { label: "Last Name", name: "last_name", type: "text" },
     { label: "Email", name: "email", type: "email" },
     { label: "Phone Number", name: "phonenum", type: "text" },
-    { label: "Role", name: "role", type: "text" },
     { label: "Date of Birth", name: "dob", type: "date" },
     { label: "National ID", name: "natID", type: "text" },
-    { label: "Address", name: "address", type: "text" }
+    { label: "Address", name: "address", type: "text" },
+    { label: "Status", name: "status", type: "select", options: ["Active", "Disable"] }
   ];
 
   const handleAddEmployeeClick = () => {
@@ -103,6 +103,35 @@ function ManageEmployee() {
   };
 
   const handleCloseModal = () => {
+    // Reset the form data when modal is closed
+    setNewEmployee({
+      username: '',
+      firstName: '',
+      lastName: '',
+      email: '',
+      phoneNum: '',
+      role: 'employee', // Keep the hardcoded role
+      dob: '',
+      nationalId: '',
+      address: '',
+      password: ''
+    });
+    
+    // Reset validation errors
+    setValidationErrors({
+      username: '',
+      firstName: '',
+      lastName: '',
+      email: '',
+      phoneNum: '',
+      role: '',
+      dob: '',
+      nationalId: '',
+      address: '',
+      password: ''
+    });
+    
+    // Close the modal
     setShowModal(false);
   };
 
@@ -119,33 +148,56 @@ function ManageEmployee() {
 
   const handleSaveNewEmployee = () => {
     let errors = {};
+    
+    // Username validation: more than 4 characters and no symbols
     if (!newEmployee.username || newEmployee.username.length < 4) {
       errors.username = "Username must be at least 4 characters long.";
+    } else if (!/^[a-zA-Z0-9]+$/.test(newEmployee.username)) {
+      errors.username = "Username can only contain letters and numbers, no symbols.";
     }
-    if (!newEmployee.firstName || !/^[A-Za-z]+$/.test(newEmployee.firstName)) {
-      errors.firstName = "First name is required and should contain only letters.";
+    
+    // First name validation: only letters and more than 4 letters
+    if (!newEmployee.firstName || newEmployee.firstName.length < 4) {
+      errors.firstName = "First name must be at least 4 characters long.";
+    } else if (!/^[A-Za-z]+$/.test(newEmployee.firstName)) {
+      errors.firstName = "First name should contain only letters.";
     }
-    if (!newEmployee.lastName || !/^[A-Za-z]+$/.test(newEmployee.lastName)) {
-      errors.lastName = "Last name is required and should contain only letters.";
+    
+    // Last name validation: only letters and more than 4 letters
+    if (!newEmployee.lastName || newEmployee.lastName.length < 4) {
+      errors.lastName = "Last name must be at least 4 characters long.";
+    } else if (!/^[A-Za-z]+$/.test(newEmployee.lastName)) {
+      errors.lastName = "Last name should contain only letters.";
     }
+    
+    // Email validation: valid email format
     if (!newEmployee.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmployee.email)) {
       errors.email = "Invalid email address.";
     }
-    if (!newEmployee.phoneNum || !/^\d{10,15}$/.test(newEmployee.phoneNum)) {
-      errors.phoneNum = "Phone number must be between 10 and 15 digits.";
+    
+    // Phone number validation: exactly 10 digits
+    if (!newEmployee.phoneNum || !/^\d{10}$/.test(newEmployee.phoneNum)) {
+      errors.phoneNum = "Phone number must be exactly 10 digits.";
     }
-    // Role validation removed since it's hardcoded
+    
+    // Date of Birth validation
     if (!newEmployee.dob) {
       errors.dob = "Date of Birth is required.";
     }
-    if (!newEmployee.nationalId || newEmployee.nationalId.length < 6) {
-      errors.nationalId = "National ID must be at least 6 characters long.";
+    
+    // National ID validation: between 10 to 12 digits
+    if (!newEmployee.nationalId || !/^\d{10,12}$/.test(newEmployee.nationalId)) {
+      errors.nationalId = "National ID must be between 10 to 12 digits.";
     }
+    
+    // Address validation: more than 5 characters
     if (!newEmployee.address || newEmployee.address.length < 5) {
       errors.address = "Address must be at least 5 characters long.";
     }
-    if (!newEmployee.password || newEmployee.password.length < 6) {
-      errors.password = "Password must be at least 6 characters long.";
+    
+    // Password validation: more than 8 characters
+    if (!newEmployee.password || newEmployee.password.length < 8) {
+      errors.password = "Password must be at least 8 characters long.";
     }
   
     setValidationErrors(errors);
@@ -154,7 +206,8 @@ function ManageEmployee() {
       // Ensure role is set to "employee" before saving
       const employeeData = {
         ...newEmployee,
-        role: 'employee'
+        role: 'employee',
+        status: 'Active' // Set default status to Active
       };
       
       axios
@@ -162,6 +215,20 @@ function ManageEmployee() {
         .then((response) => {
           setEmployees([...employees, response.data]);
           setShowModal(false);
+          
+          // Reset form after successful save
+          setNewEmployee({
+            username: '',
+            firstName: '',
+            lastName: '',
+            email: '',
+            phoneNum: '',
+            role: 'employee',
+            dob: '',
+            nationalId: '',
+            address: '',
+            password: ''
+          });
         })
         .catch((error) => {
           console.error("Error adding employee:", error);
@@ -199,18 +266,79 @@ function ManageEmployee() {
   };
   
   const handleSaveEditEmployee = () => {
-    const { password, created_at, updated_at, ...employeeData } = editedEmployee;
-    axios
-      .put(`http://localhost:5000/api/employees/${editedEmployee.userid}`, employeeData)
-      .then((response) => {
-        setEmployees((prevEmployees) =>
-          prevEmployees.map((emp) => (emp.userid === editedEmployee.userid ? editedEmployee : emp))
-        );
-        setShowEditModal(false);
-      })
-      .catch((error) => {
-        console.error("Error updating employee:", error.response ? error.response.data : error);
-      });
+    // Validate the edited employee data
+    let isValid = true;
+    
+    // Username validation: more than 4 characters and no symbols
+    if (!editedEmployee.username || editedEmployee.username.length < 4 || !/^[a-zA-Z0-9]+$/.test(editedEmployee.username)) {
+      isValid = false;
+      alert("Username must be at least 4 characters long and contain only letters and numbers.");
+      return;
+    }
+    
+    // First name validation: only letters and more than 4 letters
+    if (!editedEmployee.first_name || editedEmployee.first_name.length < 4 || !/^[A-Za-z]+$/.test(editedEmployee.first_name)) {
+      isValid = false;
+      alert("First name must be at least 4 characters long and contain only letters.");
+      return;
+    }
+    
+    // Last name validation: only letters and more than 4 letters
+    if (!editedEmployee.last_name || editedEmployee.last_name.length < 4 || !/^[A-Za-z]+$/.test(editedEmployee.last_name)) {
+      isValid = false;
+      alert("Last name must be at least 4 characters long and contain only letters.");
+      return;
+    }
+    
+    // Email validation: valid email format
+    if (!editedEmployee.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editedEmployee.email)) {
+      isValid = false;
+      alert("Invalid email address.");
+      return;
+    }
+    
+    // Phone number validation: exactly 10 digits
+    if (!editedEmployee.phonenum || !/^\d{10}$/.test(editedEmployee.phonenum)) {
+      isValid = false;
+      alert("Phone number must be exactly 10 digits.");
+      return;
+    }
+    
+    // Date of Birth validation
+    if (!editedEmployee.dob) {
+      isValid = false;
+      alert("Date of Birth is required.");
+      return;
+    }
+    
+    // National ID validation: between 10 to 12 digits
+    if (!editedEmployee.natID || !/^\d{10,12}$/.test(editedEmployee.natID)) {
+      isValid = false;
+      alert("National ID must be between 10 to 12 digits.");
+      return;
+    }
+    
+    // Address validation: more than 5 characters
+    if (!editedEmployee.address || editedEmployee.address.length < 5) {
+      isValid = false;
+      alert("Address must be at least 5 characters long.");
+      return;
+    }
+    
+    if (isValid) {
+      const { password, created_at, updated_at, ...employeeData } = editedEmployee;
+      axios
+        .put(`http://localhost:5000/api/employees/${editedEmployee.userid}`, employeeData)
+        .then((response) => {
+          setEmployees((prevEmployees) =>
+            prevEmployees.map((emp) => (emp.userid === editedEmployee.userid ? editedEmployee : emp))
+          );
+          setShowEditModal(false);
+        })
+        .catch((error) => {
+          console.error("Error updating employee:", error.response ? error.response.data : error);
+        });
+    }
   };
 
   const handleEditInputChange = (e) => {
@@ -259,6 +387,7 @@ function ManageEmployee() {
                 <option value="email">Email</option>
                 <option value="phoneNum">PhoneNum</option>
                 <option value="natId">NationalID</option>
+                <option value="status">Status</option>
               </select>
               <input
                 type="text"
@@ -286,6 +415,7 @@ function ManageEmployee() {
                   <th>EMAIL</th>
                   <th>PHONENUM</th>
                   <th>NationalID</th>
+                  <th>Status</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -299,6 +429,14 @@ function ManageEmployee() {
                       <td>{emp.email}</td>
                       <td>{emp.phonenum}</td>
                       <td>{emp.natID}</td>
+                      <td>
+                        <span style={{ 
+                          color: emp.status === 'Active' ? 'green' : 'red',
+                          fontWeight: 'bold'
+                        }}>
+                          {emp.status || 'Active'}
+                        </span>
+                      </td>
                       <td>
                         <FaEye
                           style={{ marginRight: "10px", cursor: "pointer", color: "#2770b4" }}
@@ -317,7 +455,7 @@ function ManageEmployee() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="7">No employees found</td>
+                    <td colSpan="8">No employees found</td>
                   </tr>
                 )}
               </tbody>
@@ -363,7 +501,8 @@ function ManageEmployee() {
             { label: "Role", name: "role" },
             { label: "Date of Birth", name: "dob", format: formatDate },
             { label: "National ID", name: "natID" },
-            { label: "Address", name: "address" }
+            { label: "Address", name: "address" },
+            { label: "Status", name: "status" }
           ]}
         />
 
@@ -372,7 +511,7 @@ function ManageEmployee() {
           entityData={editedEmployee}
           entityTitle="Employee"
           entityFields={employeeFields}
-          handleClose={() => setShowEditModal(false)}
+          handleClose={handleCloseEditModal}
           handleSaveEditEntity={handleSaveEditEmployee}
           handleEditInputChange={handleEditInputChange}
         />
@@ -392,7 +531,8 @@ function ManageEmployee() {
             { label: "Role", field: "role" },
             { label: "Date of Birth", field: "dob", format: (date) => date ? new Date(date).toLocaleDateString() : "" },
             { label: "National ID", field: "natID" },
-            { label: "Address", field: "address" }
+            { label: "Address", field: "address" },
+            { label: "Status", field: "status" }
           ]}
           filename="employee_report.pdf"
           reportTitle="Employee Details Report"

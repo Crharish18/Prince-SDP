@@ -36,6 +36,130 @@ router.get('/today-expense', (req, res) => {
     });
 });
 
+// Function to update product stock based on expired inventory
+function updateStockForExpiredInventory() {
+  const today = new Date();
+  const todayStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
+
+  // Query to find expired inventory with remaining quantity
+  const findExpiredInventoryQuery = `
+    SELECT i.inventory_id, i.product_id, i.qty_added, p.stock_qty
+    FROM inventory i
+    JOIN products p ON i.product_id = p.product_id
+    WHERE i.expiry_date < ? 
+    AND i.expiry_date IS NOT NULL
+    AND NOT EXISTS (
+      SELECT 1 FROM expired_inventory_log e 
+      WHERE e.inventory_id = i.inventory_id
+    )
+  `;
+
+  connection.query(findExpiredInventoryQuery, [todayStr], (err, results) => {
+    if (err) {
+      console.error('Error fetching expired inventory:', err);
+      return;
+    }
+
+    if (results.length === 0) {
+      console.log('No newly expired inventory found.');
+      return;
+    }
+
+    console.log(`Found ${results.length} expired inventory items to process.`);
+
+    // For each expired inventory, update product stock but keep inventory qty_added unchanged
+    results.forEach((inventory) => {
+      const { inventory_id, product_id, qty_added, stock_qty } = inventory;
+
+      // Calculate the new stock quantity (don't go below 0)
+      const newStockQty = Math.max(stock_qty - qty_added, 0);
+
+      // Update product stock
+      const updateProductStockQuery = `
+        UPDATE products
+        SET stock_qty = ?
+        WHERE product_id = ?
+      `;
+
+      connection.query(updateProductStockQuery, [newStockQty, product_id], (err) => {
+        if (err) {
+          console.error(`Error updating stock for product_id ${product_id}:`, err);
+          return;
+        }
+
+        // Log the expired inventory to prevent processing it again
+        const logExpiredInventoryQuery = `
+          INSERT INTO expired_inventory_log (inventory_id, product_id, qty_expired, expiry_date)
+          SELECT inventory_id, product_id, qty_added, expiry_date
+          FROM inventory
+          WHERE inventory_id = ?
+        `;
+
+        connection.query(logExpiredInventoryQuery, [inventory_id], (err) => {
+          if (err) {
+            console.error(`Error logging expired inventory for inventory_id ${inventory_id}:`, err);
+          } else {
+            console.log(`Updated stock for product_id ${product_id}. Reduced by ${qty_added} units due to expiration.`);
+          }
+        });
+      });
+    });
+  });
+}
+
+// Check if expired_inventory_log table exists, create if it doesn't
+function ensureExpiredInventoryLogTable() {
+  const createTableQuery = `
+    CREATE TABLE IF NOT EXISTS expired_inventory_log (
+      log_id INT AUTO_INCREMENT PRIMARY KEY,
+      inventory_id INT NOT NULL,
+      product_id INT NOT NULL,
+      qty_expired INT NOT NULL,
+      expiry_date DATE NOT NULL,
+      processed_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (inventory_id) REFERENCES inventory(inventory_id),
+      FOREIGN KEY (product_id) REFERENCES products(product_id)
+    )
+  `;
+
+  connection.query(createTableQuery, (err) => {
+    if (err) {
+      console.error('Error creating expired_inventory_log table:', err);
+    } else {
+      console.log('Expired inventory log table is ready');
+      // Run initial check for expired inventory
+      updateStockForExpiredInventory();
+    }
+  });
+}
+
+// Initialize the expired inventory log table when the server starts
+ensureExpiredInventoryLogTable();
+
+// Route to manually trigger the expired inventory check
+router.post('/check-expired', (req, res) => {
+  updateStockForExpiredInventory();
+  res.status(200).json({ message: 'Expired inventory check initiated' });
+});
+
+// Route to get expired inventory log
+router.get('/expired-log', (req, res) => {
+  const query = `
+    SELECT l.*, p.name as product_name 
+    FROM expired_inventory_log l
+    JOIN products p ON l.product_id = p.product_id
+    ORDER BY l.processed_date DESC
+  `;
+  
+  connection.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching expired inventory log:', err);
+      return res.status(500).send('Error fetching expired inventory log');
+    }
+    res.json(results);
+  });
+});
+
 router.post('/add-entity', upload.single('image'), (req, res) => {
   // Get product and inventory fields from req.body
   const {
@@ -144,12 +268,12 @@ router.post('/add-entity', upload.single('image'), (req, res) => {
     function insertInventoryRecord(productId) {
       const insertInventory = `
         INSERT INTO inventory
-        (qty_added, user_id, supplier_id, product_id, buying_price_per_unit, expiry_date)
-        VALUES (?, ?, ?, ?, ?, ?)`;
+        (qty_added, qty_available, user_id, supplier_id, product_id, buying_price_per_unit, expiry_date)
+        VALUES (?, ?, ?, ?, ?, ?, ?)`;
       
       connection.query(
         insertInventory,
-        [qty_added, user_id, supplier_id, productId, buying_price_per_unit, formattedExpiryDate],
+        [qty_added, qty_added, user_id, supplier_id, productId, buying_price_per_unit, formattedExpiryDate],
         (err, inventoryResults) => {
           if (err) {
             console.error('Error adding inventory:', err);
@@ -197,10 +321,13 @@ router.post('/reduce-stock', (req, res) => {
     // Process each item in the order
     const processItems = async () => {
       try {
+        const inventoryUsage = []; // To track which inventory records were used
+        
         for (const item of items) {
           const { product_id, qty } = item;
           
-          // First update the products table
+          // First update the products table - THIS IS THE KEY CHANGE
+          // We only update the product stock here, not in the checkout.jsx
           const updateProductQuery = 'UPDATE products SET stock_qty = stock_qty - ? WHERE product_id = ?';
           await new Promise((resolve, reject) => {
             connection.query(updateProductQuery, [qty, product_id], (err, results) => {
@@ -211,13 +338,14 @@ router.post('/reduce-stock', (req, res) => {
           
           // Now handle FIFO inventory reduction
           let remainingQty = qty;
+          const itemInventoryIds = []; // Track inventory IDs used for this item
           
-          // Get inventory records for this product ordered by added_on (oldest first)
+          // Get inventory records for this product ordered by expiry_date (oldest first)
           const getInventoryQuery = `
-            SELECT inventory_id, qty_added 
+            SELECT inventory_id, qty_available 
             FROM inventory 
-            WHERE product_id = ? AND qty_added > 0
-            ORDER BY added_on ASC`;
+            WHERE product_id = ? AND qty_available > 0
+            ORDER BY expiry_date ASC, added_on ASC`;
             
           const inventoryRecords = await new Promise((resolve, reject) => {
             connection.query(getInventoryQuery, [product_id], (err, results) => {
@@ -230,16 +358,22 @@ router.post('/reduce-stock', (req, res) => {
           for (const record of inventoryRecords) {
             if (remainingQty <= 0) break;
             
-            const qtyToReduce = Math.min(remainingQty, record.qty_added);
+            const qtyToReduce = Math.min(remainingQty, record.qty_available);
             remainingQty -= qtyToReduce;
             
-            // Update this inventory record
-            const updateInventoryQuery = 'UPDATE inventory SET qty_added = qty_added - ? WHERE inventory_id = ?';
+            // Update this inventory record - reduce from qty_available instead of qty_added
+            const updateInventoryQuery = 'UPDATE inventory SET qty_available = qty_available - ? WHERE inventory_id = ?';
             await new Promise((resolve, reject) => {
               connection.query(updateInventoryQuery, [qtyToReduce, record.inventory_id], (err, results) => {
                 if (err) reject(err);
                 else resolve(results);
               });
+            });
+            
+            // Add this inventory record to the usage list
+            itemInventoryIds.push({
+              inventory_id: record.inventory_id,
+              qty_used: qtyToReduce
             });
           }
           
@@ -247,6 +381,12 @@ router.post('/reduce-stock', (req, res) => {
           if (remainingQty > 0) {
             throw new Error(`Insufficient inventory for product ID ${product_id}`);
           }
+          
+          // Add the inventory usage for this item
+          inventoryUsage.push({
+            product_id,
+            inventory_ids: itemInventoryIds
+          });
         }
         
         // If we get here, all items were processed successfully
@@ -257,7 +397,10 @@ router.post('/reduce-stock', (req, res) => {
               res.status(500).json({ error: 'Transaction commit error' });
             });
           } else {
-            res.status(200).json({ message: 'Inventory updated successfully using FIFO method' });
+            res.status(200).json({ 
+              message: 'Inventory updated successfully using FIFO method',
+              inventoryUsage: inventoryUsage
+            });
           }
         });
       } catch (error) {
@@ -327,6 +470,29 @@ router.get('/expiring-soon', (req, res) => {
     res.json(results);
   });
 });
+
+// Set up a daily check for expired inventory (runs at midnight)
+const scheduleExpiryCheck = () => {
+  const now = new Date();
+  const night = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate() + 1, // tomorrow
+    0, 0, 0 // midnight
+  );
+  const timeToMidnight = night.getTime() - now.getTime();
+  
+  // Schedule first run at next midnight
+  setTimeout(() => {
+    updateStockForExpiredInventory();
+    
+    // Then schedule to run daily
+    setInterval(updateStockForExpiredInventory, 24 * 60 * 60 * 1000);
+  }, timeToMidnight);
+};
+
+// Start the scheduler
+scheduleExpiryCheck();
 
 // Export the router so it can be used in the server.js
 module.exports = router;

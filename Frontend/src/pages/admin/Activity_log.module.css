@@ -31,8 +31,10 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 5px;
-  height: 137px;
+  gap: 15px;
+  height: auto; /* Changed from fixed height to auto */
+  min-height: 137px; /* Set minimum height instead */
+  padding-bottom: 25px; /* Add padding at bottom for spacing */
 }
 
 .SearchWrapper {
@@ -40,6 +42,7 @@
   width: 100%;
   justify-content: flex-start;
   height: 48px;
+  align-items: center; /* Center items vertically */
 }
 
 .search-bar {
@@ -71,6 +74,57 @@
   background-color: #06325e;
 }
 
+/* Date sorting controls */
+.DateSortContainer {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  margin-top: 10px;
+}
+
+.SortLabel {
+  font-weight: bold;
+  margin-right: 15px;
+  white-space: nowrap;
+}
+
+.SortButtonGroup {
+  display: flex;
+  gap: 10px;
+}
+
+.SortButton {
+  display: flex;
+  align-items: center;
+  padding: 8px 15px;
+  border-radius: 5px;
+  font-size: 14px;
+  cursor: pointer;
+  border: 1px solid #2770b4;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.SortButton.active {
+  background-color: #2770b4;
+  color: white;
+}
+
+.SortButton.inactive {
+  background-color: white;
+  color: #2770b4;
+}
+
+.SortButton.clear {
+  background-color: white;
+  color: #666;
+  border-color: #ccc;
+}
+
+.SortIcon {
+  margin-left: 5px;
+}
+
 .TableContainer {
   width: 100%; /* Full width for table */
   background: white;
@@ -89,6 +143,16 @@
   color: white;
   z-index: 2;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.SortableHeader {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.SortableHeader:hover {
+  background-color: #8a2424;
 }
 
 .ModalOverlay1 {
