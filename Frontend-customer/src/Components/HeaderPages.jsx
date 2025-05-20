@@ -30,7 +30,9 @@ const HeaderPages = () => {
     const fetchCategories = async () => {
       try {
         const response = await axios.get('http://localhost:5000/api/categories');
-        setCategories(response.data);
+        // Filter categories to only include those with Active status
+        const activeCategories = response.data.filter(category => category.status === 'Active');
+        setCategories(activeCategories);
       } catch (error) {
         console.error('Error fetching categories:', error);
       }

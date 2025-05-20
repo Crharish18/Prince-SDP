@@ -78,22 +78,28 @@ function ManageProducts() {
 
   const handleCloseViewModal = () => setShowViewModal(false);
 
-  const handleDeleteProduct = (productId) => {
-    if (window.confirm("Are you sure you want to delete this product?")) {
-      axios
-        .delete(`http://localhost:5000/api/products/${productId}`)
-        .then(() => {
-          setProducts((prevProducts) =>
-            prevProducts.filter((product) => product.product_id !== productId)
-          );
-          alert("Product deleted successfully");
-        })
-        .catch((error) => {
-          console.error("Error deleting product:", error);
+ const handleDeleteProduct = (productId) => {
+  if (window.confirm("Are you sure you want to delete this product?")) {
+    axios
+      .delete(`http://localhost:5000/api/products/${productId}`)
+      .then(() => {
+        setProducts((prevProducts) =>
+          prevProducts.filter((product) => product.product_id !== productId)
+        );
+        alert("Product deleted successfully");
+      })
+      .catch((error) => {
+        console.error("Error deleting product:", error);
+        
+        // Display error message to the user
+        if (error.response && error.response.data && error.response.data.error) {
+          alert(error.response.data.error);
+        } else {
           alert("Error deleting product");
-        });
-    }
-  };
+        }
+      });
+  }
+};
 
   const handleEditProduct = (product) => {
     setSelectedProduct(product);
@@ -213,6 +219,7 @@ function ManageProducts() {
                 <option value="name">Name</option>
                 <option value="price">Price</option>
                 <option value="stock_qty">Stock Quantity</option>
+                <option value="status">Status</option>
               </select>
               <input 
                 type="text" 
@@ -267,6 +274,7 @@ function ManageProducts() {
                     {quantitySort === 'asc' && <FaSortUp style={{ marginLeft: "5px" }} />}
                     {quantitySort === 'desc' && <FaSortDown style={{ marginLeft: "5px" }} />}
                   </th>
+                  <th>Status</th>
                   <th>created_at</th>
                   <th>Actions</th>
                 </tr>
@@ -279,8 +287,14 @@ function ManageProducts() {
                       <td>{prod.name}</td>
                       <td>Rs.{parseFloat(prod.price).toFixed(2)}</td>
                       <td>{prod.stock_qty}</td>
-                     
-
+                      <td>
+                        <span style={{ 
+                          color: prod.status === 'Active' ? 'green' : 'red',
+                          fontWeight: 'bold'
+                        }}>
+                          {prod.status || 'Active'}
+                        </span>
+                      </td>
                       <td>{formatTimestamp(prod.created_at)}</td>
                       <td>
                         <FaEye 
@@ -297,7 +311,7 @@ function ManageProducts() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="5">No products found</td>
+                    <td colSpan="7">No products found</td>
                   </tr>
                 )}
               </tbody>
@@ -319,6 +333,7 @@ function ManageProducts() {
             { label: "Category ID", name: "category_id"},
             { label: "Discount Percentage", name: "discount_percentage"},
             { label: "Minimum Quantity", name: "min_quantity" },
+            { label: "Status", name: "status" },
             { label: "Image", name: "image_url", type: "image" }
           ]} 
         />
@@ -335,6 +350,7 @@ function ManageProducts() {
             { label: "Category ID", name: "category_id"},
             { label: "Discount Percentage", name: "discount_percentage"},
             { label: "Minimum Quantity", name: "min_quantity" },
+            { label: "Status", name: "status", type: "select", options: ["Active", "Disable"] },
             { label: "Image", name: "image_url", type: "image" }
           ]}
           handleClose={() => setShowEditModal(false)} 
@@ -352,6 +368,7 @@ function ManageProducts() {
             { label: "Name", field: "name" },
             { label: "Price", field: "price", format: (price) => `Rs.${parseFloat(price).toFixed(2)}` },
             { label: "Stock Quantity", field: "stock_qty" },
+            { label: "Status", field: "status" },
             { label: "Created At", field: "created_at", format: (date) => date ? formatTimestamp(date) : "N/A" }
           ]}
           filename="products_report.pdf"

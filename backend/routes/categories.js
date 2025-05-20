@@ -33,16 +33,16 @@ router.get('/only6', (req, res) => {
 
 
     router.post('/', (req, res) => {
-      const { categoryName } = req.body;  // Changed from category_name to categoryName
+      const { categoryName, status } = req.body;  // Changed from category_name to categoryName
       
       // Validate the category name
       if (!categoryName || categoryName.trim().length < 3) {
         return res.status(400).json({ error: 'Category name must be at least 3 characters long.' });
       }
 
-      const query = `INSERT INTO categories (category_name) VALUES (?)`;
+      const query = `INSERT INTO categories (category_name, status) VALUES (?, ?)`;
 
-      connection.query(query, [categoryName], (err, results) => {
+      connection.query(query, [categoryName, status || 'Active'], (err, results) => {
         if (err) {
           console.error('Error adding category:', err);  // Add error logging
           return res.status(500).send('Error adding category');
@@ -50,6 +50,7 @@ router.get('/only6', (req, res) => {
         res.status(201).json({
           category_id: results.insertId,
           category_name: categoryName,
+          status: status || 'Active',
           created_at: new Date(),
         });
       });
@@ -58,16 +59,16 @@ router.get('/only6', (req, res) => {
   // Update a category by ID
 router.put('/:category_id', (req, res) => {
     const { category_id } = req.params;  // Get category_id from URL parameter
-    const { category_name } = req.body;  // Get category_name from request body
+    const { category_name, status } = req.body;  // Get category_name from request body
   
     // Validate category_name
     if (!category_name || category_name.length < 3) {
       return res.status(400).json({ error: 'Category name must be at least 3 characters long.' });
     }
   
-    const query = `UPDATE categories SET category_name = ? WHERE category_id = ?`;
+    const query = `UPDATE categories SET category_name = ?, status = ? WHERE category_id = ?`;
   
-    connection.query(query, [category_name, category_id], (err, results) => {
+    connection.query(query, [category_name, status, category_id], (err, results) => {
       if (err) {
         console.error('Error updating category:', err);
         return res.status(500).send('Error updating category');
@@ -91,7 +92,15 @@ router.delete('/:category_id', (req, res) => {
     connection.query(query, [category_id], (err, results) => {
       if (err) {
         console.error('Error deleting category:', err);
-        return res.status(500).send('Error deleting category');
+        
+        // Check if the error is a foreign key constraint error
+        if (err.code === 'ER_ROW_IS_REFERENCED_2') {
+          return res.status(400).json({ 
+            error: 'This category cannot be deleted because it is associated with products. Please delete those products first or disable the category instead.' 
+          });
+        }
+        
+        return res.status(500).json({ error: 'Error deleting category' });
       }
   
       if (results.affectedRows === 0) {

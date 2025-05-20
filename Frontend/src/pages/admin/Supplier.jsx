@@ -20,7 +20,8 @@ function Supplier() {
     name: '',
     phone: '',
     email: '',
-    address: ''
+    address: '',
+    status: 'Active'
   });
 
   const [validationErrors, setValidationErrors] = useState({
@@ -83,7 +84,7 @@ function Supplier() {
     { label: "Phone", name: "phone", type: "text" },
     { label: "Email", name: "email", type: "email" },
     { label: "Address", name: "address", type: "text" },
-    
+    { label: "Status", name: "status", type: "select", options: ["Active", "Disable"] }
   ];
 
   const validateEmail = (email) => {
@@ -101,7 +102,8 @@ function Supplier() {
       name: '',
       phone: '',
       email: '',
-      address: ''
+      address: '',
+      status: 'Active'
     });
     // Reset validation errors
     setValidationErrors({
@@ -166,7 +168,8 @@ function Supplier() {
             name: '',
             phone: '',
             email: '',
-            address: ''
+            address: '',
+            status: 'Active'
           });
         })
         .catch((error) => {
@@ -184,18 +187,26 @@ function Supplier() {
     setShowViewModal(false); 
   };
 
-  const handleDeleteSupplier = (supplierId) => {
-    axios
-      .delete(`http://localhost:5000/api/suppliers/${supplierId}`)
-      .then((response) => {
-        setSuppliers((prevSuppliers) =>
-          prevSuppliers.filter((supplier) => supplier.supplier_id !== supplierId)
-        );
-      })
-      .catch((error) => {
-        console.error("Error deleting supplier:", error);
-      });
-  };
+  // Delete supplier
+const handleDeleteSupplier = (supplierId) => {
+  axios.delete(`http://localhost:5000/api/suppliers/${supplierId}`)
+    .then(response => {
+      setSuppliers((prevSuppliers) =>
+        prevSuppliers.filter((supplier) => supplier.supplier_id !== supplierId)
+      );
+    })
+    .catch(error => {
+      console.error("Error deleting supplier:", error);
+      
+      // Display error message to the user
+      if (error.response && error.response.data && error.response.data.error) {
+        alert(error.response.data.error);
+      } else {
+        alert("An error occurred while deleting the supplier. Please try again.");
+      }
+    });
+};
+
 
   const handleEditSupplier = (supplier) => {
     setSelectedSupplier(supplier);
@@ -304,6 +315,7 @@ function Supplier() {
                 <option value="phone">Phone</option>
                 <option value="email">Email</option>
                 <option value="address">Address</option>
+                <option value="status">Status</option>
               </select>
               <input
                 type="text"
@@ -330,6 +342,7 @@ function Supplier() {
                   <th>PHONE</th>
                   <th>EMAIL</th>
                   <th>ADDRESS</th>
+                  <th>STATUS</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -342,6 +355,14 @@ function Supplier() {
                       <td>{supplier.phone}</td>
                       <td>{supplier.email}</td>
                       <td>{supplier.address || 'N/A'}</td>
+                      <td>
+                        <span style={{ 
+                          color: supplier.status === 'Active' ? 'green' : 'red',
+                          fontWeight: 'bold'
+                        }}>
+                          {supplier.status || 'Active'}
+                        </span>
+                      </td>
                       <td>
                         <FaEye
                           style={{ marginRight: "10px", cursor: "pointer", color: "#2770b4" }}
@@ -360,7 +381,7 @@ function Supplier() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="6">No suppliers found</td>
+                    <td colSpan="7">No suppliers found</td>
                   </tr>
                 )}
               </tbody>
@@ -379,7 +400,8 @@ function Supplier() {
             { label: "Name", name: "name", type: "text" },
             { label: "Phone", name: "phone", type: "text" },
             { label: "Email", name: "email", type: "email" },
-            { label: "Address", name: "address", type: "text" }
+            { label: "Address", name: "address", type: "text" },
+            { label: "Status", name: "status", type: "select", options: ["Active", "Disable"] }
           ]}
           handleInputChange={handleInputChange}
           validationErrors={validationErrors}
@@ -396,6 +418,7 @@ function Supplier() {
             { label: "Phone", name: "phone" },
             { label: "Email", name: "email" },
             { label: "Address", name: "address" },
+            { label: "Status", name: "status" },
             { label: "Created At", name: "created_at", format: formatDate }
           ]}
         />
@@ -422,6 +445,7 @@ function Supplier() {
             { label: "Phone", field: "phone" },
             { label: "Email", field: "email" },
             { label: "Address", field: "address" },
+            { label: "Status", field: "status" },
             { label: "Created At", field: "created_at", format: (date) => date ? formatDate(date) : "N/A" }
           ]}
           filename="suppliers_report.pdf"

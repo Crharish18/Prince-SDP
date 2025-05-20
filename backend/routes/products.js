@@ -79,7 +79,7 @@ router.post('/', upload.single('image'), (req, res) => {
     console.log("Request body:", req.body);
     console.log("File:", req.file ? `${req.file.originalname} (${req.file.size} bytes)` : "No file");
 
-    const { name, description, price, stock_qty, category_id, discount_percentage, min_quantity } = req.body;
+    const { name, description, price, stock_qty, category_id, discount_percentage, min_quantity, status } = req.body;
     const file = req.file;
 
     if (!name || !price || !stock_qty || !min_quantity) {
@@ -102,8 +102,8 @@ router.post('/', upload.single('image'), (req, res) => {
             console.log("Cloudinary upload successful:", result.secure_url);
 
             // Save product with the Cloudinary URL
-            const query = `INSERT INTO products (name, description, price, stock_qty, image_url, category_id, discount_percentage, min_quantity) 
-                          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+            const query = `INSERT INTO products (name, description, price, stock_qty, image_url, category_id, discount_percentage, min_quantity, status) 
+                          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
             connection.query(query, [
                 name,
@@ -113,7 +113,8 @@ router.post('/', upload.single('image'), (req, res) => {
                 result.secure_url,
                 category_id || null, 
                 discount_percentage || 0, 
-                min_quantity
+                min_quantity,
+                status || 'Active'
             ], (err, results) => {
                 if (err) {
                     console.error('Error adding product:', err);
@@ -129,7 +130,8 @@ router.post('/', upload.single('image'), (req, res) => {
                         image_url: result.secure_url,
                         category_id: category_id || null, 
                         discount_percentage: discount_percentage || 0, 
-                        min_quantity 
+                        min_quantity,
+                        status: status || 'Active'
                     });
                 }
             });
@@ -140,7 +142,7 @@ router.post('/', upload.single('image'), (req, res) => {
 // PUT: Update a product with image upload
 router.put('/:product_id', upload.single('image'), (req, res) => {
     const { product_id } = req.params;
-    const { name, description, price, stock_qty, category_id, discount_percentage, min_quantity } = req.body;
+    const { name, description, price, stock_qty, category_id, discount_percentage, min_quantity, status } = req.body;
     const file = req.file;
   
     if (!name || !price || !stock_qty || !min_quantity) {
@@ -158,7 +160,7 @@ router.put('/:product_id', upload.single('image'), (req, res) => {
           }
   
           // Update product with new image URL
-          const query = `UPDATE products SET name=?, description=?, price=?, stock_qty=?, image_url=?, category_id=?, discount_percentage=?, min_quantity=? WHERE product_id=?`;
+          const query = `UPDATE products SET name=?, description=?, price=?, stock_qty=?, image_url=?, category_id=?, discount_percentage=?, min_quantity=?, status=? WHERE product_id=?`;
   
           connection.query(query, [
             name,
@@ -168,7 +170,8 @@ router.put('/:product_id', upload.single('image'), (req, res) => {
             result.secure_url, 
             category_id, 
             discount_percentage || 0, 
-            min_quantity, 
+            min_quantity,
+            status || 'Active',
             product_id
           ], (err, results) => {
             if (err) {
@@ -189,7 +192,7 @@ router.put('/:product_id', upload.single('image'), (req, res) => {
       ).end(file.buffer);
     } else {
       // No new image, just update the other fields
-      const query = `UPDATE products SET name=?, description=?, price=?, stock_qty=?, category_id=?, discount_percentage=?, min_quantity=? WHERE product_id=?`;
+      const query = `UPDATE products SET name=?, description=?, price=?, stock_qty=?, category_id=?, discount_percentage=?, min_quantity=?, status=? WHERE product_id=?`;
   
       connection.query(query, [
         name, 
@@ -198,7 +201,8 @@ router.put('/:product_id', upload.single('image'), (req, res) => {
         stock_qty, 
         category_id, 
         discount_percentage || 0, 
-        min_quantity, 
+        min_quantity,
+        status || 'Active',
         product_id
       ], (err, results) => {
         if (err) {
@@ -254,7 +258,15 @@ router.delete('/:product_id', (req, res) => {
     connection.query(query, [product_id], (err, results) => {
         if (err) {
             console.error('Error deleting product:', err);
-            res.status(500).send('Error deleting product');
+            
+            // Check if the error is a foreign key constraint error
+            if (err.code === 'ER_ROW_IS_REFERENCED_2') {
+                return res.status(400).json({ 
+                    error: 'This product cannot be deleted because it is associated with inventory items or orders. Please delete those items first or disable the product instead.' 
+                });
+            }
+            
+            res.status(500).json({ error: 'Error deleting product' });
         } else {
             if (results.affectedRows === 0) {
                 res.status(404).json({ error: 'Product not found' });

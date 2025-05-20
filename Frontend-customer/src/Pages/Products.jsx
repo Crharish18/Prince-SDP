@@ -37,7 +37,9 @@ const Products = () => {
     const fetchCategories = async () => {
       try {
         const response = await axios.get('http://localhost:5000/api/categories');
-        setCategories(response.data);
+        // Filter categories to only include those with Active status
+        const activeCategories = response.data.filter(category => category.status === 'Active');
+        setCategories(activeCategories);
       } catch (error) {
         console.error('Error fetching categories:', error);
       } finally {
@@ -66,7 +68,9 @@ const Products = () => {
           response = await axios.get('http://localhost:5000/api/products');
         }
         
-        setProducts(response.data);
+        // Filter products to only include those with 'Active' status
+        const activeProducts = response.data.filter(product => product.status === 'Active');
+        setProducts(activeProducts);
       } catch (error) {
         console.error('Error fetching products:', error);
       } finally {
@@ -98,7 +102,9 @@ const Products = () => {
     const fetchCategories = async () => {
       try {
         const response = await axios.get('http://localhost:5000/api/categories');
-        setCategories(response.data);
+        // Filter categories to only include those with Active status
+        const activeCategories = response.data.filter(category => category.status === 'Active');
+        setCategories(activeCategories);
       } catch (error) {
         console.error('Error fetching categories:', error);
       } finally {
@@ -203,7 +209,9 @@ const Products = () => {
           ? 'http://localhost:5000/api/products' 
           : `http://localhost:5000/api/products/category/${categoryId}`
       );
-      setProducts(response.data);
+      // Filter products to only include those with 'Active' status
+      const activeProducts = response.data.filter(product => product.status === 'Active');
+      setProducts(activeProducts);
     } catch (error) {
       console.error('Error fetching products by category:', error);
     } finally {
@@ -486,9 +494,7 @@ const Products = () => {
                             {product.stock_qty > 0 ? 'ADD TO CART' : 'OUT OF STOCK'}
                           </button>
                         </div>
-                        <div className="mt-2 text-sm text-gray-500">
-                          or 3 X Rs.300 with card
-                        </div>
+                        
                       </div>
                     </div>
                   ))

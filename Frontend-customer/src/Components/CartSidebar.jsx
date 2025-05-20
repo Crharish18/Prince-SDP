@@ -236,9 +236,7 @@ const CartSidebar = ({ isOpen, onClose }) => {
             >
               Checkout
             </button>
-            <p className="text-sm text-gray-500 text-center">
-              or 3 X Rs.{(finalTotal / 3).toFixed(2)} with KOKO
-            </p>
+            
           </div>
         </div>
       </div>

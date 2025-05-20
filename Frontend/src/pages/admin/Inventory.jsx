@@ -149,19 +149,31 @@ function Inventory() {
 
   useEffect(() => {
     axios.get('http://localhost:5000/api/categories')
-      .then((response) => setCategories(response.data))
+      .then((response) => {
+        // Filter categories to only include those with Active status
+        const activeCategories = response.data.filter(category => category.status === 'Active');
+        setCategories(activeCategories);
+      })
       .catch((error) => console.error('Error fetching categories:', error));
   }, []);
 
   useEffect(() => {
     axios.get('http://localhost:5000/api/suppliers')
-      .then((response) => setSuppliers(response.data))
+      .then((response) => {
+        // Filter suppliers to only include those with Active status
+        const activeSuppliers = response.data.filter(supplier => supplier.status === 'Active');
+        setSuppliers(activeSuppliers);
+      })
       .catch((error) => console.error('Error fetching suppliers:', error));
   }, []);
 
   useEffect(() => {
     axios.get('http://localhost:5000/api/products')
-      .then((response) => setProducts(response.data))
+      .then((response) => {
+        // Filter products to only include those with Active status
+        const activeProducts = response.data.filter(product => product.status === 'Active');
+        setProducts(activeProducts);
+      })
       .catch((error) => console.error('Error fetching products:', error));
   }, []);
 
@@ -479,7 +491,11 @@ function Inventory() {
           
         // Also refresh products data
         axios.get('http://localhost:5000/api/products')
-          .then(response => setProducts(response.data))
+          .then(response => {
+            // Filter products to only include those with Active status
+            const activeProducts = response.data.filter(product => product.status === 'Active');
+            setProducts(activeProducts);
+          })
           .catch(error => console.error('Error fetching products:', error));
       })
       .catch((error) => {

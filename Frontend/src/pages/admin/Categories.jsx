@@ -18,6 +18,7 @@ function Categories() {
   const [showModal, setShowModal] = useState(false);
   const [newCategory, setNewCategory] = useState({
     categoryName: '',
+    status: 'Active'
   });
 
   const [validationErrors, setValidationErrors] = useState({
@@ -73,6 +74,7 @@ function Categories() {
     setShowModal(false);
     setNewCategory({
       categoryName: '',
+      status: 'Active'
     });
     setValidationErrors({
       categoryName: '',
@@ -82,12 +84,19 @@ function Categories() {
   // Handle category input change - Updated to allow only letters
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    // Only allow letters and spaces
-    const lettersOnly = value.replace(/[^a-zA-Z ]/g, '');
-    setNewCategory({
-      ...newCategory,
-      [name]: lettersOnly,
-    });
+    if (name === 'status') {
+      setNewCategory({
+        ...newCategory,
+        [name]: value,
+      });
+    } else {
+      // Only allow letters and spaces for category name
+      const lettersOnly = value.replace(/[^a-zA-Z ]/g, '');
+      setNewCategory({
+        ...newCategory,
+        [name]: lettersOnly,
+      });
+    }
   };
 
   const handleSaveNewCategory = () => {
@@ -102,7 +111,8 @@ function Categories() {
 
     if (Object.keys(errors).length === 0) {
       const categoryData = {
-        categoryName: newCategory.categoryName
+        categoryName: newCategory.categoryName,
+        status: newCategory.status
       };
       axios.post("http://localhost:5000/api/categories", categoryData)
         .then(response => {
@@ -110,6 +120,7 @@ function Categories() {
           setShowModal(false);
           setNewCategory({
             categoryName: '',
+            status: 'Active'
           });
         })
         .catch(error => {
@@ -130,17 +141,25 @@ function Categories() {
   };
 
   // Delete category
-  const handleDeleteCategory = (categoryId) => {
-    axios.delete(`http://localhost:5000/api/categories/${categoryId}`)
-      .then(response => {
-        setCategories((prevCategories) =>
-          prevCategories.filter((category) => category.category_id !== categoryId)
-        );
-      })
-      .catch(error => {
-        console.error("Error deleting category:", error);
-      });
-  };
+const handleDeleteCategory = (categoryId) => {
+  axios.delete(`http://localhost:5000/api/categories/${categoryId}`)
+    .then(response => {
+      setCategories((prevCategories) =>
+        prevCategories.filter((category) => category.category_id !== categoryId)
+      );
+    })
+    .catch(error => {
+      console.error("Error deleting category:", error);
+      
+      // Display error message to the user
+      if (error.response && error.response.data && error.response.data.error) {
+        alert(error.response.data.error);
+      } else {
+        alert("An error occurred while deleting the category. Please try again.");
+      }
+    });
+};
+
 
   // Edit category
   const handleEditCategory = (category) => {
@@ -180,12 +199,19 @@ function Categories() {
   // Handle input change for edited category - Updated to allow only letters
   const handleEditInputChange = (e) => {
     const { name, value } = e.target;
-    // Only allow letters and spaces
-    const lettersOnly = value.replace(/[^a-zA-Z ]/g, '');
-    setEditedCategory({
-      ...editedCategory,
-      [name]: lettersOnly,
-    });
+    if (name === 'status') {
+      setEditedCategory({
+        ...editedCategory,
+        [name]: value,
+      });
+    } else {
+      // Only allow letters and spaces for category name
+      const lettersOnly = value.replace(/[^a-zA-Z ]/g, '');
+      setEditedCategory({
+        ...editedCategory,
+        [name]: lettersOnly,
+      });
+    }
   };
 
   // Close edit modal
@@ -218,6 +244,7 @@ function Categories() {
               >
                 <option value="category_id">Category ID</option>
                 <option value="category_name">Category Name</option>
+                <option value="status">Status</option>
               </select>
               <input
                 type="text"
@@ -241,6 +268,7 @@ function Categories() {
                 <tr>
                   <th>Category ID</th>
                   <th>Category Name</th>
+                  <th>Status</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -250,6 +278,14 @@ function Categories() {
                     <tr key={cat.category_id}>
                       <td>{cat.category_id}</td>
                       <td>{cat.category_name}</td>
+                      <td>
+                        <span style={{ 
+                          color: cat.status === 'Active' ? 'green' : 'red',
+                          fontWeight: 'bold'
+                        }}>
+                          {cat.status || 'Active'}
+                        </span>
+                      </td>
                       <td>
                          <FaEye
                          style={{ marginRight: "10px", cursor: "pointer", color: "#2770b4" }}
@@ -268,7 +304,7 @@ function Categories() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="3">No categories found</td>
+                    <td colSpan="4">No categories found</td>
                   </tr>
                 )}
               </tbody>
@@ -296,6 +332,18 @@ function Categories() {
                           {validationErrors.categoryName}
                         </div>
                       )}
+                    </div>
+                    <div className={styles.FormGroup}>
+                      <label style={{ fontWeight: "bold" }}>Status</label>
+                      <select
+                        className="form-control"
+                        name="status"
+                        value={newCategory.status}
+                        onChange={handleInputChange}
+                      >
+                        <option value="Active">Active</option>
+                        <option value="Disable">Disable</option>
+                      </select>
                     </div>
                   </div>
                   <div className={styles.BtnContainer}>
@@ -335,6 +383,7 @@ function Categories() {
           entityFields={[
             { label: "Category ID", name: "category_id" },
             { label: "Category Name", name: "category_name" },
+            { label: "Status", name: "status" }
           ]}
         />
 
@@ -345,6 +394,7 @@ function Categories() {
           entityTitle="Category"
           entityFields={[
             { label: "Category Name", name: "category_name" },
+            { label: "Status", name: "status", type: "select", options: ["Active", "Disable"] }
           ]}
           handleClose={handleCloseEditModal}
           handleSaveEditEntity={handleSaveEditCategory}
@@ -359,7 +409,8 @@ function Categories() {
           data={filteredCategories}
           fields={[
             { label: "Category ID", field: "category_id" },
-            { label: "Category Name", field: "category_name" }
+            { label: "Category Name", field: "category_name" },
+            { label: "Status", field: "status" }
           ]}
           filename="categories_report.pdf"
           reportTitle="Categories Details Report"

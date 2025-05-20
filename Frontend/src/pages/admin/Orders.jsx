@@ -513,11 +513,7 @@ function ManageOrder() {
                           onClick={() => handleEditOrder(order)} 
                           title="Edit Order Status"
                         />
-                        <FaTrash
-                          style={{ cursor: "pointer", color: "#d9534f" }}
-                          onClick={() => handleDeleteOrder(order.order_id)} 
-                          title="Delete Order"
-                        />
+                        
                       </td>
                     </tr>
                   ))

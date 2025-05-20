@@ -16,20 +16,20 @@ router.get('/', (req, res) => {
   });
 
   router.post('/', (req, res) => {
-    const { name, phone, email, address } = req.body;
+    const { name, phone, email, address, status } = req.body;
   
     if (!name || !phone || !email) {
       return res.status(400).json({ error: 'Name, phone, and email are required fields' });
     }
   
-    const query = `INSERT INTO suppliers (name, phone, email, address) VALUES (?, ?, ?, ?)`;
+    const query = `INSERT INTO suppliers (name, phone, email, address, status) VALUES (?, ?, ?, ?, ?)`;
   
-    connection.query(query, [name, phone, email, address], (err, results) => {
+    connection.query(query, [name, phone, email, address, status || 'Active'], (err, results) => {
       if (err) {
         console.error('Error adding supplier:', err);
         res.status(500).send('Error adding supplier');
       } else {
-        res.status(201).json({ supplier_id: results.insertId, name, phone, email, address });
+        res.status(201).json({ supplier_id: results.insertId, name, phone, email, address, status: status || 'Active' });
       }
     });
   });
@@ -42,7 +42,15 @@ router.get('/', (req, res) => {
     connection.query(query, [supplier_id], (err, results) => {
       if (err) {
         console.error('Error deleting supplier:', err);
-        res.status(500).send('Error deleting supplier');
+        
+        // Check if the error is a foreign key constraint error
+        if (err.code === 'ER_ROW_IS_REFERENCED_2') {
+          return res.status(400).json({ 
+            error: 'This supplier cannot be deleted because it is associated with inventory items. Please delete those items first or disable the supplier instead.' 
+          });
+        }
+        
+        res.status(500).json({ error: 'Error deleting supplier' });
       } else {
         res.status(200).json({ message: 'Supplier deleted successfully' });
       }
@@ -51,15 +59,15 @@ router.get('/', (req, res) => {
   
   router.put('/:supplier_id', (req, res) => {
     const { supplier_id } = req.params;
-    const { name, phone, email, address } = req.body;
+    const { name, phone, email, address, status } = req.body;
   
     if (!name || !phone || !email) {
       return res.status(400).json({ error: 'Name, phone, and email are required fields' });
     }
   
-    const query = `UPDATE suppliers SET name=?, phone=?, email=?, address=? WHERE supplier_id=?`;
+    const query = `UPDATE suppliers SET name=?, phone=?, email=?, address=?, status=? WHERE supplier_id=?`;
   
-    connection.query(query, [name, phone, email, address, supplier_id], (err, results) => {
+    connection.query(query, [name, phone, email, address, status, supplier_id], (err, results) => {
       if (err) {
         console.error('Error updating supplier:', err);
         res.status(500).send('Error updating supplier');
