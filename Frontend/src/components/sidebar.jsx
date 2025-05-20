@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'; // Import Link from react-router-dom
 import React, { useState } from 'react';
 import './Sidebar.css'; 
-import { FaTachometerAlt, FaUsers, FaBox, FaListAlt, FaRegFileAlt, FaCogs, FaChevronDown, FaChevronUp, FaUserShield, FaUserCircle, FaExchangeAlt, FaTag, FaTruck } from 'react-icons/fa'; // Added icons for submenu
+import { FaTachometerAlt, FaUsers, FaBox, FaListAlt, FaRegFileAlt, FaCogs, FaChevronDown, FaChevronUp, FaUserShield, FaUserCircle, FaExchangeAlt, FaTag, FaTruck,FaBoxOpen, FaCalendarTimes, FaShoppingBasket, FaTags, FaHandshake } from 'react-icons/fa'; // Added icons for submenu
 import logodash from "../assets/PicturesAdmin/logoWhite.png";
 
 const Sidebar = () => {
@@ -101,17 +101,21 @@ const Sidebar = () => {
           {isInventoryOpen && (
             <div className="hover-submenu">
                 <Link to="/admin/Inventory" className="submenu-item">
-                <FaBox className="submenu-icon" style={{ marginRight: '10px' }} /> Inventories
-              </Link>
-              <Link to="/admin/products" className="submenu-item">
-                <FaBox className="submenu-icon" style={{ marginRight: '10px' }} /> Products
-              </Link>
-              <Link to="/admin/Categories" className="submenu-item">
-                <FaTag className="submenu-icon" style={{ marginRight: '10px' }} /> Categories
-              </Link>
-              <Link to="/admin/Supplier" className="submenu-item">
-                <FaTruck className="submenu-icon" style={{ marginRight: '10px' }} /> Suppliers
-              </Link>
+                    <FaBoxOpen className="submenu-icon" style={{ marginRight: '10px' }} /> Inventories
+                  </Link>
+                  <Link to="/admin/Expired_Inventories" className="submenu-item">
+                    <FaCalendarTimes className="submenu-icon" style={{ marginRight: '10px' }} /> Expired Inventories
+                  </Link>
+                  <Link to="/admin/products" className="submenu-item">
+                    <FaShoppingBasket className="submenu-icon" style={{ marginRight: '10px' }} /> Products
+                  </Link>
+                  <Link to="/admin/Categories" className="submenu-item">
+                    <FaTags className="submenu-icon" style={{ marginRight: '10px' }} /> Categories
+                  </Link>
+                  <Link to="/admin/Supplier" className="submenu-item">
+                    <FaHandshake className="submenu-icon" style={{ marginRight: '10px' }} /> Suppliers
+                  </Link>
+
             </div>
           )}
         </li>

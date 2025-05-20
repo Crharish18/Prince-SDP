@@ -1,270 +1,377 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Sprout, Mail, Lock, ArrowLeft, KeyRound } from 'lucide-react';
 import axios from 'axios';
+import { Sprout, Lock, Mail, User, Phone, MapPin, CreditCard, Calendar } from 'lucide-react';
 
-function ForgotPassword() {
-  const [step, setStep] = useState(1);
-  const [email, setEmail] = useState('');
-  const [code, setCode] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [resetToken, setResetToken] = useState('');
+function Signup() {
+  const [formData, setFormData] = useState({
+    first_name: '',
+    last_name: '',
+    phone_num: '',
+    address: '',
+    national_id: '',
+    dob: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+  });
+
+  const [errors, setErrors] = useState({});
+  const [message, setMessage] = useState('');
   const navigate = useNavigate();
 
-  const handleEmailSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    setSuccess('');
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
     
-    try {
-      // First check if email exists
-      const checkResponse = await axios.post('http://localhost:5000/api/customers/check-email', { email });
-      
-      if (!checkResponse.data.exists) {
-        setError('Email not found. Please check your email address.');
-        setLoading(false);
-        return;
-      }
-      
-      // If email exists, send verification code
-      const sendCodeResponse = await axios.post('http://localhost:5000/api/customers/send-verification-code', { email });
-      
-      setSuccess('Verification code sent! Please check your email.');
-      setTimeout(() => {
-        setStep(2);
-        setLoading(false);
-      }, 2000);
-      
-    } catch (err) {
-      setError(err.response?.data?.error || 'An error occurred. Please try again.');
-      setLoading(false);
+    // Clear error for this field when user starts typing again
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
     }
   };
 
-  const handleCodeVerification = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    setSuccess('');
+  const validateForm = () => {
+    const newErrors = {};
     
-    try {
-      const response = await axios.post('http://localhost:5000/api/customers/verify-code', { 
-        email, 
-        code 
-      });
-      
-      setResetToken(response.data.resetToken);
-      setSuccess('Code verified successfully!');
-      setTimeout(() => {
-        setStep(3);
-        setLoading(false);
-      }, 1500);
-      
-    } catch (err) {
-      setError(err.response?.data?.error || 'Invalid verification code. Please try again.');
-      setLoading(false);
+    // First name validation - only letters and more than 3 characters
+    if (!/^[A-Za-z]{3,}$/.test(formData.first_name)) {
+      newErrors.first_name = 'First name must contain only letters and be at least 3 characters';
     }
+    
+    // Last name validation - only letters and more than 3 characters
+    if (!/^[A-Za-z]{3,}$/.test(formData.last_name)) {
+      newErrors.last_name = 'Last name must contain only letters and be at least 3 characters';
+    }
+    
+    // Phone number validation - 10 digits
+    if (!/^\d{10}$/.test(formData.phone_num)) {
+      newErrors.phone_num = 'Phone number must be 10 digits';
+    }
+    
+    // Email validation
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+    
+    // Address validation - more than 5 characters
+    if (formData.address.length < 5) {
+      newErrors.address = 'Address must be at least 5 characters';
+    }
+    
+    // National ID validation - between 10 to 12 characters
+    if (formData.national_id.length < 10 || formData.national_id.length > 12) {
+      newErrors.national_id = 'National ID must be between 10 to 12 characters';
+    }
+    
+    // Date of birth validation - must be in the past
+    const today = new Date();
+    const dobDate = new Date(formData.dob);
+    if (dobDate >= today) {
+      newErrors.dob = 'Date of birth must be in the past';
+    }
+    
+    // Password validation - at least 8 characters
+    if (formData.password.length < 8) {
+      newErrors.password = 'Your password must be at least 8 characters long for better security';
+    }
+    
+    // Confirm password validation
+    if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match. Please ensure both passwords are identical';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
-  const handlePasswordReset = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (newPassword !== confirmPassword) {
-      setError('Passwords do not match.');
+    if (!validateForm()) {
       return;
     }
-    
-    if (newPassword.length < 6) {
-      setError('Password must be at least 6 characters long.');
-      return;
-    }
-    
-    setLoading(true);
-    setError('');
-    setSuccess('');
-    
+
     try {
-      await axios.post('http://localhost:5000/api/customers/reset-password', {
-        email,
-        resetToken,
-        newPassword
-      });
-      
-      setSuccess('Password reset successful! Redirecting to login...');
+      const response = await axios.post('http://localhost:5000/api/customers', formData);
+      console.log('Customer signed up:', response.data);
+      setMessage('Account created successfully! Redirecting to login...');
       setTimeout(() => {
         navigate('/CustomerLogin');
       }, 2000);
-      
+
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to reset password. Please try again.');
-      setLoading(false);
+      console.error('Error during sign up:', err);
+      setMessage('Error creating account. Please try again.');
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl p-8">
-        <div className="text-center mb-8">
-          <div className="mx-auto h-16 w-16 bg-green-100 rounded-full flex items-center justify-center">
-            <Sprout className="h-10 w-10 text-green-600" />
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl w-full flex rounded-2xl shadow-2xl overflow-hidden">
+        <div className="hidden lg:block lg:w-1/2 relative">
+          <img
+            src="https://images.unsplash.com/photo-1628352081506-83c43123ed6d?ixlib=rb-1.2.1&auto=format&fit=crop&q=80"
+            alt="Organic farming"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-green-900/50 to-transparent">
+            <div className="absolute bottom-8 left-8 text-white">
+              <h2 className="text-3xl font-bold mb-2">Join Prince Lanka</h2>
+              <p className="text-green-50">Start your journey to better farming today</p>
+            </div>
           </div>
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">Reset Password</h2>
-          <p className="mt-2 text-sm text-gray-600">
-            {step === 1 && "Enter your email to receive a verification code"}
-            {step === 2 && "Enter the verification code sent to your email"}
-            {step === 3 && "Create your new password"}
-          </p>
         </div>
 
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg">
-            {error}
+        <div className="w-full lg:w-1/2 bg-white p-8">
+          <div className="max-w-2xl mx-auto">
+            <div className="text-center mb-6">
+              <div className="mx-auto h-16 w-16 bg-green-100 rounded-full flex items-center justify-center">
+                <Sprout className="h-10 w-10 text-green-600" />
+              </div>
+              <h2 className="mt-4 text-3xl font-extrabold text-gray-900">Create Account</h2>
+              <p className="mt-2 text-sm text-gray-600">Join our community of successful farmers</p>
+            </div>
+
+            {/* Success/Error Message */}
+            {message && <div className="text-center text-green-500 mb-4">{message}</div>}
+
+            {/* Signup Form */}
+            <form onSubmit={handleSubmit}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* First Name */}
+                <div>
+                  <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
+                    First Name
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <User className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      id="firstName"
+                      name="first_name"
+                      type="text"
+                      required
+                      value={formData.first_name}
+                      onChange={handleChange}
+                      className={`appearance-none block w-full px-10 py-2 border ${errors.first_name ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm`}
+                      placeholder="First name"
+                    />
+                  </div>
+                  {errors.first_name && <p className="mt-1 text-xs text-red-500">{errors.first_name}</p>}
+                </div>
+
+                {/* Last Name */}
+                <div>
+                  <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
+                    Last Name
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <User className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      id="lastName"
+                      name="last_name"
+                      type="text"
+                      required
+                      value={formData.last_name}
+                      onChange={handleChange}
+                      className={`appearance-none block w-full px-10 py-2 border ${errors.last_name ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm`}
+                      placeholder="Last name"
+                    />
+                  </div>
+                  {errors.last_name && <p className="mt-1 text-xs text-red-500">{errors.last_name}</p>}
+                </div>
+
+                {/* Phone */}
+                <div>
+                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                    Phone Number
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Phone className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      id="phone"
+                      name="phone_num"
+                      type="tel"
+                      required
+                      value={formData.phone_num}
+                      onChange={handleChange}
+                      className={`appearance-none block w-full px-10 py-2 border ${errors.phone_num ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm`}
+                      placeholder="Phone number"
+                    />
+                  </div>
+                  {errors.phone_num && <p className="mt-1 text-xs text-red-500">{errors.phone_num}</p>}
+                </div>
+
+                {/* Email */}
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Mail className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      id="email"
+                      name="email"
+                      type="email"
+                      required
+                      value={formData.email}
+                      onChange={handleChange}
+                      className={`appearance-none block w-full px-10 py-2 border ${errors.email ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm`}
+                      placeholder="Enter your email"
+                    />
+                  </div>
+                  {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email}</p>}
+                </div>
+
+                {/* Address */}
+                <div>
+                  <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
+                    Address
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <MapPin className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      id="address"
+                      name="address"
+                      type="text"
+                      required
+                      value={formData.address}
+                      onChange={handleChange}
+                      className={`appearance-none block w-full px-10 py-2 border ${errors.address ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm`}
+                      placeholder="Your address"
+                    />
+                  </div>
+                  {errors.address && <p className="mt-1 text-xs text-red-500">{errors.address}</p>}
+                </div>
+
+                {/* National ID */}
+                <div>
+                  <label htmlFor="nationalId" className="block text-sm font-medium text-gray-700 mb-1">
+                    National ID
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <CreditCard className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      id="nationalId"
+                      name="national_id"
+                      type="text"
+                      required
+                      value={formData.national_id}
+                      onChange={handleChange}
+                      className={`appearance-none block w-full px-10 py-2 border ${errors.national_id ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm`}
+                      placeholder="National ID number"
+                    />
+                  </div>
+                  {errors.national_id && <p className="mt-1 text-xs text-red-500">{errors.national_id}</p>}
+                </div>
+
+                {/* Date of Birth */}
+                <div>
+                  <label htmlFor="dob" className="block text-sm font-medium text-gray-700 mb-1">
+                    Date of Birth
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Calendar className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      id="dob"
+                      name="dob"
+                      type="date"
+                      required
+                      value={formData.dob}
+                      onChange={handleChange}
+                      className={`appearance-none block w-full px-10 py-2 border ${errors.dob ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm`}
+                    />
+                  </div>
+                  {errors.dob && <p className="mt-1 text-xs text-red-500">{errors.dob}</p>}
+                </div>
+
+                {/* Password */}
+                <div>
+                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                    Password
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Lock className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      id="password"
+                      name="password"
+                      type="password"
+                      required
+                      value={formData.password}
+                      onChange={handleChange}
+                      className={`appearance-none block w-full px-10 py-2 border ${errors.password ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm`}
+                      placeholder="Create password"
+                    />
+                  </div>
+                  {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password}</p>}
+                </div>
+
+                {/* Confirm Password */}
+                <div>
+                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                    Confirm Password
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Lock className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      type="password"
+                      required
+                      value={formData.confirmPassword}
+                      onChange={handleChange}
+                      className={`appearance-none block w-full px-10 py-2 border ${errors.confirmPassword ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm`}
+                      placeholder="Confirm password"
+                    />
+                  </div>
+                  {errors.confirmPassword && <p className="mt-1 text-xs text-red-500">{errors.confirmPassword}</p>}
+                </div>
+              </div>
+
+              <div className="mt-6">
+                <button
+                  type="submit"
+                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 transform hover:scale-[1.02]"
+                >
+                  Create Account
+                </button>
+              </div>
+
+              <div className="text-center mt-4 text-sm">
+                <span className="text-gray-600">Already have an account? </span>
+                <Link to="/CustomerLogin" className="font-medium text-green-600 hover:text-green-500 transition-colors">
+                  Sign in
+                </Link>
+              </div>
+            </form>
           </div>
-        )}
-
-        {success && (
-          <div className="mb-4 p-3 bg-green-50 border border-green-200 text-green-700 rounded-lg">
-            {success}
-          </div>
-        )}
-
-        {step === 1 && (
-          <form onSubmit={handleEmailSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                Email Address
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="appearance-none block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
-                  placeholder="Enter your email"
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200 ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
-            >
-              {loading ? 'Sending...' : 'Send Verification Code'}
-            </button>
-          </form>
-        )}
-
-        {step === 2 && (
-          <form onSubmit={handleCodeVerification} className="space-y-6">
-            <div>
-              <label htmlFor="code" className="block text-sm font-medium text-gray-700 mb-1">
-                Verification Code
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <KeyRound className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="code"
-                  name="code"
-                  type="text"
-                  required
-                  value={code}
-                  onChange={(e) => setCode(e.target.value)}
-                  className="appearance-none block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
-                  placeholder="Enter verification code"
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200 ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
-            >
-              {loading ? 'Verifying...' : 'Verify Code'}
-            </button>
-          </form>
-        )}
-
-        {step === 3 && (
-          <form onSubmit={handlePasswordReset} className="space-y-6">
-            <div>
-              <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                New Password
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="newPassword"
-                  name="newPassword"
-                  type="password"
-                  required
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="appearance-none block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
-                  placeholder="Enter new password"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                Confirm New Password
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  required
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="appearance-none block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
-                  placeholder="Confirm new password"
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200 ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
-            >
-              {loading ? 'Resetting...' : 'Reset Password'}
-            </button>
-          </form>
-        )}
-
-        <div className="mt-6">
-          <Link
-            to="/CustomerLogin"
-            className="flex items-center justify-center text-sm font-medium text-green-600 hover:text-green-500 transition-colors duration-200"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Login
-          </Link>
         </div>
       </div>
     </div>
   );
 }
 
-export default ForgotPassword;
+export default Signup;

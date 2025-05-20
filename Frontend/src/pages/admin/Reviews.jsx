@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { FaEye, FaTrash, FaStar, FaSortUp, FaSortDown } from "react-icons/fa";
+import { Link } from 'react-router-dom';
 import Sidebar from "../../components/Sidebar";
 import Header from "../../components/Header";
 import styles from './Reviews.module.css';
@@ -226,6 +227,11 @@ function Reviews() {
               />
               <div className={styles.BtnContainer}>
                 <button className="btn btn-secondary" style={{ width: '150px', marginLeft:"10px" }} onClick={handleDownloadPDF}>Print</button>
+              </div>
+              <div className={styles.BtnContainer}>
+                <Link to="/admin/Messages" className="btn btn-primary" style={{ width: '150px', marginLeft:"10px" }}>
+                  Messages
+                </Link>
               </div>
             </div>
 

@@ -9,8 +9,8 @@ const Services = () => {
     {
       icon: Tractor,
       title: "Agricultural Equipment Sales",
-      description: "We offer a wide range of agricultural equipment, including tractors, harvesters, and planting machines for both retail and wholesale.",
-      features: ["Tractors & Harvesters", "Soil cultivation tools", "Planting machines", "Full agricultural equipment range"]
+      description: "We offer a wide range of agricultural equipment, including tools, pesticides machines, and other similar tools and macinery for both retail and wholesale(Small scale).",
+      features: ["Tools & Harvesters", "Soil cultivation tools", "Pesticides machines", "Full agricultural equipment range"]
     },
     {
       icon: BarChart,

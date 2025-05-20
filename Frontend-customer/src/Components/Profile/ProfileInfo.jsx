@@ -9,6 +9,7 @@ const AddressFormComponent = ({ type, initialData, onSave, onCancel }) => {
     // Set country to Sri Lanka for shipping addresses
     ...(type === 'shipping' && { country: 'Sri Lanka' })
   });
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     setLocalForm({
@@ -29,6 +30,57 @@ const AddressFormComponent = ({ type, initialData, onSave, onCancel }) => {
       ...prev,
       [name]: value
     }));
+
+    // Clear error when user types
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
+  };
+
+  const validateAddressForm = () => {
+    const newErrors = {};
+    
+    // Fullname validation - only letters and more than 3 characters
+    if (!/^[A-Za-z\s]{3,}$/.test(localForm.fullname)) {
+      newErrors.fullname = 'Full name must contain only letters and be at least 3 characters long';
+    }
+    
+    // Street address validation - letters, numbers, and / symbols with more than 3 characters
+    if (!/^[A-Za-z0-9\s\/]{3,}$/.test(localForm.street)) {
+      newErrors.street = 'Street address must be at least 3 characters and can only contain letters, numbers, and / symbols';
+    }
+    
+    // Apartment validation (optional) - if provided, should be more than 3 characters
+    if (localForm.apartment && localForm.apartment.length < 3) {
+      newErrors.apartment = 'Apartment/Unit must be at least 3 characters long';
+    }
+    
+    // City validation - only letters and more than 3 characters
+    if (!/^[A-Za-z\s]{3,}$/.test(localForm.city)) {
+      newErrors.city = 'City must contain only letters and be at least 3 characters long';
+    }
+    
+    // Province validation - only letters and more than 3 characters
+    if (!/^[A-Za-z\s]{3,}$/.test(localForm.province)) {
+      newErrors.province = 'Province must contain only letters and be at least 3 characters long';
+    }
+    
+    // Postal code validation - exactly 5 digits
+    if (!/^\d{5}$/.test(localForm.postal_code)) {
+      newErrors.postal_code = 'Postal code must be exactly 5 digits';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSaveClick = () => {
+    if (validateAddressForm()) {
+      onSave({ ...localForm, type, ...(type === 'shipping' && { country: 'Sri Lanka' }) });
+    }
   };
 
   return (
@@ -40,8 +92,9 @@ const AddressFormComponent = ({ type, initialData, onSave, onCancel }) => {
           name="fullname"
           value={localForm.fullname || ''}
           onChange={handleChange}
-          className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-left"
+          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-left ${errors.fullname ? 'border-red-500' : ''}`}
         />
+        {errors.fullname && <p className="mt-1 text-xs text-red-500 text-left">{errors.fullname}</p>}
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1 text-left">Street Address</label>
@@ -50,8 +103,9 @@ const AddressFormComponent = ({ type, initialData, onSave, onCancel }) => {
           name="street"
           value={localForm.street || ''}
           onChange={handleChange}
-          className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-left"
+          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-left ${errors.street ? 'border-red-500' : ''}`}
         />
+        {errors.street && <p className="mt-1 text-xs text-red-500 text-left">{errors.street}</p>}
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1 text-left">Apartment/Unit (Optional)</label>
@@ -60,8 +114,9 @@ const AddressFormComponent = ({ type, initialData, onSave, onCancel }) => {
           name="apartment"
           value={localForm.apartment || ''}
           onChange={handleChange}
-          className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-left"
+          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-left ${errors.apartment ? 'border-red-500' : ''}`}
         />
+        {errors.apartment && <p className="mt-1 text-xs text-red-500 text-left">{errors.apartment}</p>}
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div>
@@ -71,8 +126,9 @@ const AddressFormComponent = ({ type, initialData, onSave, onCancel }) => {
             name="city"
             value={localForm.city || ''}
             onChange={handleChange}
-            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-left"
+            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-left ${errors.city ? 'border-red-500' : ''}`}
           />
+          {errors.city && <p className="mt-1 text-xs text-red-500 text-left">{errors.city}</p>}
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1 text-left">Province</label>
@@ -81,8 +137,9 @@ const AddressFormComponent = ({ type, initialData, onSave, onCancel }) => {
             name="province"
             value={localForm.province || ''}
             onChange={handleChange}
-            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-left"
+            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-left ${errors.province ? 'border-red-500' : ''}`}
           />
+          {errors.province && <p className="mt-1 text-xs text-red-500 text-left">{errors.province}</p>}
         </div>
       </div>
       <div className="grid grid-cols-2 gap-4">
@@ -93,8 +150,9 @@ const AddressFormComponent = ({ type, initialData, onSave, onCancel }) => {
             name="postal_code"
             value={localForm.postal_code || ''}
             onChange={handleChange}
-            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-left"
+            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-left ${errors.postal_code ? 'border-red-500' : ''}`}
           />
+          {errors.postal_code && <p className="mt-1 text-xs text-red-500 text-left">{errors.postal_code}</p>}
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1 text-left">Country</label>
@@ -117,7 +175,7 @@ const AddressFormComponent = ({ type, initialData, onSave, onCancel }) => {
           Cancel
         </button>
         <button
-          onClick={() => onSave({ ...localForm, type, ...(type === 'shipping' && { country: 'Sri Lanka' }) })}
+          onClick={handleSaveClick}
           className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition"
         >
           Save Address
@@ -142,6 +200,7 @@ const ProfileInfo = ({ customerData, loading }) => {
     newPassword: '',
     confirmPassword: ''
   });
+  const [errors, setErrors] = useState({});
   const [editingAddress, setEditingAddress] = useState(null); // 'shipping', 'billing', or null
   const [addresses, setAddresses] = useState({
     shipping: null,
@@ -235,9 +294,85 @@ const ProfileInfo = ({ customerData, loading }) => {
       ...prev,
       [name]: value
     }));
+
+    // Clear error when user types
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+    
+    // First name validation - only letters and more than 3 characters
+    if (!/^[A-Za-z]{3,}$/.test(formData.firstName)) {
+      newErrors.firstName = 'First name must contain only letters and be at least 3 characters long';
+    }
+    
+    // Last name validation - only letters and more than 3 characters
+    if (!/^[A-Za-z]{3,}$/.test(formData.lastName)) {
+      newErrors.lastName = 'Last name must contain only letters and be at least 3 characters long';
+    }
+    
+    // Phone number validation - exactly 10 digits
+    if (!/^\d{10}$/.test(formData.phone)) {
+      newErrors.phone = 'Phone number must be exactly 10 digits';
+    }
+    
+    // National ID validation - between 10 to 12 characters without symbols
+    if (!/^[A-Za-z0-9]{10,12}$/.test(formData.nationalId)) {
+      newErrors.nationalId = 'National ID must be between 10 to 12 characters (letters and numbers only)';
+    }
+    
+    // Email validation
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+    
+    // Date of birth validation - must be in the past
+    const today = new Date();
+    const dobDate = new Date(formData.dob);
+    if (dobDate >= today) {
+      newErrors.dob = 'Date of birth must be in the past';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const validatePasswordForm = () => {
+    const newErrors = {};
+    
+    if (!formData.currentPassword) {
+      newErrors.currentPassword = 'Please enter your current password';
+    }
+    
+    if (!formData.newPassword) {
+      newErrors.newPassword = 'Please enter a new password';
+    } else if (formData.newPassword.length < 8) {
+      newErrors.newPassword = 'Your new password must be at least 8 characters long for better security';
+    }
+    
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = 'Please confirm your new password';
+    } else if (formData.newPassword !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match. Please ensure both passwords are identical';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSaveChanges = async () => {
+    if (!validateForm()) {
+      setUpdateStatus('error');
+      setUpdateMessage('Please correct the errors in the form');
+      return;
+    }
+
     try {
       const token = localStorage.getItem('customerToken');
       if (!token) {
@@ -288,22 +423,7 @@ const ProfileInfo = ({ customerData, loading }) => {
   const handlePasswordChange = async (e) => {
     e.preventDefault();
     
-    // Validate password inputs
-    if (!formData.currentPassword) {
-      setUpdateStatus('error');
-      setUpdateMessage('Current password is required');
-      return;
-    }
-    
-    if (!formData.newPassword) {
-      setUpdateStatus('error');
-      setUpdateMessage('New password is required');
-      return;
-    }
-    
-    if (formData.newPassword !== formData.confirmPassword) {
-      setUpdateStatus('error');
-      setUpdateMessage('New passwords do not match');
+    if (!validatePasswordForm()) {
       return;
     }
     
@@ -402,7 +522,6 @@ const ProfileInfo = ({ customerData, loading }) => {
   const handleSaveAddress = async (formData) => {
     try {
       const token = localStorage.getItem('customerToken');
-      
       if (!token) {
         setUpdateStatus('error');
         setUpdateMessage('Authentication required');
@@ -549,9 +668,10 @@ const ProfileInfo = ({ customerData, loading }) => {
                       name="firstName"
                       value={formData.firstName}
                       onChange={handleInputChange}
-                      className="w-full pl-12 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      className={`w-full pl-12 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent ${errors.firstName ? 'border-red-500' : ''}`}
                     />
                   </div>
+                  {errors.firstName && <p className="mt-1 text-xs text-red-500">{errors.firstName}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
@@ -562,9 +682,10 @@ const ProfileInfo = ({ customerData, loading }) => {
                       name="lastName"
                       value={formData.lastName}
                       onChange={handleInputChange}
-                      className="w-full pl-12 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      className={`w-full pl-12 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent ${errors.lastName ? 'border-red-500' : ''}`}
                     />
                   </div>
+                  {errors.lastName && <p className="mt-1 text-xs text-red-500">{errors.lastName}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
@@ -575,9 +696,10 @@ const ProfileInfo = ({ customerData, loading }) => {
                       name="email"
                       value={formData.email}
                       onChange={handleInputChange}
-                      className="w-full pl-12 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      className={`w-full pl-12 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent ${errors.email ? 'border-red-500' : ''}`}
                     />
                   </div>
+                  {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email}</p>}
                 </div>
               </div>
               
@@ -591,9 +713,10 @@ const ProfileInfo = ({ customerData, loading }) => {
                       name="phone"
                       value={formData.phone}
                       onChange={handleInputChange}
-                      className="w-full pl-12 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      className={`w-full pl-12 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent ${errors.phone ? 'border-red-500' : ''}`}
                     />
                   </div>
+                  {errors.phone && <p className="mt-1 text-xs text-red-500">{errors.phone}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">National ID</label>
@@ -604,9 +727,10 @@ const ProfileInfo = ({ customerData, loading }) => {
                       name="nationalId"
                       value={formData.nationalId}
                       onChange={handleInputChange}
-                      className="w-full pl-12 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      className={`w-full pl-12 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent ${errors.nationalId ? 'border-red-500' : ''}`}
                     />
                   </div>
+                  {errors.nationalId && <p className="mt-1 text-xs text-red-500">{errors.nationalId}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Date of Birth</label>
@@ -617,9 +741,10 @@ const ProfileInfo = ({ customerData, loading }) => {
                       name="dob"
                       value={formData.dob}
                       onChange={handleInputChange}
-                      className="w-full pl-12 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      className={`w-full pl-12 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent ${errors.dob ? 'border-red-500' : ''}`}
                     />
                   </div>
+                  {errors.dob && <p className="mt-1 text-xs text-red-500">{errors.dob}</p>}
                 </div>
               </div>
             </div>
@@ -708,8 +833,9 @@ const ProfileInfo = ({ customerData, loading }) => {
                     name="currentPassword"
                     value={formData.currentPassword}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent ${errors.currentPassword ? 'border-red-500' : ''}`}
                   />
+                  {errors.currentPassword && <p className="mt-1 text-xs text-red-500">{errors.currentPassword}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
@@ -718,8 +844,9 @@ const ProfileInfo = ({ customerData, loading }) => {
                     name="newPassword"
                     value={formData.newPassword}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent ${errors.newPassword ? 'border-red-500' : ''}`}
                   />
+                  {errors.newPassword && <p className="mt-1 text-xs text-red-500">{errors.newPassword}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Confirm New Password</label>
@@ -728,8 +855,9 @@ const ProfileInfo = ({ customerData, loading }) => {
                     name="confirmPassword"
                     value={formData.confirmPassword}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent ${errors.confirmPassword ? 'border-red-500' : ''}`}
                   />
+                  {errors.confirmPassword && <p className="mt-1 text-xs text-red-500">{errors.confirmPassword}</p>}
                 </div>
                 <button
                   type="submit"

@@ -23,22 +23,57 @@ const ViewModal = ({ showViewModal, selectedEntity, handleClose, entityTitle, en
                 <label style={{ fontWeight: "bold" }}>{field.label}</label>
                 {field.type === "image" ? (
                   <div className="image-container">
-                    <img 
-                      src={selectedEntity[field.name]} 
-                      alt={`${field.label}`}
-                      className="modal-image"
-                      style={{ maxWidth: "100%", maxHeight: "200px", objectFit: "contain" }}
-                    />
+                    {selectedEntity[field.name] ? (
+                      <img 
+                        src={selectedEntity[field.name]} 
+                        alt={`${field.label}`}
+                        className="modal-image"
+                        style={{ maxWidth: "100%", maxHeight: "200px", objectFit: "contain" }}
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = "https://via.placeholder.com/150?text=No+Image";
+                        }}
+                      />
+                    ) : (
+                      <div style={{
+                        height: "150px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        backgroundColor: "#f8f9fa",
+                        border: "1px dashed #dee2e6",
+                        borderRadius: "4px"
+                      }}>
+                        No profile picture available
+                      </div>
+                    )}
                   </div>
                 ) : field.format ? (
-                  <div>{field.format(selectedEntity[field.name])}</div>
+                  <div className="form-control-static" style={{
+                    padding: "0.375rem 0.75rem",
+                    backgroundColor: "#f8f9fa",
+                    border: "1px solid #ced4da",
+                    borderRadius: "0.25rem",
+                    minHeight: "38px",
+                    display: "flex",
+                    alignItems: "center"
+                  }}>
+                    {field.format(selectedEntity[field.name])}
+                  </div>
                 ) : (
-                  <input 
-                    type="text" 
-                    className="form-control" 
-                    value={selectedEntity[field.name] || ''} 
-                    disabled 
-                  />
+                  <div className="form-control-static" style={{
+                    padding: "0.375rem 0.75rem",
+                    backgroundColor: "#f8f9fa",
+                    border: "1px solid #ced4da",
+                    borderRadius: "0.25rem",
+                    minHeight: "38px",
+                    display: "flex",
+                    alignItems: "center"
+                  }}>
+                    {selectedEntity[field.name] !== null && selectedEntity[field.name] !== undefined 
+                      ? selectedEntity[field.name] 
+                      : 'Not provided'}
+                  </div>
                 )}
               </div>
             ))}

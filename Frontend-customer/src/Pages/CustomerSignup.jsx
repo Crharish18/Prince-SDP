@@ -16,6 +16,7 @@ function Signup() {
     confirmPassword: '',
   });
 
+  const [errors, setErrors] = useState({});
   const [message, setMessage] = useState('');
   const navigate = useNavigate();
 
@@ -25,16 +26,81 @@ function Signup() {
       ...prev,
       [name]: value,
     }));
+    
+    // Clear error for this field when user starts typing again
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+    
+    // First name validation - only letters and more than 3 characters
+    if (!/^[A-Za-z]{3,}$/.test(formData.first_name)) {
+      newErrors.first_name = 'Please enter a valid first name with at least 3 letters (no numbers or special characters)';
+    }
+    
+    // Last name validation - only letters and more than 3 characters
+    if (!/^[A-Za-z]{3,}$/.test(formData.last_name)) {
+      newErrors.last_name = 'Please enter a valid last name with at least 3 letters (no numbers or special characters)';
+    }
+    
+    // Phone number validation - 10 digits
+    if (!/^\d{10}$/.test(formData.phone_num)) {
+      newErrors.phone_num = 'Please enter a valid 10-digit phone number';
+    }
+    
+    // Email validation
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address (e.g., example@domain.com)';
+    }
+    
+    // Address validation - more than 5 characters
+    if (formData.address.length < 5) {
+      newErrors.address = 'Please provide a complete address with at least 5 characters';
+    }
+    
+    // National ID validation - between 10 to 12 characters
+    if (formData.national_id.length < 9 || formData.national_id.length > 13) {
+      newErrors.national_id = 'National ID must contain between 10 to 12 characters';
+    }
+    
+    // Date of birth validation - must be in the past
+    const today = new Date();
+    const dobDate = new Date(formData.dob);
+    if (dobDate >= today) {
+      newErrors.dob = 'Date of birth must be in the past';
+    }
+    
+    // Password validation - at least 8 characters
+    if (formData.password.length < 8) {
+      newErrors.password = 'Please create a secure password with at least 8 characters';
+    }
+    
+    // Confirm password validation
+    if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match. Please try again';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
 
     try {
       const response = await axios.post('http://localhost:5000/api/customers', formData);
       console.log('Customer signed up:', response.data);
       setMessage('Account created successfully! Redirecting to login...');
-
       setTimeout(() => {
         navigate('/CustomerLogin');
       }, 2000);
@@ -94,10 +160,11 @@ function Signup() {
                       required
                       value={formData.first_name}
                       onChange={handleChange}
-                      className="appearance-none block w-full px-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
+                      className={`appearance-none block w-full px-10 py-2 border ${errors.first_name ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm`}
                       placeholder="First name"
                     />
                   </div>
+                  {errors.first_name && <p className="mt-1 text-xs text-red-500">{errors.first_name}</p>}
                 </div>
 
                 {/* Last Name */}
@@ -116,10 +183,11 @@ function Signup() {
                       required
                       value={formData.last_name}
                       onChange={handleChange}
-                      className="appearance-none block w-full px-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
+                      className={`appearance-none block w-full px-10 py-2 border ${errors.last_name ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm`}
                       placeholder="Last name"
                     />
                   </div>
+                  {errors.last_name && <p className="mt-1 text-xs text-red-500">{errors.last_name}</p>}
                 </div>
 
                 {/* Phone */}
@@ -138,10 +206,11 @@ function Signup() {
                       required
                       value={formData.phone_num}
                       onChange={handleChange}
-                      className="appearance-none block w-full px-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
+                      className={`appearance-none block w-full px-10 py-2 border ${errors.phone_num ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm`}
                       placeholder="Phone number"
                     />
                   </div>
+                  {errors.phone_num && <p className="mt-1 text-xs text-red-500">{errors.phone_num}</p>}
                 </div>
 
                 {/* Email */}
@@ -160,10 +229,11 @@ function Signup() {
                       required
                       value={formData.email}
                       onChange={handleChange}
-                      className="appearance-none block w-full px-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
+                      className={`appearance-none block w-full px-10 py-2 border ${errors.email ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm`}
                       placeholder="Enter your email"
                     />
                   </div>
+                  {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email}</p>}
                 </div>
 
                 {/* Address */}
@@ -182,10 +252,11 @@ function Signup() {
                       required
                       value={formData.address}
                       onChange={handleChange}
-                      className="appearance-none block w-full px-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
+                      className={`appearance-none block w-full px-10 py-2 border ${errors.address ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm`}
                       placeholder="Your address"
                     />
                   </div>
+                  {errors.address && <p className="mt-1 text-xs text-red-500">{errors.address}</p>}
                 </div>
 
                 {/* National ID */}
@@ -204,10 +275,11 @@ function Signup() {
                       required
                       value={formData.national_id}
                       onChange={handleChange}
-                      className="appearance-none block w-full px-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
+                      className={`appearance-none block w-full px-10 py-2 border ${errors.national_id ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm`}
                       placeholder="National ID number"
                     />
                   </div>
+                  {errors.national_id && <p className="mt-1 text-xs text-red-500">{errors.national_id}</p>}
                 </div>
 
                 {/* Date of Birth */}
@@ -226,9 +298,10 @@ function Signup() {
                       required
                       value={formData.dob}
                       onChange={handleChange}
-                      className="appearance-none block w-full px-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
+                      className={`appearance-none block w-full px-10 py-2 border ${errors.dob ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm`}
                     />
                   </div>
+                  {errors.dob && <p className="mt-1 text-xs text-red-500">{errors.dob}</p>}
                 </div>
 
                 {/* Password */}
@@ -247,10 +320,11 @@ function Signup() {
                       required
                       value={formData.password}
                       onChange={handleChange}
-                      className="appearance-none block w-full px-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
+                      className={`appearance-none block w-full px-10 py-2 border ${errors.password ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm`}
                       placeholder="Create password"
                     />
                   </div>
+                  {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password}</p>}
                 </div>
 
                 {/* Confirm Password */}
@@ -269,10 +343,11 @@ function Signup() {
                       required
                       value={formData.confirmPassword}
                       onChange={handleChange}
-                      className="appearance-none block w-full px-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
+                      className={`appearance-none block w-full px-10 py-2 border ${errors.confirmPassword ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm`}
                       placeholder="Confirm password"
                     />
                   </div>
+                  {errors.confirmPassword && <p className="mt-1 text-xs text-red-500">{errors.confirmPassword}</p>}
                 </div>
               </div>
 

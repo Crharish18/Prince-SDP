@@ -8,6 +8,10 @@ import styles from './Categories.module.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import ViewModal from "../../components/Viewmodal"; 
 import EditModal from "../../components/EditModal"; 
+import PrintModal from "../../components/PrintModal";
+import { jsPDF } from "jspdf";
+import 'jspdf-autotable';
+import logodash from "../../assets/PicturesAdmin/logoWhite.png";
 
 function Categories() {
   const [categories, setCategories] = useState([]);
@@ -29,10 +33,11 @@ function Categories() {
   const [editValidationErrors, setEditValidationErrors] = useState({
     category_name: '',
   });
+  const [showPrintModal, setShowPrintModal] = useState(false);
 
   // Fetch data from the backend
   useEffect(() => {
-    axios.get('http://localhost:5000/api/categories') // Replace with the correct API endpoint
+    axios.get('http://localhost:5000/api/categories')
       .then(response => {
         setCategories(response.data);
       })
@@ -74,45 +79,44 @@ function Categories() {
     });
   };
 
-  // Handle category input change
+  // Handle category input change - Updated to allow only letters
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    // Only allow letters and spaces
+    const lettersOnly = value.replace(/[^a-zA-Z ]/g, '');
     setNewCategory({
       ...newCategory,
-      [name]: value,
+      [name]: lettersOnly,
     });
   };
 
- const handleSaveNewCategory = () => {
-  let errors = {};
-  if (!newCategory.categoryName || newCategory.categoryName.length < 3) {
-    errors.categoryName = "Category name must be at least 3 characters long.";
-  } else if (!/^[a-zA-Z0-9 ]+$/.test(newCategory.categoryName)) {
-    errors.categoryName = "Category name can only contain letters, numbers, and spaces.";
-  }
+  const handleSaveNewCategory = () => {
+    let errors = {};
+    if (!newCategory.categoryName || newCategory.categoryName.length < 3) {
+      errors.categoryName = "Category name must be at least 3 characters long.";
+    } else if (!/^[a-zA-Z ]+$/.test(newCategory.categoryName)) {
+      errors.categoryName = "Category name can only contain letters and spaces.";
+    }
 
-  setValidationErrors(errors);
+    setValidationErrors(errors);
 
-  if (Object.keys(errors).length === 0) {
-    // Send categoryName directly to match the backend
-    const categoryData = {
-      categoryName: newCategory.categoryName
-    };
-    
-    axios.post("http://localhost:5000/api/categories", categoryData)
-      .then(response => {
-        setCategories([...categories, response.data]);
-        setShowModal(false);
-        setNewCategory({
-          categoryName: '',
+    if (Object.keys(errors).length === 0) {
+      const categoryData = {
+        categoryName: newCategory.categoryName
+      };
+      axios.post("http://localhost:5000/api/categories", categoryData)
+        .then(response => {
+          setCategories([...categories, response.data]);
+          setShowModal(false);
+          setNewCategory({
+            categoryName: '',
+          });
+        })
+        .catch(error => {
+          console.error("Error adding category:", error);
         });
-      })
-      .catch(error => {
-        console.error("Error adding category:", error);
-      });
-  }
-};
-
+    }
+  };
 
   // View category details
   const handleViewCategory = (category) => {
@@ -153,8 +157,8 @@ function Categories() {
     let errors = {};
     if (!editedCategory.category_name || editedCategory.category_name.length < 3) {
       errors.category_name = "Category name must be at least 3 characters long.";
-    } else if (!/^[a-zA-Z0-9 ]+$/.test(editedCategory.category_name)) {
-      errors.category_name = "Category name can only contain letters, numbers, and spaces.";
+    } else if (!/^[a-zA-Z ]+$/.test(editedCategory.category_name)) {
+      errors.category_name = "Category name can only contain letters and spaces.";
     }
 
     setEditValidationErrors(errors);
@@ -173,12 +177,14 @@ function Categories() {
     }
   };
 
-  // Handle input change for edited category
+  // Handle input change for edited category - Updated to allow only letters
   const handleEditInputChange = (e) => {
     const { name, value } = e.target;
+    // Only allow letters and spaces
+    const lettersOnly = value.replace(/[^a-zA-Z ]/g, '');
     setEditedCategory({
       ...editedCategory,
-      [name]: value,
+      [name]: lettersOnly,
     });
   };
 
@@ -188,6 +194,10 @@ function Categories() {
     setEditValidationErrors({
       category_name: '',
     });
+  };
+
+  const handleDownloadPDF = () => {
+    setShowPrintModal(true);
   };
 
   return (
@@ -208,7 +218,6 @@ function Categories() {
               >
                 <option value="category_id">Category ID</option>
                 <option value="category_name">Category Name</option>
-
               </select>
               <input
                 type="text"
@@ -221,9 +230,7 @@ function Categories() {
                 <button className="btn btn-primary" style={{ width: '150px', marginLeft:"10px" }} onClick={handleAddCategoryClick}>
                   Add Category
                 </button>
-                <Link to="/admin/products" className="btn btn-secondary" style={{ width: '150px', marginLeft:"10px" }}>
-                Products
-                </Link>
+                <button className="btn btn-secondary" onClick={handleDownloadPDF} style={{ width: '150px', marginLeft:"10px" }}>Print</button>
               </div>
             </div>
           </div>
@@ -268,7 +275,6 @@ function Categories() {
             </table>
           </div>
         </div>
-
         {showModal && (
             <div className={styles.ModalOverlay}>
               <div className={styles.ModalContent}>
@@ -320,7 +326,6 @@ function Categories() {
             </div>
           )}
 
-
         {/* View Modal */}
         <ViewModal
           showViewModal={showViewModal}
@@ -345,6 +350,19 @@ function Categories() {
           handleSaveEditEntity={handleSaveEditCategory}
           handleEditInputChange={handleEditInputChange}
           validationErrors={editValidationErrors}
+        />
+
+        <PrintModal
+          show={showPrintModal}
+          handleClose={() => setShowPrintModal(false)}
+          title="Print Categories Report"
+          data={filteredCategories}
+          fields={[
+            { label: "Category ID", field: "category_id" },
+            { label: "Category Name", field: "category_name" }
+          ]}
+          filename="categories_report.pdf"
+          reportTitle="Categories Details Report"
         />
       </div>
     </div>

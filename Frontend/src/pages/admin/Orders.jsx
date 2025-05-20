@@ -6,6 +6,7 @@ import Header from "../../components/Header";
 import styles from './Order.module.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import OrderItemsModal from "../../components/orderitemsmodal";
+import { Link } from 'react-router-dom';
 import ViewModal from "../../components/Viewmodal"; 
 import PrintModal from "../../components/PrintModal";
 import { jsPDF } from "jspdf";
@@ -408,6 +409,9 @@ function ManageOrder() {
                 onChange={handleSearchChange}
                 placeholder={`Search by ${searchColumn}...`}
               />
+              <Link to="/admin/Order_Address" className="btn btn-primary" style={{ width: '150px', marginLeft:"10px" }}>
+                  Order-Address
+                </Link>
               <div className={styles.BtnContainer}>
                 <button className="btn btn-secondary" style={{ width: '150px', marginLeft:"10px" }} onClick={handleDownloadPDF}>Print</button>
               </div>

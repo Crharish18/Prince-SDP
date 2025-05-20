@@ -10,7 +10,7 @@ const ProfileSidebar = ({ activeTab, setActiveTab, customerData, loading, orders
     { icon: User, label: 'My Profile', id: 'profile' },
     { icon: Package, label: 'My Orders', id: 'orders' },
     { icon: Heart, label: 'My Wishlist', id: 'wishlist' },
-    { icon: Bell, label: 'Notifications', id: 'notifications' }
+    
   ];
 
   const handleProfilePictureClick = () => {
@@ -114,8 +114,8 @@ const ProfileSidebar = ({ activeTab, setActiveTab, customerData, loading, orders
           <h2 className="text-2xl font-bold mb-2">{loading ? "Loading..." : `${customerData?.first_name || ''} ${customerData?.last_name || ''}`}</h2>
           <p className="text-gray-500">{customerData?.email || ''}</p>
           <div className="mt-4 pt-4 border-t">
-            <p className="text-sm text-gray-500">Member since</p>
-            <p className="font-medium">March 2024</p>
+            <p className="text-sm text-gray-500">Member of</p>
+            <p className="font-medium">Prince Lanka</p>
           </div>
         </div>
 

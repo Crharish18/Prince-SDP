@@ -1,4 +1,6 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
+
 
 const Features = () => {
   return (
@@ -17,9 +19,12 @@ const Features = () => {
             <p className="text-gray-600 mb-8">
               Discover how Prince Lanka can transform your agricultural operations by providing a wide range of agricultural necessities. From seeds and agrochemicals to irrigation items and machinery, we have everything you need to enhance your farming operations.
             </p>
-            <button className="bg-green-500 text-white px-8 py-3 rounded-full hover:bg-green-600 transition">
-              Learn More
-            </button>
+            <Link to="/Services">
+  <button className="bg-green-500 text-white px-8 py-3 rounded-full hover:bg-green-600 transition">
+    Learn More
+  </button>
+</Link>
+
           </div>
         </div>
       </div>

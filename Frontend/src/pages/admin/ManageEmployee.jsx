@@ -180,9 +180,18 @@ function ManageEmployee() {
       errors.phoneNum = "Phone number must be exactly 10 digits.";
     }
     
-    // Date of Birth validation
+    // Date of Birth validation - must be in the past
     if (!newEmployee.dob) {
       errors.dob = "Date of Birth is required.";
+    } else {
+      const dobDate = new Date(newEmployee.dob);
+      const currentDate = new Date();
+      
+      if (isNaN(dobDate)) {
+        errors.dob = "Invalid date format.";
+      } else if (dobDate >= currentDate) {
+        errors.dob = "Date of Birth must be in the past.";
+      }
     }
     
     // National ID validation: between 10 to 12 digits
@@ -304,11 +313,24 @@ function ManageEmployee() {
       return;
     }
     
-    // Date of Birth validation
+    // Date of Birth validation - must be in the past
     if (!editedEmployee.dob) {
       isValid = false;
       alert("Date of Birth is required.");
       return;
+    } else {
+      const dobDate = new Date(editedEmployee.dob);
+      const currentDate = new Date();
+      
+      if (isNaN(dobDate)) {
+        isValid = false;
+        alert("Invalid date format.");
+        return;
+      } else if (dobDate >= currentDate) {
+        isValid = false;
+        alert("Date of Birth must be in the past.");
+        return;
+      }
     }
     
     // National ID validation: between 10 to 12 digits

@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import React, { useState } from 'react';
 import '../Sidebar.css'; 
-import { FaTachometerAlt, FaUsers, FaBox, FaListAlt, FaRegFileAlt, FaCogs, FaUserCircle, FaExchangeAlt, FaTag, FaTruck } from 'react-icons/fa';
+import { FaTachometerAlt, FaUsers, FaBox, FaListAlt, FaRegFileAlt, FaCogs, FaUserCircle, FaExchangeAlt, FaTag, FaTruck, FaBoxOpen, FaCalendarTimes, FaShoppingBasket, FaTags, FaHandshake } from 'react-icons/fa';
 import logodash from "../../assets/PicturesAdmin/logoWhite.png";
 
 const Emp_Sidebar = () => {
@@ -80,20 +80,25 @@ const Emp_Sidebar = () => {
           {isInventoryOpen && (
             <div className="hover-submenu">
                 <Link to="/employee/Inventory" className="submenu-item">
-                <FaBox className="submenu-icon" style={iconStyle} /> Inventories
+                <FaBoxOpen className="submenu-icon" style={iconStyle} /> Inventories
+              </Link>
+              <Link to="/employee/Expired_Inventories" className="submenu-item">
+                <FaCalendarTimes  className="submenu-icon" style={iconStyle}/> Expired Inventories
               </Link>
               <Link to="/employee/products" className="submenu-item">
-                <FaBox className="submenu-icon" style={iconStyle} /> Products
+                <FaShoppingBasket className="submenu-icon" style={iconStyle} /> Products
               </Link>
               <Link to="/employee/Categories" className="submenu-item">
-                <FaTag className="submenu-icon" style={iconStyle} /> Categories
+                <FaTags className="submenu-icon" style={iconStyle} /> Categories
               </Link>
               <Link to="/employee/Supplier" className="submenu-item">
-                <FaTruck className="submenu-icon" style={iconStyle} /> Suppliers
+                <FaHandshake className="submenu-icon" style={iconStyle} /> Suppliers
               </Link>
             </div>
           )}
         </li>
+
+
 
         {/* Profile */}
         <li className="sidebar-item" style={sidebarItemStyle}>

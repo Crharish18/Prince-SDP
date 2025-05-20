@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { Link } from 'react-router-dom';
 import { FaEye, FaEdit, FaTrash, FaSortUp, FaSortDown } from "react-icons/fa"; 
@@ -8,6 +8,10 @@ import styles from './products.module.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import ViewModal from "../../components/Viewmodal"; 
 import EditModal from "../../components/EditModal"; 
+import PrintModal from "../../components/PrintModal";
+import { jsPDF } from "jspdf";
+import 'jspdf-autotable';
+import logodash from "../../assets/PicturesAdmin/logoWhite.png";
 
 function ManageProducts() {
   const [products, setProducts] = useState([]);
@@ -18,8 +22,8 @@ function ManageProducts() {
   const [showEditModal, setShowEditModal] = useState(false); 
   const [editedProduct, setEditedProduct] = useState({}); 
   const [editImageFile, setEditImageFile] = useState(null);
-  // Add quantity sort state
   const [quantitySort, setQuantitySort] = useState(null); // null, 'asc', or 'desc'
+  const [showPrintModal, setShowPrintModal] = useState(false);
 
   // Debug check when component mounts
   useEffect(() => {
@@ -161,6 +165,33 @@ function ManageProducts() {
       }));
     }
   };
+
+  const formatTimestamp = (timestamp) => {
+    if (!timestamp) return "N/A";
+    
+    try {
+      const date = new Date(timestamp);
+      
+      // Check if date is valid
+      if (isNaN(date.getTime())) return "N/A";
+      
+      return date.toLocaleString('en-US', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return "N/A";
+    }
+  };
+  
+  const handleDownloadPDF = () => {
+    setShowPrintModal(true);
+  };
   
   return (
     <div className={styles.ManageProductsContainer}>
@@ -192,9 +223,7 @@ function ManageProducts() {
                 disabled={!searchColumn}
               />
               <div className={styles.BtnContainer}>
-                <Link to="/admin/categories" className="btn btn-secondary" style={{ width: '150px', marginLeft:"10px" }}>
-                  Categories
-                </Link>
+                <button className="btn btn-secondary" onClick={handleDownloadPDF} style={{ width: '150px', marginLeft:"10px" }}>Print</button>
               </div>
             </div>
             
@@ -238,6 +267,7 @@ function ManageProducts() {
                     {quantitySort === 'asc' && <FaSortUp style={{ marginLeft: "5px" }} />}
                     {quantitySort === 'desc' && <FaSortDown style={{ marginLeft: "5px" }} />}
                   </th>
+                  <th>created_at</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -249,6 +279,9 @@ function ManageProducts() {
                       <td>{prod.name}</td>
                       <td>Rs.{parseFloat(prod.price).toFixed(2)}</td>
                       <td>{prod.stock_qty}</td>
+                     
+
+                      <td>{formatTimestamp(prod.created_at)}</td>
                       <td>
                         <FaEye 
                           style={{ marginRight: "10px", cursor: "pointer", color: "#2770b4" }}
@@ -292,7 +325,7 @@ function ManageProducts() {
 
         <EditModal 
           showEditModal={showEditModal} 
-          entityData={editedProduct} 
+          entityData={editedProduct}
           entityTitle="Product"
           entityFields={[
             { label: "Name", name: "name"},
@@ -307,6 +340,22 @@ function ManageProducts() {
           handleClose={() => setShowEditModal(false)} 
           handleSaveEditEntity={handleSaveEditProduct} 
           handleEditInputChange={handleEditInputChange}   
+        />
+
+        <PrintModal
+          show={showPrintModal}
+          handleClose={() => setShowPrintModal(false)}
+          title="Print Products Report"
+          data={filteredProducts}
+          fields={[
+            { label: "Product ID", field: "product_id" },
+            { label: "Name", field: "name" },
+            { label: "Price", field: "price", format: (price) => `Rs.${parseFloat(price).toFixed(2)}` },
+            { label: "Stock Quantity", field: "stock_qty" },
+            { label: "Created At", field: "created_at", format: (date) => date ? formatTimestamp(date) : "N/A" }
+          ]}
+          filename="products_report.pdf"
+          reportTitle="Products Details Report"
         />
       </div>
     </div>

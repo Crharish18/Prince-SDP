@@ -33,7 +33,7 @@ const formatDateForMySQL = (dateString) => {
 
 // ✅ GET: Fetch all customers
 router.get('/', (req, res) => {
-    const query = 'SELECT customer_id, first_name, last_name, phone_num, address, national_id, dob, created_at, updated_at, status FROM customer';
+    const query = 'SELECT customer_id, first_name, last_name, phone_num, address, national_id, dob, created_at, updated_at, status, email, profile_pic FROM customer';
 
     connection.query(query, (err, results) => {
         if (err) {
@@ -44,6 +44,7 @@ router.get('/', (req, res) => {
         }
     });
 });
+
 
 router.post('/', async (req, res) => {
     const { first_name, last_name, phone_num, address, national_id, password, dob, email, status } = req.body;

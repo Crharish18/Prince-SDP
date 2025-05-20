@@ -1,11 +1,11 @@
-.InventoryContainer {
+.ManageEmployeeContainer {
   display: flex;
   height: 100vh; /* Full viewport height */
   width: 100vw; /* Full viewport width */
   overflow-x: hidden;
 }
 
-.InventoryContent {
+.ManageEmployeeContent {
   flex-grow: 1; /* Content should take up remaining space */
   display: flex;
   flex-direction: column;
@@ -31,18 +31,16 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 15px;
-  height: auto; /* Changed from fixed height to auto */
-  min-height: 137px; /* Set minimum height instead */
-  padding-bottom: 25px; /* Add padding at bottom for spacing */
+  gap: 5px;
+  height: 137px;
 }
+
 
 .SearchWrapper {
   display: flex;
   width: 100%;
   justify-content: flex-start;
   height: 48px;
-  align-items: center; /* Center items vertically */
 }
 
 .search-bar {
@@ -60,6 +58,7 @@
   gap: 10px;
 }
 
+
 .BtnContainer .btn {
   font-size: 16px;
   padding: 12px 20px;
@@ -74,57 +73,6 @@
   background-color: #06325e;
 }
 
-/* New styles for the date sorting section */
-.DateSortContainer {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  margin-top: 10px;
-}
-
-.SortLabel {
-  font-weight: bold;
-  margin-right: 10px;
-  min-width: 140px; /* Fixed width for label */
-}
-
-.SortButtonGroup {
-  display: flex;
-  gap: 10px;
-}
-
-.SortButton {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px 15px;
-  border-radius: 5px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: 1px solid #2770b4;
-}
-
-.SortButton.active {
-  background-color: #2770b4;
-  color: white;
-}
-
-.SortButton.inactive {
-  background-color: white;
-  color: #2770b4;
-}
-
-.SortButton.clear {
-  background-color: white;
-  color: #666;
-  border-color: #ccc;
-}
-
-.SortIcon {
-  margin-left: 5px;
-}
-
 .TableContainer {
   width: 100%; /* Full width for table */
   background: white;
@@ -136,31 +84,20 @@
   overflow-y: scroll;
 }
 
+/* Modify the section title font size */
+
+
 .TableContainer thead {
   position: sticky;
-  top: -20px;
+  top: -20PX;
   background: #781c1c;
   color: white;
   z-index: 2;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  
 }
 
-.TableContainer th {
-  padding: 12px 15px;
-  text-align: left;
-}
-
-.SortableHeader {
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-}
-
-.SortableHeader:hover {
-  background-color: #8a2424;
-}
-
-.ModalOverlay1 {
+.ModalOverlay1{
   position: fixed;
   top: 0;
   left: 0;
@@ -190,23 +127,22 @@
   overflow-y: auto; /* Add scroll if content overflows */
 }
 
-.modal-content1 {
-  background: #ffffff;
-  padding: 40px;
-  border-radius: 12px; /* Rounded corners for a modern look */
-  width: 600px;
-  max-width: 100%;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2); /* Soft shadow for depth */
-  display: flex;
-  flex-direction: column;
-  gap: 25px;
-  animation: slideIn 0.4s ease-out; /* Animation for modal entry */
-  max-height: 90vh; /* Limit the height of the modal */
-  overflow-y: auto; /* Add scroll if content overflows */
-}
-
+  .modal-content1 {
+    background: #ffffff;
+    padding: 40px;
+    border-radius: 12px; /* Rounded corners for a modern look */
+    width: 600px;
+    max-width: 100%;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2); /* Soft shadow for depth */
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+    animation: slideIn 0.4s ease-out; /* Animation for modal entry */
+    max-height: 90vh; /* Limit the height of the modal */
+    overflow-y: auto; /* Add scroll if content overflows */
+  }
 /* Form */
-.ModalForm1 {
+.ModalForm1{
   display: flex;
   flex-direction: column;
   gap: 50px;
@@ -228,48 +164,4 @@
   color: red;
   font-size: 12px;
   margin-top: 5px;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes slideIn {
-  from { transform: translateY(-20px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
-
-@media print {
-  body * {
-    visibility: hidden;
-  }
-  
-  #inventoryTable, #inventoryTable * {
-    visibility: visible;
-  }
-  
-  #inventoryTable {
-    position: absolute;
-    left: 0;
-    top: 0;
-  }
-  
-  /* Styling for logo */
-  img {
-    max-width: 200px;  /* Adjust based on your logo size */
-    margin-bottom: 20px;
-  }
-  
-  /* Styling for title and description */
-  h1 {
-    text-align: center;
-    font-size: 24px;
-    font-weight: bold;
-  }
-
-  p {
-    text-align: center;
-    font-size: 16px;
-  }
 }

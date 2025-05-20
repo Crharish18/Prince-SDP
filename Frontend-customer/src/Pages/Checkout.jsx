@@ -10,6 +10,7 @@ import Footer from '../Components/Footer';
 // Create a separate component for the address form to maintain its own state
 const AddressFormComponent = ({ type, initialData, onSave, onCancel }) => {
   const [localFormData, setLocalFormData] = useState(initialData);
+  const [errors, setErrors] = useState({});
 
   // Update local form when initialData changes
   useEffect(() => {
@@ -21,10 +22,57 @@ const AddressFormComponent = ({ type, initialData, onSave, onCancel }) => {
       ...prev,
       [field]: value
     }));
+
+    // Clear error when user types
+    if (errors[field]) {
+      setErrors(prev => ({
+        ...prev,
+        [field]: ''
+      }));
+    }
+  };
+
+  const validateAddressForm = () => {
+    const newErrors = {};
+    
+    // Fullname validation - only letters and more than 3 characters
+    if (!/^[A-Za-z\s]{3,}$/.test(localFormData.fullname || '')) {
+      newErrors.fullname = 'Full name must contain only letters and be at least 3 characters long';
+    }
+    
+    // Street address validation - letters, numbers, and / symbols with more than 3 characters
+    if (!/^[A-Za-z0-9\s\/]{3,}$/.test(localFormData.street || '')) {
+      newErrors.street = 'Street address must be at least 3 characters and can only contain letters, numbers, and / symbols';
+    }
+    
+    // Apartment validation (optional) - if provided, should be more than 3 characters
+    if (localFormData.apartment && localFormData.apartment.length < 3) {
+      newErrors.apartment = 'Apartment/Unit must be at least 3 characters long';
+    }
+    
+    // City validation - only letters and more than 3 characters
+    if (!/^[A-Za-z\s]{3,}$/.test(localFormData.city || '')) {
+      newErrors.city = 'City must contain only letters and be at least 3 characters long';
+    }
+    
+    // Province validation - only letters and more than 3 characters
+    if (!/^[A-Za-z\s]{3,}$/.test(localFormData.province || '')) {
+      newErrors.province = 'Province must contain only letters and be at least 3 characters long';
+    }
+    
+    // Postal code validation - exactly 5 digits
+    if (!/^\d{5}$/.test(localFormData.postal_code || '')) {
+      newErrors.postal_code = 'Postal code must be exactly 5 digits';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = () => {
-    onSave(localFormData);
+    if (validateAddressForm()) {
+      onSave(localFormData);
+    }
   };
 
   return (
@@ -35,8 +83,9 @@ const AddressFormComponent = ({ type, initialData, onSave, onCancel }) => {
           type="text"
           value={localFormData.fullname || ''}
           onChange={(e) => handleLocalChange('fullname', e.target.value)}
-          className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent text-left"
+          className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent text-left ${errors.fullname ? 'border-red-500' : ''}`}
         />
+        {errors.fullname && <p className="mt-1 text-xs text-red-500 text-left">{errors.fullname}</p>}
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1 text-left">Street Address</label>
@@ -44,8 +93,9 @@ const AddressFormComponent = ({ type, initialData, onSave, onCancel }) => {
           type="text"
           value={localFormData.street || ''}
           onChange={(e) => handleLocalChange('street', e.target.value)}
-          className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent text-left"
+          className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent text-left ${errors.street ? 'border-red-500' : ''}`}
         />
+        {errors.street && <p className="mt-1 text-xs text-red-500 text-left">{errors.street}</p>}
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1 text-left">Apartment/Unit (Optional)</label>
@@ -53,8 +103,9 @@ const AddressFormComponent = ({ type, initialData, onSave, onCancel }) => {
           type="text"
           value={localFormData.apartment || ''}
           onChange={(e) => handleLocalChange('apartment', e.target.value)}
-          className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent text-left"
+          className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent text-left ${errors.apartment ? 'border-red-500' : ''}`}
         />
+        {errors.apartment && <p className="mt-1 text-xs text-red-500 text-left">{errors.apartment}</p>}
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div>
@@ -63,8 +114,9 @@ const AddressFormComponent = ({ type, initialData, onSave, onCancel }) => {
             type="text"
             value={localFormData.city || ''}
             onChange={(e) => handleLocalChange('city', e.target.value)}
-            className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent text-left"
+            className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent text-left ${errors.city ? 'border-red-500' : ''}`}
           />
+          {errors.city && <p className="mt-1 text-xs text-red-500 text-left">{errors.city}</p>}
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1 text-left">Province</label>
@@ -72,8 +124,9 @@ const AddressFormComponent = ({ type, initialData, onSave, onCancel }) => {
             type="text"
             value={localFormData.province || ''}
             onChange={(e) => handleLocalChange('province', e.target.value)}
-            className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent text-left"
+            className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent text-left ${errors.province ? 'border-red-500' : ''}`}
           />
+          {errors.province && <p className="mt-1 text-xs text-red-500 text-left">{errors.province}</p>}
         </div>
       </div>
       <div className="grid grid-cols-2 gap-4">
@@ -83,8 +136,9 @@ const AddressFormComponent = ({ type, initialData, onSave, onCancel }) => {
             type="text"
             value={localFormData.postal_code || ''}
             onChange={(e) => handleLocalChange('postal_code', e.target.value)}
-            className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent text-left"
+            className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent text-left ${errors.postal_code ? 'border-red-500' : ''}`}
           />
+          {errors.postal_code && <p className="mt-1 text-xs text-red-500 text-left">{errors.postal_code}</p>}
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1 text-left">Country</label>
@@ -413,7 +467,7 @@ const Checkout = ({ onBack }) => {
         await axios.delete(`http://localhost:5000/api/cart/customer/${customerId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
-
+        
         // Redirect happens after user views PDF in new window
       } else {
         alert('Failed to save order items.');
@@ -456,13 +510,6 @@ const Checkout = ({ onBack }) => {
 
   // Save temporary address (not to database)
   const handleSaveTempAddress = (formData, type) => {
-    // Validate required fields
-    if (!formData.fullname || !formData.street || !formData.city || 
-        !formData.province || !formData.postal_code) {
-      alert(`Please fill in all required fields for the ${type.toLowerCase()} address.`);
-      return;
-    }
-    
     // Create a temporary address with a unique ID
     const tempAddress = {
       ...formData,

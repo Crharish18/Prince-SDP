@@ -8,6 +8,10 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import ViewModal from "../../components/Viewmodal"; 
 import EditModal from "../../components/EditModal"; 
 import AddEntityModal from "../../components/AddEntityModal";
+import PrintModal from "../../components/PrintModal";
+import { jsPDF } from "jspdf";
+import 'jspdf-autotable';
+import logodash from "../../assets/PicturesAdmin/logoWhite.png";
 
 function Supplier() {
   const [suppliers, setSuppliers] = useState([]);
@@ -32,6 +36,13 @@ function Supplier() {
   const [selectedSupplier, setSelectedSupplier] = useState(null); 
   const [showEditModal, setShowEditModal] = useState(false); 
   const [editedSupplier, setEditedSupplier] = useState({}); 
+  const [editValidationErrors, setEditValidationErrors] = useState({
+    name: '',
+    phone: '',
+    email: '',
+    address: ''
+  });
+  const [showPrintModal, setShowPrintModal] = useState(false);
 
   useEffect(() => {
     axios
@@ -72,7 +83,7 @@ function Supplier() {
     { label: "Phone", name: "phone", type: "text" },
     { label: "Email", name: "email", type: "email" },
     { label: "Address", name: "address", type: "text" },
-    { label: "Created At", name: "created_at", type: "text" }
+    
   ];
 
   const validateEmail = (email) => {
@@ -190,21 +201,63 @@ function Supplier() {
     setSelectedSupplier(supplier);
     setEditedSupplier({ ...supplier });
     setShowEditModal(true);
+    setEditValidationErrors({
+      name: '',
+      phone: '',
+      email: '',
+      address: ''
+    });
   };
   
   const handleSaveEditSupplier = () => {
-    const { created_at, ...supplierData } = editedSupplier;
-    axios
-      .put(`http://localhost:5000/api/suppliers/${editedSupplier.supplier_id}`, supplierData)
-      .then((response) => {
-        setSuppliers((prevSuppliers) =>
-          prevSuppliers.map((sup) => (sup.supplier_id === editedSupplier.supplier_id ? editedSupplier : sup))
-        );
-        setShowEditModal(false);
-      })
-      .catch((error) => {
-        console.error("Error updating supplier:", error.response ? error.response.data : error);
-      });
+    let errors = {};
+    
+    // Name validation: only letters and more than 3 characters
+    if (!editedSupplier.name) {
+      errors.name = "Name is required.";
+    } else if (editedSupplier.name.length < 3) {
+      errors.name = "Name must be at least 3 characters long.";
+    } else if (!/^[a-zA-Z\s]+$/.test(editedSupplier.name)) {
+      errors.name = "Name can only contain letters and spaces.";
+    }
+    
+    // Phone validation: only numbers and exactly 10 digits
+    if (!editedSupplier.phone) {
+      errors.phone = "Phone number is required.";
+    } else if (!/^\d{10}$/.test(editedSupplier.phone)) {
+      errors.phone = "Phone number must be exactly 10 digits.";
+    }
+    
+    // Email validation: valid email format
+    if (!editedSupplier.email) {
+      errors.email = "Email is required.";
+    } else if (!validateEmail(editedSupplier.email)) {
+      errors.email = "Please enter a valid email address.";
+    }
+    
+    // Address validation: more than 5 characters
+    if (!editedSupplier.address) {
+      errors.address = "Address is required.";
+    } else if (editedSupplier.address.length < 5) {
+      errors.address = "Address must be at least 5 characters long.";
+    }
+  
+    setEditValidationErrors(errors);
+
+    if (Object.keys(errors).length === 0) {
+      const { created_at, ...supplierData } = editedSupplier;
+      axios
+        .put(`http://localhost:5000/api/suppliers/${editedSupplier.supplier_id}`, supplierData)
+        .then((response) => {
+          setSuppliers((prevSuppliers) =>
+            prevSuppliers.map((sup) => (sup.supplier_id === editedSupplier.supplier_id ? editedSupplier : sup))
+          );
+          setShowEditModal(false);
+        })
+        .catch((error) => {
+          console.error("Error updating supplier:", error.response ? error.response.data : error);
+        });
+    }
   };
 
   const handleEditInputChange = (e) => {
@@ -218,6 +271,16 @@ function Supplier() {
   const handleCloseEditModal = () => {
     setShowEditModal(false);
     setSelectedSupplier(null);
+    setEditValidationErrors({
+      name: '',
+      phone: '',
+      email: '',
+      address: ''
+    });
+  };
+
+  const handleDownloadPDF = () => {
+    setShowPrintModal(true);
   };
 
   return (
@@ -253,7 +316,7 @@ function Supplier() {
                 <button className="btn btn-primary" style={{ width: '150px', marginLeft:"10px" }} onClick={handleAddSupplierClick}>
                   Add Supplier
                 </button>
-                <button className="btn btn-secondary" style={{ width: '150px', marginLeft:"10px" }}>Print</button>
+                <button className="btn btn-secondary" onClick={handleDownloadPDF} style={{ width: '150px', marginLeft:"10px" }}>Print</button>
               </div>
             </div>
           </div>
@@ -345,6 +408,24 @@ function Supplier() {
           handleClose={handleCloseEditModal}
           handleSaveEditEntity={handleSaveEditSupplier}
           handleEditInputChange={handleEditInputChange}
+          validationErrors={editValidationErrors}
+        />
+
+        <PrintModal
+          show={showPrintModal}
+          handleClose={() => setShowPrintModal(false)}
+          title="Print Suppliers Report"
+          data={filteredSuppliers}
+          fields={[
+            { label: "Supplier ID", field: "supplier_id" },
+            { label: "Name", field: "name" },
+            { label: "Phone", field: "phone" },
+            { label: "Email", field: "email" },
+            { label: "Address", field: "address" },
+            { label: "Created At", field: "created_at", format: (date) => date ? formatDate(date) : "N/A" }
+          ]}
+          filename="suppliers_report.pdf"
+          reportTitle="Suppliers Details Report"
         />
       </div>
     </div>

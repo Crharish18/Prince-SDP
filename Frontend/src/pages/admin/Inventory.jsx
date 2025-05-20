@@ -338,158 +338,159 @@ function Inventory() {
   };
   
   const handleSaveNewEntity = () => {
-    let errors = {};
-    
-    // Product name validation: more than 5 characters with letters or numbers only
-    if (!newEntity.name || newEntity.name.length <= 5) {
-      errors.name = "Product name must be more than 5 characters.";
-    } else if (!/^[a-zA-Z0-9 ]+$/.test(newEntity.name)) {
-      errors.name = "Product name can only contain letters, numbers, and spaces.";
-    }
-    
-    // Price validation: only numbers
-    if (!newEntity.price) {
-      errors.price = "Price is required.";
-    } else if (isNaN(newEntity.price) || parseFloat(newEntity.price) < 0) {
-      errors.price = "Price must be a positive number.";
-    }
-    
-    // Discount validation: only numbers
-    if (newEntity.discount_percentage && isNaN(newEntity.discount_percentage)) {
-      errors.discount_percentage = "Discount must be a number.";
-    }
-    
-    // Min quantity validation: only numbers
-    if (newEntity.min_quantity && isNaN(newEntity.min_quantity)) {
-      errors.min_quantity = "Minimum quantity must be a number.";
-    }
-    
-    // Description validation: more than 5 characters
-    if (!newEntity.description || newEntity.description.length <= 5) {
-      errors.description = "Description must be more than 5 characters.";
-    }
-    
-    // Quantity added validation: only numbers
-    if (!newEntity.qty_added) {
-      errors.qty_added = "Quantity is required.";
-    } else if (isNaN(newEntity.qty_added) || parseInt(newEntity.qty_added) < 1) {
-      errors.qty_added = "Quantity must be a positive number.";
-    }
-    
-    // Buying price per unit validation: only numbers
-    if (!newEntity.buying_price_per_unit) {
-      errors.buying_price_per_unit = "Buying price is required.";
-    } else if (isNaN(newEntity.buying_price_per_unit) || parseFloat(newEntity.buying_price_per_unit) < 0) {
-      errors.buying_price_per_unit = "Buying price must be a positive number.";
-    }
-    
-    // Category validation: not null
-    if (!newEntity.category_id) {
-      errors.category_id = "Category is required.";
-    }
-    
-    // Supplier validation: not null
-    if (!newEntity.supplier_id) {
-      errors.supplier_id = "Supplier is required.";
-    }
-    
-    // User ID validation: not null
-    if (!newEntity.user_id) {
-      errors.user_id = "User ID is required.";
-    }
-    
-    // Expiry date validation: not null and must be future date
-    if (!newEntity.expiry_date) {
-      errors.expiry_date = "Expiry date is required.";
-    } else {
-      const selectedDate = new Date(newEntity.expiry_date);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0); // Reset time part for accurate comparison
-      
-      if (selectedDate <= today) {
-        errors.expiry_date = "Expiry date must be a future date.";
-      }
-    }
-    
-    // Only require image for new products
-    if (modalMode === 'new' && !imageFile) {
-      errors.image = "Product image is required for new products.";
-    }
-    
-    // For existing products, validate product_id
-    if (modalMode === 'existing' && !newEntity.product_id) {
-      errors.product_id = "Please select a product.";
-    }
-    
-    setValidationErrors(errors);
+  let errors = {};
   
-    if (Object.keys(errors).length === 0) {
-      const formData = new FormData();
-      
-      // Append all fields
-      formData.append("name", newEntity.name);
-      formData.append("price", newEntity.price);
-      formData.append("category_id", newEntity.category_id);
-      formData.append("discount_percentage", newEntity.discount_percentage || 0);
-      formData.append("min_quantity", newEntity.min_quantity || 1);
-      formData.append("description", newEntity.description || "");
-      formData.append("qty_added", newEntity.qty_added);
-      formData.append("user_id", newEntity.user_id);
-      formData.append("supplier_id", newEntity.supplier_id);
-      formData.append("buying_price_per_unit", newEntity.buying_price_per_unit);
-      formData.append("expiry_date", newEntity.expiry_date);
-      
-      // If it's an existing product, include the product_id
-      if (modalMode === 'existing' && newEntity.product_id) {
-        formData.append("product_id", newEntity.product_id);
-      }
-      
-      // Only append image if a file is selected
-      if (imageFile) {
-        formData.append("image", imageFile);
-      }
+  // Product name validation: more than 5 characters with letters or numbers only
+  if (!newEntity.name || newEntity.name.length <= 5) {
+    errors.name = "Product name must be more than 5 characters.";
+  } else if (!/^[a-zA-Z0-9 ]+$/.test(newEntity.name)) {
+    errors.name = "Product name can only contain letters, numbers, and spaces.";
+  }
   
-      // Add debugging to see what's being sent
-      console.log("Sending data:", {
-        name: newEntity.name,
-        price: newEntity.price,
-        qty_added: newEntity.qty_added,
-        user_id: newEntity.user_id,
-        supplier_id: newEntity.supplier_id,
-        buying_price_per_unit: newEntity.buying_price_per_unit,
-        product_id: newEntity.product_id || 'new product',
-        expiry_date: newEntity.expiry_date,
-        hasImage: !!imageFile
-      });
+  // Price validation: only positive numbers
+  if (!newEntity.price) {
+    errors.price = "Price is required.";
+  } else if (isNaN(newEntity.price) || parseFloat(newEntity.price) <= 0) {
+    errors.price = "Price must be greater than 0.";
+  }
   
-      axios
-        .post("http://localhost:5000/api/inventory/add-entity", formData, {
-          headers: { "Content-Type": "multipart/form-data" }
-        })
-        .then((response) => {
-          setShowModal(false);
-          setImageFile(null);
-          setSelectedProduct(null);
-          setInputProductName('');
+  // Discount validation: only 0 or positive numbers
+  if (newEntity.discount_percentage && (isNaN(newEntity.discount_percentage) || parseFloat(newEntity.discount_percentage) < 0)) {
+    errors.discount_percentage = "Discount must be 0 or a positive number.";
+  }
+  
+  // Min quantity validation: only 0 or positive numbers
+  if (newEntity.min_quantity && (isNaN(newEntity.min_quantity) || parseInt(newEntity.min_quantity) < 0)) {
+    errors.min_quantity = "Minimum quantity must be 0 or a positive number.";
+  }
+  
+  // Description validation: more than 5 characters
+  if (!newEntity.description || newEntity.description.length <= 5) {
+    errors.description = "Description must be more than 5 characters.";
+  }
+  
+  // Quantity added validation: only positive numbers greater than 0
+  if (!newEntity.qty_added) {
+    errors.qty_added = "Quantity is required.";
+  } else if (isNaN(newEntity.qty_added) || parseInt(newEntity.qty_added) <= 0) {
+    errors.qty_added = "Quantity must be greater than 0.";
+  }
+  
+  // Buying price per unit validation: only positive numbers greater than 0
+  if (!newEntity.buying_price_per_unit) {
+    errors.buying_price_per_unit = "Buying price is required.";
+  } else if (isNaN(newEntity.buying_price_per_unit) || parseFloat(newEntity.buying_price_per_unit) <= 0) {
+    errors.buying_price_per_unit = "Buying price must be greater than 0.";
+  }
+  
+  // Category validation: not null
+  if (!newEntity.category_id) {
+    errors.category_id = "Category is required.";
+  }
+  
+  // Supplier validation: not null
+  if (!newEntity.supplier_id) {
+    errors.supplier_id = "Supplier is required.";
+  }
+  
+  // User ID validation: not null
+  if (!newEntity.user_id) {
+    errors.user_id = "User ID is required.";
+  }
+  
+  // Expiry date validation: not null and must be future date
+  if (!newEntity.expiry_date) {
+    errors.expiry_date = "Expiry date is required.";
+  } else {
+    const selectedDate = new Date(newEntity.expiry_date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time part for accurate comparison
+    
+    if (selectedDate <= today) {
+      errors.expiry_date = "Expiry date must be a future date.";
+    }
+  }
+  
+  // Only require image for new products
+  if (modalMode === 'new' && !imageFile) {
+    errors.image = "Product image is required for new products.";
+  }
+  
+  // For existing products, validate product_id
+  if (modalMode === 'existing' && !newEntity.product_id) {
+    errors.product_id = "Please select a product.";
+  }
+  
+  setValidationErrors(errors);
+
+  if (Object.keys(errors).length === 0) {
+    const formData = new FormData();
+    
+    // Append all fields
+    formData.append("name", newEntity.name);
+    formData.append("price", newEntity.price);
+    formData.append("category_id", newEntity.category_id);
+    formData.append("discount_percentage", newEntity.discount_percentage || 0);
+    formData.append("min_quantity", newEntity.min_quantity || 1);
+    formData.append("description", newEntity.description || "");
+    formData.append("qty_added", newEntity.qty_added);
+    formData.append("user_id", newEntity.user_id);
+    formData.append("supplier_id", newEntity.supplier_id);
+    formData.append("buying_price_per_unit", newEntity.buying_price_per_unit);
+    formData.append("expiry_date", newEntity.expiry_date);
+    
+    // If it's an existing product, include the product_id
+    if (modalMode === 'existing' && newEntity.product_id) {
+      formData.append("product_id", newEntity.product_id);
+    }
+    
+    // Only append image if a file is selected
+    if (imageFile) {
+      formData.append("image", imageFile);
+    }
+
+    // Add debugging to see what's being sent
+    console.log("Sending data:", {
+      name: newEntity.name,
+      price: newEntity.price,
+      qty_added: newEntity.qty_added,
+      user_id: newEntity.user_id,
+      supplier_id: newEntity.supplier_id,
+      buying_price_per_unit: newEntity.buying_price_per_unit,
+      product_id: newEntity.product_id || 'new product',
+      expiry_date: newEntity.expiry_date,
+      hasImage: !!imageFile
+    });
+
+    axios
+      .post("http://localhost:5000/api/inventory/add-entity", formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      })
+      .then((response) => {
+        setShowModal(false);
+        setImageFile(null);
+        setSelectedProduct(null);
+        setInputProductName('');
+        
+        // Refresh inventory data
+        axios.get('http://localhost:5000/api/inventory')
+          .then(response => setInventories(response.data))
+          .catch(error => console.error('Error fetching inventory:', error));
           
-          // Refresh inventory data
-          axios.get('http://localhost:5000/api/inventory')
-            .then(response => setInventories(response.data))
-            .catch(error => console.error('Error fetching inventory:', error));
-            
-          // Also refresh products data
-          axios.get('http://localhost:5000/api/products')
-            .then(response => setProducts(response.data))
-            .catch(error => console.error('Error fetching products:', error));
-        })
-        .catch((error) => {
-          console.error("Error adding entity:", error);
-          if (error.response) {
-            console.error("Error response data:", error.response.data);
-          }
-        });
-    }
-  };
+        // Also refresh products data
+        axios.get('http://localhost:5000/api/products')
+          .then(response => setProducts(response.data))
+          .catch(error => console.error('Error fetching products:', error));
+      })
+      .catch((error) => {
+        console.error("Error adding entity:", error);
+        if (error.response) {
+          console.error("Error response data:", error.response.data);
+        }
+      });
+  }
+};
+
   
   const handleViewInventory = (inventory) => {
     setSelectedInventory(inventory);

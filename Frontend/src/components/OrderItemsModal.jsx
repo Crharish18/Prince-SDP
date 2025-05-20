@@ -13,8 +13,10 @@ const OrderItemsModal = ({ showOrderItemsModal, orderItems, handleClose }) => {
           <table className="table table-striped" style={{ width: "100%" }}>
             <thead>
               <tr>
+                <th style={{ padding: "12px 15px", textAlign: "center", width: "10%" }}>Order_Item ID</th>
                 <th style={{ padding: "12px 15px", textAlign: "center", width: "10%" }}>Product ID</th>
-                <th style={{ padding: "12px 15px", textAlign: "left", width: "30%" }}>Product Name</th>
+                <th style={{ padding: "12px 15px", textAlign: "center", width: "10%" }}>Inventory ID</th>
+                <th style={{ padding: "12px 15px", textAlign: "left", width: "20%" }}>Product Name</th>
                 <th style={{ padding: "12px 15px", textAlign: "center", width: "10%" }}>Quantity</th>
                 <th style={{ padding: "12px 15px", textAlign: "right", width: "15%" }}>Price</th>
                 <th style={{ padding: "12px 15px", textAlign: "right", width: "15%" }}>Discount</th>
@@ -25,7 +27,9 @@ const OrderItemsModal = ({ showOrderItemsModal, orderItems, handleClose }) => {
               {orderItems.length > 0 ? (
                 orderItems.map((item) => (
                   <tr key={item.order_item_id}>
+                    <td style={{ padding: "12px 15px", textAlign: "center" }}>{item.order_item_id}</td>
                     <td style={{ padding: "12px 15px", textAlign: "center" }}>{item.product_id}</td>
+                    <td style={{ padding: "12px 15px", textAlign: "center" }}>{item.inventory_id}</td>
                     <td style={{ padding: "12px 15px", textAlign: "left" }}>{item.product_name}</td>
                     <td style={{ padding: "12px 15px", textAlign: "center" }}>{item.qty}</td>
                     <td style={{ padding: "12px 15px", textAlign: "right" }}>Rs {parseFloat(item.price).toFixed(2)}</td>
@@ -35,7 +39,7 @@ const OrderItemsModal = ({ showOrderItemsModal, orderItems, handleClose }) => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="6" style={{ textAlign: "center", padding: "15px" }}>No items found for this order</td>
+                  <td colSpan="8" style={{ textAlign: "center", padding: "15px" }}>No items found for this order</td>
                 </tr>
               )}
             </tbody>

@@ -15,6 +15,9 @@ import Reviews from "./pages/admin/Reviews";
 import Reports from "./pages/admin/Reports";
 import ActivityLog from "./pages/admin/Activity_log";
 import ResetPass from "./pages/admin/Reset_Password";
+import ExpiredInventories from "./pages/admin/Expired_Inventories";
+import Messages from "./pages/admin/Messages";
+import OrderAddress from "./pages/admin/Order_Address";
 
 import EDashboard from "./pages/employee/Emp_Dashboard";
 import Emp_Profile from "./pages/employee/Emp_Profile";
@@ -24,6 +27,9 @@ import Emp_Inventory from "./pages/employee/Emp_Inventory";
 import Emp_Products from "./pages/employee/Emp_Products";
 import Emp_Categories from "./pages/employee/Emp_Categories";
 import Emp_Supplier from "./pages/employee/Emp_Supplier";
+import Emp_ExpiredInventories from "./pages/employee/Emp_Expired_Inventories";
+import Emp_Order_Address from "./pages/employee/Emp_Order_Address";
+import Emp_Transactions from "./pages/employee/Emp_Transaction";
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
@@ -114,6 +120,22 @@ function App() {
           element={token && role === 'admin' ? <ActivityLog /> : <Navigate to="/admin" />} 
         />
 
+        <Route 
+          path="/admin/Expired_Inventories"
+          element={token && role === 'admin' ? <ExpiredInventories /> : <Navigate to="/admin" />} 
+           
+        />
+
+         <Route 
+          path="/admin/Messages"
+          element={token && role === 'admin' ? <Messages /> : <Navigate to="/admin" />} 
+           
+        />
+
+        <Route
+          path="/admin/Order_Address"
+          element={token && role === 'admin' ? <OrderAddress /> : <Navigate to="/admin" />} 
+        />
 
         <Route 
                     path="/admin/Reset_Password" 
@@ -170,6 +192,21 @@ function App() {
           element={token && role === 'employee' ? <Emp_Supplier/> : <Navigate to="/admin" />}  
           
         /> 
+
+        <Route
+          path="/employee/Expired_Inventories"    
+          element={token && role === 'employee' ? <Emp_ExpiredInventories /> : <Navigate to="/admin" />}
+        />
+
+        <Route
+          path="/employee/Order_Address"   
+          element={token && role === 'employee' ? <Emp_Order_Address /> : <Navigate to="/admin" />}
+        />
+
+        <Route
+          path="/employee/Transactions"
+          element={token && role === 'employee' ? <Emp_Transactions /> : <Navigate to="/admin" />}
+        />
         
 
         {/* ✅ Default Route: Redirects based on authentication */}

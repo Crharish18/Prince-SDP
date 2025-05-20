@@ -165,12 +165,6 @@ function Reports() {
             reportFilters={inventoryReportFilters}
           />
         );
-      case "Transaction Report":
-        // Future implementation
-        return <div>Transaction Report - Coming Soon</div>;
-      case "Employee Report":
-        // Future implementation
-        return <div>Employee Report - Coming Soon</div>;
       default:
         return <div>Select a report type</div>;
     }
@@ -205,8 +199,6 @@ function Reports() {
                   <option value="Sales Report">Sales Report</option>
                   <option value="Customer Report">Customer Report</option>
                   <option value="Inventory Report">Inventory Report</option>
-                  <option value="Transaction Report">Transaction Report</option>
-                  <option value="Employee Report">Employee Report</option>
                 </select>
               </div>
               

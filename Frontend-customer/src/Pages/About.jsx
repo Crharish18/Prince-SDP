@@ -28,9 +28,7 @@ const About = () => {
         <div className="text-center mb-16">
           <h2 className="text-3xl font-bold mb-4">Our Mission</h2>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            At Prince Lanka, we're dedicated to revolutionizing agriculture through innovative technology 
-            and sustainable practices. Our goal is to empower farmers with the tools and resources 
-            they need to succeed in farming.
+            At Prince Lanka, our mission is to support farmers by providing high-quality fertilizers, agrochemicals, and farming tools. We are committed to helping cultivate success through reliable products, expert guidance, and a passion for sustainable agriculture.
           </p>
         </div>
 

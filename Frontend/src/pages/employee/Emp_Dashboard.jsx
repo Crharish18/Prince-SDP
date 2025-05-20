@@ -22,6 +22,7 @@ function Dashboard() {
   const [pendingOrders, setPendingOrders] = useState(0);  // State for total pending orders
   const [allOrders, setAllOrders] = useState(0); // State for all orders (not just today's)
   const [progressPercentage, setProgressPercentage] = useState(0); // State for progress percentage
+  const [lowStockCount, setLowStockCount] = useState(0); // New state for low stock products count
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -36,6 +37,10 @@ function Dashboard() {
         const products = await productResponse.json();
         const productNames = products.map(product => product.name);
         const stockQty = products.map(product => product.stock_qty);
+
+        // Count products with stock less than 10
+        const lowStockProducts = products.filter(product => product.stock_qty < 10);
+        setLowStockCount(lowStockProducts.length);
 
         setProductsData({
           labels: productNames,
@@ -75,7 +80,7 @@ function Dashboard() {
       <Emp_Sidebar />
       <div className="dashboard-content">
         <Header />
-        <div className="card-container" style={{ marginLeft: "0px", width: "100%", height: "18vh", marginTop: "80px" }}>
+        <div className="card-container" style={{ marginLeft: "0px", width: "134%", height: "18vh", marginTop: "80px" }}>
           <div className="card">
             <h2>Today Orders</h2>
             <div className="metric-value">{totalOrders}</div>
@@ -83,12 +88,7 @@ function Dashboard() {
 
           <div className="card">
             <h2>Low Stock Products</h2>
-            <div className="metric-value"></div>
-          </div>
-
-          <div className="card">
-            <h2>Today Expense</h2>
-            <div className="metric-value"></div>
+            <div className="metric-value " style={{ color: '#FF0000' }}>{lowStockCount}</div>
           </div>
 
           <div className="card">
@@ -161,7 +161,6 @@ function Dashboard() {
                   style={{ 
                     width: `${progressPercentage}%`, 
                     backgroundColor: '#FF474C',
-
                     height: '100%',
                     borderRadius: '10px',
                     display: 'flex',

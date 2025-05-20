@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { FaEye, FaEdit, FaTrash } from "react-icons/fa"; 
-import Sidebar from "../../components/Sidebar";
+import Emp_Sidebar from "../../components/Employee/Emp_Sidebar";  
 import Header from "../../components/Header";
-import styles from './Transactions.module.css'; // Import as CSS module
+import styles from './Emp_Transaction.module.css'; // Import as CSS module
 import 'bootstrap/dist/css/bootstrap.min.css';
 import ViewModal from "../../components/Viewmodal"; 
 import EditModal from "../../components/EditModal"; 
@@ -195,7 +195,7 @@ function Transaction() {
 
   return (
     <div className={styles.ManageEmployeeContainer}>
-      <Sidebar />
+      <Emp_Sidebar />
       <div className={styles.ManageEmployeeContent}>
         <Header />
         <div className={styles.InnerContainer} style={{ marginLeft: "10px", width: "100%" }}>
@@ -224,9 +224,7 @@ function Transaction() {
                 placeholder={`Search by ${searchColumn}...`}
               />
               <div className={styles.BtnContainer}>
-                <button className="btn btn-primary" style={{ width: '150px', marginLeft:"10px" }} onClick={handleAddTransactionClick}>
-                  Add Transaction
-                </button>
+                
                 <button className="btn btn-secondary" onClick={handleDownloadPDF} style={{ width: '150px', marginLeft:"10px" }}>Print</button>
               </div>
             </div>
@@ -264,10 +262,7 @@ function Transaction() {
                           style={{ marginRight: "10px", cursor: "pointer", color: "#f0ad4e" }}
                           onClick={() => handleEditTransaction(trans)} 
                         />
-                        <FaTrash
-                          style={{ cursor: "pointer", color: "#d9534f" }}
-                          onClick={() => handleDeleteTransaction(trans.transaction_id)} 
-                        />
+                       
                       </td>
                     </tr>
                   ))
