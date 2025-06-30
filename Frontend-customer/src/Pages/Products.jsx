@@ -90,7 +90,7 @@ const Products = () => {
     // Reset category and search query if page is refreshed
     const newSearchParams = new URLSearchParams(location.search);
   
-    // Check if category or search params exist and remove them
+    //if refreshed it goes back to old state
     if (newSearchParams.has('category') || newSearchParams.has('search')) {
       newSearchParams.delete('category');
       newSearchParams.delete('search');

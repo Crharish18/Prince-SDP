@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { FaEye, FaEdit, FaTrash, FaSortUp, FaSortDown } from "react-icons/fa";
-import Sidebar from "../../components/Sidebar";
+import Sidebar from "../../components/sidebar";
 import Header from "../../components/Header";
 import styles from './inventory.module.css';
 import 'bootstrap/dist/css/bootstrap.min.css';

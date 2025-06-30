@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { FaEye, FaEdit, FaTrash } from "react-icons/fa"; 
-import Sidebar from "../../components/Sidebar";
+import Sidebar from "../../components/sidebar";
 import Header from "../../components/Header";
 import styles from './Supplier.module.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -13,9 +13,12 @@ import { jsPDF } from "jspdf";
 import 'jspdf-autotable';
 import logodash from "../../assets/PicturesAdmin/logoWhite.png";
 
+
 function Supplier() {
   const [suppliers, setSuppliers] = useState([]);
+  // State for Add Supplier modal visibility
   const [showModal, setShowModal] = useState(false);
+  // State for new supplier form data
   const [newSupplier, setNewSupplier] = useState({
     name: '',
     phone: '',
@@ -24,6 +27,7 @@ function Supplier() {
     status: 'Active'
   });
 
+  // State for validation errors in add form
   const [validationErrors, setValidationErrors] = useState({
     name: '',
     phone: '',
@@ -31,20 +35,26 @@ function Supplier() {
     address: ''
   });
   
+  // State for search input and column
   const [searchText, setSearchText] = useState("");
   const [searchColumn, setSearchColumn] = useState("");
+  // State for view modal and selected supplier
   const [showViewModal, setShowViewModal] = useState(false); 
   const [selectedSupplier, setSelectedSupplier] = useState(null); 
+  // State for edit modal and edited supplier
   const [showEditModal, setShowEditModal] = useState(false); 
   const [editedSupplier, setEditedSupplier] = useState({}); 
+  // State for validation errors in edit form
   const [editValidationErrors, setEditValidationErrors] = useState({
     name: '',
     phone: '',
     email: '',
     address: ''
   });
+  // State for print modal
   const [showPrintModal, setShowPrintModal] = useState(false);
 
+  // Fetch suppliers from backend on mount
   useEffect(() => {
     axios
       .get('http://localhost:5000/api/suppliers')
@@ -56,6 +66,7 @@ function Supplier() {
       });
   }, []);
 
+  // Format date as YYYY-MM-DD
   const formatDate = (date) => {
     const formattedDate = new Date(date);
     const year = formattedDate.getFullYear();
@@ -64,20 +75,24 @@ function Supplier() {
     return `${year}-${month}-${day}`;
   };
   
+  // Handle search column dropdown change
   const handleSearchColumnChange = (e) => {
     setSearchColumn(e.target.value);  
   };
   
+  // Handle search input change
   const handleSearchChange = (e) => {
     setSearchText(e.target.value);  
   };
   
+  // Filter suppliers based on search input and column
   const filteredSuppliers = suppliers.filter((supplier) => {
     if (!searchText || !searchColumn) return true; 
     const value = supplier[searchColumn]?.toString().toLowerCase(); 
     return value && value.includes(searchText.toLowerCase());
   });
 
+  // Field definitions for EditModal
   const supplierFields = [
     { label: "Supplier ID", name: "supplier_id", type: "text" },
     { label: "Name", name: "name", type: "text" },
@@ -87,14 +102,17 @@ function Supplier() {
     { label: "Status", name: "status", type: "select", options: ["Active", "Disable"] }
   ];
 
+  // Email validation function
   const validateEmail = (email) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email).toLowerCase());
   };
 
+  // Show Add Supplier modal
   const handleAddSupplierClick = () => {
     setShowModal(true);
   };
 
+  // Close Add Supplier modal and reset form
   const handleCloseModal = () => {
     setShowModal(false);
     // Reset form data
@@ -114,6 +132,7 @@ function Supplier() {
     });
   };
 
+  // Handle input change in Add Supplier form
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewSupplier({
@@ -122,6 +141,7 @@ function Supplier() {
     });
   };
 
+  // Validate and save new supplier to backend
   const handleSaveNewSupplier = () => {
     let errors = {};
     
@@ -178,36 +198,37 @@ function Supplier() {
     }
   };
 
+  // Show view modal for selected supplier
   const handleViewSupplier = (supplier) => {
     setSelectedSupplier(supplier);
     setShowViewModal(true);
   };
 
+  // Close view modal
   const handleCloseViewModal = () => {
     setShowViewModal(false); 
   };
 
-  // Delete supplier
-const handleDeleteSupplier = (supplierId) => {
-  axios.delete(`http://localhost:5000/api/suppliers/${supplierId}`)
-    .then(response => {
-      setSuppliers((prevSuppliers) =>
-        prevSuppliers.filter((supplier) => supplier.supplier_id !== supplierId)
-      );
-    })
-    .catch(error => {
-      console.error("Error deleting supplier:", error);
-      
-      // Display error message to the user
-      if (error.response && error.response.data && error.response.data.error) {
-        alert(error.response.data.error);
-      } else {
-        alert("An error occurred while deleting the supplier. Please try again.");
-      }
-    });
-};
+  // Delete supplier by ID
+  const handleDeleteSupplier = (supplierId) => {
+    axios.delete(`http://localhost:5000/api/suppliers/${supplierId}`)
+      .then(response => {
+        setSuppliers((prevSuppliers) =>
+          prevSuppliers.filter((supplier) => supplier.supplier_id !== supplierId)
+        );
+      })
+      .catch(error => {
+        console.error("Error deleting supplier:", error);
+        // Display error message to the user
+        if (error.response && error.response.data && error.response.data.error) {
+          alert(error.response.data.error);
+        } else {
+          alert("An error occurred while deleting the supplier. Please try again.");
+        }
+      });
+  };
 
-
+  // Show edit modal for selected supplier
   const handleEditSupplier = (supplier) => {
     setSelectedSupplier(supplier);
     setEditedSupplier({ ...supplier });
@@ -220,6 +241,7 @@ const handleDeleteSupplier = (supplierId) => {
     });
   };
   
+  // Validate and save edited supplier to backend
   const handleSaveEditSupplier = () => {
     let errors = {};
     
@@ -271,6 +293,7 @@ const handleDeleteSupplier = (supplierId) => {
     }
   };
 
+  // Handle input change in Edit Supplier modal
   const handleEditInputChange = (e) => {
     const { name, value } = e.target;
     setEditedSupplier((prev) => ({
@@ -279,6 +302,7 @@ const handleDeleteSupplier = (supplierId) => {
     }));
   };
 
+  // Close edit modal and reset validation errors
   const handleCloseEditModal = () => {
     setShowEditModal(false);
     setSelectedSupplier(null);
@@ -290,10 +314,12 @@ const handleDeleteSupplier = (supplierId) => {
     });
   };
 
+  // Show print modal for downloading PDF
   const handleDownloadPDF = () => {
     setShowPrintModal(true);
   };
 
+  // Main render
   return (
     <div className={styles.ManageSupplierContainer}>
       <Sidebar />
@@ -303,7 +329,9 @@ const handleDeleteSupplier = (supplierId) => {
           <div className={styles.TopSection}>
             <h1 className="section-title" style={{ fontSize: '28px', fontWeight: 'bold' }}>Manage Suppliers</h1>
 
+            {/* Search and action controls */}
             <div className={styles.SearchWrapper}>
+              {/* Search column dropdown */}
               <select
                 className="form-control"
                 value={searchColumn}
@@ -317,6 +345,7 @@ const handleDeleteSupplier = (supplierId) => {
                 <option value="address">Address</option>
                 <option value="status">Status</option>
               </select>
+              {/* Search input */}
               <input
                 type="text"
                 className="form-control search-bar"
@@ -325,14 +354,17 @@ const handleDeleteSupplier = (supplierId) => {
                 placeholder={`Search by ${searchColumn}...`}
               />
               <div className={styles.BtnContainer}>
+                {/* Add Supplier button */}
                 <button className="btn btn-primary" style={{ width: '150px', marginLeft:"10px" }} onClick={handleAddSupplierClick}>
                   Add Supplier
                 </button>
+                {/* Print button */}
                 <button className="btn btn-secondary" onClick={handleDownloadPDF} style={{ width: '150px', marginLeft:"10px" }}>Print</button>
               </div>
             </div>
           </div>
 
+          {/* Suppliers table */}
           <div className={styles.TableContainer}>
             <table className="table table-striped">
               <thead>
@@ -364,14 +396,17 @@ const handleDeleteSupplier = (supplierId) => {
                         </span>
                       </td>
                       <td>
+                        {/* View supplier button */}
                         <FaEye
                           style={{ marginRight: "10px", cursor: "pointer", color: "#2770b4" }}
                           onClick={() => handleViewSupplier(supplier)} 
                         />
+                        {/* Edit supplier button */}
                         <FaEdit
                           style={{ marginRight: "10px", cursor: "pointer", color: "#f0ad4e" }}
                           onClick={() => handleEditSupplier(supplier)} 
                         />
+                        {/* Delete supplier button */}
                         <FaTrash
                           style={{ cursor: "pointer", color: "#d9534f" }}
                           onClick={() => handleDeleteSupplier(supplier.supplier_id)} 
@@ -388,8 +423,7 @@ const handleDeleteSupplier = (supplierId) => {
             </table>
           </div>
         </div>
-
-       
+        {/* Add Supplier Modal */}
         <AddEntityModal
           showModal={showModal}
           handleClose={handleCloseModal}
@@ -407,6 +441,7 @@ const handleDeleteSupplier = (supplierId) => {
           validationErrors={validationErrors}
         />
 
+        {/* View Modal for supplier details */}
         <ViewModal
           showViewModal={showViewModal}
           selectedEntity={selectedSupplier}
@@ -423,6 +458,7 @@ const handleDeleteSupplier = (supplierId) => {
           ]}
         />
 
+        {/* Edit Modal for supplier */}
         <EditModal
           showEditModal={showEditModal}
           entityData={editedSupplier}
@@ -434,6 +470,7 @@ const handleDeleteSupplier = (supplierId) => {
           validationErrors={editValidationErrors}
         />
 
+        {/* Print Modal for suppliers */}
         <PrintModal
           show={showPrintModal}
           handleClose={() => setShowPrintModal(false)}

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { FaEye, FaEdit, FaTrash } from "react-icons/fa";
-import Sidebar from "../../components/Sidebar";
+import Sidebar from "../../components/sidebar";
 import Header from "../../components/Header";
 import styles from './Customer.module.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -12,7 +12,9 @@ import { jsPDF } from "jspdf";
 import 'jspdf-autotable';
 import logodash from "../../assets/PicturesAdmin/logoWhite.png";
 
+// Customers management page
 function Customers() {
+  // State variables
   const [customers, setCustomers] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [searchColumn, setSearchColumn] = useState("");
@@ -24,6 +26,7 @@ function Customers() {
   const [validationErrors, setValidationErrors] = useState({});
   const [formSubmitted, setFormSubmitted] = useState(false);
 
+  // Fetch customers on mount
   useEffect(() => {
     axios.get('http://localhost:5000/api/customers')
       .then(response => {
@@ -34,6 +37,7 @@ function Customers() {
       });
   }, []);
 
+  // Format date to yyyy-MM-dd
   const formatDate = (dob) => {
     if (!dob) return "N/A";
     
@@ -53,29 +57,35 @@ function Customers() {
     }
   };
   
+  // Handle search column change
   const handleSearchColumnChange = (e) => {
     setSearchColumn(e.target.value);
   };
 
+  // Handle search text change
   const handleSearchChange = (e) => {
     setSearchText(e.target.value);
   };
 
+  // Filter customers based on search
   const filteredCustomers = customers.filter((customer) => {
     if (!searchText || !searchColumn) return true;
     const value = customer[searchColumn]?.toString().toLowerCase();
     return value && value.includes(searchText.toLowerCase());
   });
 
+  // Open view modal for selected customer
   const handleViewCustomer = (customer) => {
     setSelectedCustomer(customer);
     setShowViewModal(true);
   };
 
+  // Close view modal
   const handleCloseViewModal = () => {
     setShowViewModal(false);
   };
 
+  // Disable customer (soft delete)
   const handleDeleteCustomer = (customerId) => {
     // Instead of deleting, update status to 'disable'
     const customerToUpdate = customers.find(c => c.customer_id === customerId);
@@ -97,6 +107,7 @@ function Customers() {
     }
   };
 
+  // Open edit modal for selected customer
   const handleEditCustomer = (customer) => {
     // Format the date to yyyy-MM-dd for the date input
     const formattedCustomer = { ...customer };
@@ -111,6 +122,7 @@ function Customers() {
     setShowEditModal(true);
   };
 
+  // Validate all customer fields
   const validateCustomerData = (customer) => {
     const errors = {};
     
@@ -163,6 +175,7 @@ function Customers() {
     return errors;
   };
 
+  // Save edited customer
   const handleSaveEditCustomer = (e) => {
     if (e) {
       e.preventDefault(); // Prevent default form submission
@@ -203,6 +216,7 @@ function Customers() {
       });
   };
   
+  // Handle input change in edit modal
   const handleEditInputChange = (e) => {
     const { name, value } = e.target;
     
@@ -230,7 +244,7 @@ function Customers() {
     }
   };
   
-  // Separate function for field validation to be called on blur
+  // Validate individual field
   const validateField = (name, value) => {
     let error = undefined;
     
@@ -295,6 +309,7 @@ function Customers() {
     return error;
   };
   
+  // Handle blur event for validation
   const handleFieldBlur = (e) => {
     const { name, value } = e.target;
     const error = validateField(name, value);
@@ -305,17 +320,19 @@ function Customers() {
     }));
   };
   
+  // Close edit modal
   const handleCloseEditModal = () => {
     setShowEditModal(false);
     setValidationErrors({});
     setFormSubmitted(false);
   };
 
+  // Open print modal
   const handleDownloadPDF = () => {
     setShowPrintModal(true);
   };
 
-  // Custom component to display validation errors
+  // Component to display validation errors
   const ErrorMessage = ({ fieldName }) => {
     if (!validationErrors[fieldName]) return null;
     
@@ -326,6 +343,7 @@ function Customers() {
     );
   };
 
+  // Render UI
   return (
     <div className={styles.ManageCustomerContainer}>
       <Sidebar />

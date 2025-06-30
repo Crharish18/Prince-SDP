@@ -17,10 +17,10 @@ const Sidebar = () => {
     setter(prevState => !prevState);
   };
 
-  // Style to reduce spacing between sidebar items
+  // Style to reduce spacing between sidebar items(extra)
   const sidebarItemStyle = {
-    padding: '4px 0', // Reduced padding
-    marginBottom: '2px' // Reduced margin
+    padding: '4px 0', 
+    marginBottom: '2px' 
   };
   
 
@@ -46,7 +46,7 @@ const Sidebar = () => {
           </Link>
         </li>
 
-        {/* Manage Admin - duplicate removed */}
+        
         
         {/* Manage Employees */}
         <li className="sidebar-item" style={sidebarItemStyle}>

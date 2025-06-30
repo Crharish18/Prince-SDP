@@ -31,7 +31,7 @@ const formatDateForMySQL = (dateString) => {
     }
 };
 
-// ✅ GET: Fetch all customers
+// GET: Fetch all customers
 router.get('/', (req, res) => {
     const query = 'SELECT customer_id, first_name, last_name, phone_num, address, national_id, dob, created_at, updated_at, status, email, profile_pic FROM customer';
 
@@ -92,7 +92,7 @@ router.post('/', async (req, res) => {
     }
 });
 
-// ✅ PUT: Update a customer and set updated_at timestamp
+// PUT: Update a customer and set updated_at timestamp
 router.put('/:customer_id', async (req, res) => {
     const { customer_id } = req.params;
     const { first_name, last_name, phone_num, address, national_id, password, dob, status } = req.body;
@@ -142,7 +142,7 @@ router.put('/:customer_id', async (req, res) => {
     }
 });
 
-// ✅ DELETE: Update customer status to 'disable' instead of deleting
+// DELETE: Update customer status to 'disable' instead of deleting
 router.delete('/:customer_id', (req, res) => {
     const { customer_id } = req.params;
 
@@ -188,7 +188,7 @@ router.post('/check-email', (req, res) => {
     });
 });
 
-// ✅ NEW: Send verification code
+// NEW: Send verification code
 router.post('/send-verification-code', (req, res) => {
     const { email } = req.body;
     
@@ -252,7 +252,7 @@ router.post('/send-verification-code', (req, res) => {
     });
 });
 
-// ✅ NEW: Verify code
+// NEW: Verify code
 router.post('/verify-code', (req, res) => {
     const { email, code } = req.body;
     
@@ -289,7 +289,7 @@ router.post('/verify-code', (req, res) => {
     });
 });
 
-// ✅ NEW: Reset password
+// NEW: Reset password
 router.post('/reset-password', async (req, res) => {
     const { email, resetToken, newPassword } = req.body;
     
@@ -336,5 +336,5 @@ router.post('/reset-password', async (req, res) => {
     }
 });
 
-// ✅ Export the router
+// Export the router
 module.exports = router;

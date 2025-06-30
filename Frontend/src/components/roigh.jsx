@@ -3,6 +3,7 @@ import { Box, Drawer, List, ListItem, ListItemText, Divider, Typography } from "
 import { Link, useLocation } from "react-router-dom";
 import * as Icons from "@mui/icons-material";
 
+// Sidebar route configuration for admin navigation
 const routeConfig = [
     { title: "Dashboard", path: "/adminDashboard", icon: "HomeOutlined", color: "#4caf50" },
     { title: "Manage Members", path: "/members", icon: "PeopleOutlined", color: "#2196f3" },
@@ -17,6 +18,7 @@ const routeConfig = [
     { title: "Report", path: "/report", icon: "AssessmentOutlined", color: "#009688" },
 ];
 
+// AdminSideBar component for admin navigation
 const AdminSideBar = () => {
     const location = useLocation();
     const currentTitle = routeConfig.find((r) => r.path === location.pathname)?.title || "Dashboard";
@@ -27,6 +29,7 @@ const AdminSideBar = () => {
         activeText: "#e3e3e8", fontSize: "14.5px", iconSize: "17px"
     };
 
+    // Sidebar navigation item component
     const Item = ({ title, path, icon, color }) => {
         const isActive = location.pathname === path;
         const IconComponent = Icons[icon];
@@ -52,7 +55,7 @@ const AdminSideBar = () => {
 
     return (
         <>
-                       <Box sx={{ display: "flex" }}>
+            <Box sx={{ display: "flex" }}>
                 <Drawer variant="permanent" open sx={{
                     width: isCollapsed ? 80 : 240, transition: "width 0.3s",
                     "& .MuiDrawer-paper": {

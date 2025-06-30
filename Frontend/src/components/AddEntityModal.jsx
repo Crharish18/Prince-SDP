@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
-import styles from "./AddEntityModal.module.css"; // Import CSS module
+import styles from "./AddEntityModal.module.css";
 
+// AddEntityModal component 
 const AddEntityModal = ({
   showModal,
   handleClose,
@@ -11,22 +12,21 @@ const AddEntityModal = ({
   handleInputChange,
   validationErrors,
 }) => {
+  // image preview URL
   const [imagePreview, setImagePreview] = useState(null);
   
-  // Track if the modal was previously open
+  // State to track if modal was previously open
   const [wasOpen, setWasOpen] = useState(false);
   
+  
   useEffect(() => {
-    // If modal is closing (was open but now closed)
+    // Close handler if modal was open and now closed
     if (wasOpen && !showModal) {
-      // Reset form data by calling handleClose
       handleClose();
     }
-    
-    // Update wasOpen state
     setWasOpen(showModal);
-    
-    // Update image preview when entityData changes (for existing products)
+
+    // Set image preview if available in entity data
     if (entityData && entityData.image_url) {
       setImagePreview(entityData.image_url);
     } else {
@@ -34,27 +34,27 @@ const AddEntityModal = ({
     }
   }, [entityData, showModal, wasOpen, handleClose]);
   
+  // Don't render modal if closed
   if (!showModal) return null;
   
+  // Handle file input change and preview
   const handleFileChange = (e, onChange) => {
     const file = e.target.files[0];
     if (file) {
-      // Create a preview URL for the selected image
+      // Set preview for selected image
       const previewUrl = URL.createObjectURL(file);
       setImagePreview(previewUrl);
-      
-      // Call the original onChange handler
+      // Call input change handler if provided
       if (onChange) {
         onChange(e);
       }
     }
   };
   
-  // Modified close handler to reset form data
+  // Handle modal close and cleanup
   const handleModalClose = () => {
-    // Clear image preview
+    // Clear image preview when closing modal
     setImagePreview(null);
-    // Call the original close handler
     handleClose();
   };
   
@@ -68,11 +68,13 @@ const AddEntityModal = ({
               <div key={field.name} className={styles.FormGroup}>
                 <label style={{ fontWeight: "bold" }}>{field.label}</label>
                 {field.render ? (
+                  // Custom render for special fields (e.g., autocomplete)
                   field.render({
                     value: entityData[field.name] || "",
                     onChange: handleInputChange
                   })
                 ) : field.type === 'file' ? (
+                  // File input with image preview
                   <div className={styles.FileInputContainer}>
                     {imagePreview && (
                       <div className={styles.ImagePreviewContainer}>
@@ -92,6 +94,7 @@ const AddEntityModal = ({
                     />
                   </div>
                 ) : field.type === 'select' ? (
+                  // Select dropdown
                   <select
                     className="form-control"
                     name={field.name}
@@ -106,6 +109,7 @@ const AddEntityModal = ({
                     ))}
                   </select>
                 ) : (
+                  // Regular input field
                   <input
                     type={field.type}
                     className="form-control"
@@ -115,8 +119,8 @@ const AddEntityModal = ({
                     onChange={handleInputChange}
                   />
                 )}
-
                 {validationErrors[field.name] && (
+                  // Show validation error
                   <div className="error" style={{ color: 'red', fontSize: '14px', marginTop: '5px' }}>
                     {validationErrors[field.name]}
                   </div>
@@ -152,5 +156,7 @@ const AddEntityModal = ({
     </div>
   );
 };
+
+
 
 export default AddEntityModal;

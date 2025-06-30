@@ -15,17 +15,25 @@ import { jwtDecode } from "jwt-decode";
 import { jsPDF } from "jspdf";
 import 'jspdf-autotable';
 
+// Employee Inventory management component
 function Inventory() {
+  // State for all inventory records
   const [inventories, setInventories] = useState([]);
+  // State for showing/hiding Add Inventory modal
   const [showModal, setShowModal] = useState(false);
+  // State for product image file
   const [imageFile, setImageFile] = useState(null);
+  // State for categories, suppliers, and products
   const [categories, setCategories] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [products, setProducts] = useState([]);
+  // State for selected product in autocomplete
   const [selectedProduct, setSelectedProduct] = useState(null);
+  // State for input value in product autocomplete
   const [inputProductName, setInputProductName] = useState('');
-  // Add sorting state for expiry date
+  // State for expiry date sorting: null, 'asc', or 'desc'
   const [expiryDateSort, setExpiryDateSort] = useState(null); // null, 'asc', or 'desc'
+  // State for new inventory form data
   const [newInventory, setNewInventory] = useState({
     qty_added: '',
     user_id: '',
@@ -35,6 +43,7 @@ function Inventory() {
     expiry_date: ''
   });
 
+  // State for new entity (product + inventory) form data
   const [newEntity, setNewEntity] = useState({
     // Product fields
     name: '',
@@ -59,6 +68,7 @@ function Inventory() {
     return tomorrow.toISOString().split('T')[0];
   };
   
+  // State for validation errors in add form
   const [validationErrors, setValidationErrors] = useState({
     name: '',
     price: '',
@@ -75,13 +85,18 @@ function Inventory() {
     expiry_date: '',
     image: ''
   });
+  // State for search input and column
   const [searchText, setSearchText] = useState("");
   const [searchColumn, setSearchColumn] = useState("");
+  // State for view modal and selected inventory
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedInventory, setSelectedInventory] = useState(null);
+  // State for edit modal and edited inventory
   const [showEditModal, setShowEditModal] = useState(false);
   const [editedInventory, setEditedInventory] = useState({});
+  // State for print modal
   const [showPrintModal, setShowPrintModal] = useState(false);
+  // State for modal mode: 'new' or 'existing'
   const [modalMode, setModalMode] = useState('new'); // 'new' or 'existing'
 
   // Toggle expiry date sorting
@@ -95,6 +110,7 @@ function Inventory() {
     }
   };
 
+  // Render product autocomplete for existing product mode
   const renderProductAutocomplete = ({ value, onChange }) => (
     <Autocomplete
       freeSolo
@@ -136,6 +152,7 @@ function Inventory() {
     />
   );
   
+  // Fetch inventory data on mount
   useEffect(() => {
     axios
       .get('http://localhost:5000/api/inventory')
@@ -147,28 +164,33 @@ function Inventory() {
       });
   }, []);
 
+  // Fetch categories data on mount
   useEffect(() => {
     axios.get('http://localhost:5000/api/categories')
       .then((response) => setCategories(response.data))
       .catch((error) => console.error('Error fetching categories:', error));
   }, []);
 
+  // Fetch suppliers data on mount
   useEffect(() => {
     axios.get('http://localhost:5000/api/suppliers')
       .then((response) => setSuppliers(response.data))
       .catch((error) => console.error('Error fetching suppliers:', error));
   }, []);
 
+  // Fetch products data on mount
   useEffect(() => {
     axios.get('http://localhost:5000/api/products')
       .then((response) => setProducts(response.data))
       .catch((error) => console.error('Error fetching products:', error));
   }, []);
 
+  // Handle search column dropdown change
   const handleSearchColumnChange = (e) => {
     setSearchColumn(e.target.value);
   };
 
+  // Handle image file input change
   const handleImageFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -177,11 +199,12 @@ function Inventory() {
     }
   };
   
+  // Handle search input change
   const handleSearchChange = (e) => {
     setSearchText(e.target.value);
   };
 
-  // Updated filteredInventories to include sorting by expiry date
+  // Filter and sort inventories based on search and expiry date sort
   const filteredInventories = React.useMemo(() => {
     // First filter the data
     let filtered = inventories.filter((inv) => {
@@ -213,6 +236,7 @@ function Inventory() {
     return filtered;
   }, [inventories, searchText, searchColumn, expiryDateSort]);
 
+  // Field definitions for AddEntityModal (new product)
   const newProductFields = [
     { label: "Product Name", name: "name", type: "text" },
     { label: "Price", name: "price", type: "number" },
@@ -238,6 +262,7 @@ function Inventory() {
     }
   ];
   
+  // Field definitions for AddEntityModal (existing product)
   const existingProductFields = [
     {
       label: "Product Name",
@@ -268,6 +293,7 @@ function Inventory() {
     { label: "Product Image", name: "image", type: "file", onChange: handleImageFileChange }
   ];
 
+  // Field definitions for EditModal (inventory)
   const inventoryFields = [
     { label: "Quantity Added", name: "qty_added", type: "number" },
     { label: "User ID", name: "user_id", type: "number" },
@@ -282,6 +308,7 @@ function Inventory() {
     }
   ];
 
+  // Close Add Inventory modal and reset form
   const handleCloseModal = () => {
     setShowModal(false);
     // Reset validation errors
@@ -322,6 +349,7 @@ function Inventory() {
     setInputProductName('');
   };
 
+  // Handle input change in add form
   const handleInputChange = (e) => {
     const { name, value, type, files } = e.target;
     
@@ -337,6 +365,7 @@ function Inventory() {
     }
   };
   
+  // Validate and save new entity to backend
   const handleSaveNewEntity = () => {
   let errors = {};
   
@@ -492,15 +521,18 @@ function Inventory() {
 };
 
   
+  // Show view modal for selected inventory
   const handleViewInventory = (inventory) => {
     setSelectedInventory(inventory);
     setShowViewModal(true);
   };
 
+  // Close view modal
   const handleCloseViewModal = () => {
     setShowViewModal(false);
   };
 
+  // Delete inventory record by ID
   const handleDeleteInventory = (inventoryId) => {
     axios
       .delete(`http://localhost:5000/api/inventory/${inventoryId}`)
@@ -514,12 +546,14 @@ function Inventory() {
       });
   };
 
+  // Show edit modal for selected inventory
   const handleEditInventory = (inventory) => {
     setSelectedInventory(inventory);
     setEditedInventory({ ...inventory });
     setShowEditModal(true);
   };
 
+  // Validate and save edited inventory to backend
   const handleSaveEditInventory = () => {
     // Add validation for edit inventory
     let errors = {};
@@ -577,6 +611,7 @@ function Inventory() {
       });
   };
 
+  // Handle input change in edit modal
   const handleEditInputChange = (e) => {
     const { name, value } = e.target;
     setEditedInventory((prev) => ({
@@ -585,15 +620,18 @@ function Inventory() {
     }));
   };
 
+  // Close edit modal and reset selected inventory
   const handleCloseEditModal = () => {
     setShowEditModal(false);
     setSelectedInventory(null);
   };
 
+  // Show print modal for downloading PDF
   const handleDownloadPDF = () => {
     setShowPrintModal(true);
   };
 
+  // Get user ID from JWT token (for user_id field)
   function getUserIdFromToken() {
     const token = localStorage.getItem("token"); // or whatever key you use
     if (!token) return null;
@@ -605,6 +643,7 @@ function Inventory() {
     }
   }
 
+  // Show Add Inventory modal and set mode ('new' or 'existing')
   const handleAddInventoryClick = (mode) => {
     const userId = getUserIdFromToken();
     setNewEntity({
@@ -628,6 +667,7 @@ function Inventory() {
     setShowModal(true);
   };
   
+  // Main render
   return (
     <div className={styles.InventoryContainer}>
       <Emp_Sidebar />
@@ -637,6 +677,7 @@ function Inventory() {
           <div className={styles.TopSection}>
             <h1 className="section-title" style={{ fontSize: '28px', fontWeight: 'bold' }}>Manage Inventory</h1>
             <div className={styles.SearchWrapper}>
+              {/* Search column dropdown */}
               <select
                 className="form-control"
                 value={searchColumn}
@@ -651,6 +692,7 @@ function Inventory() {
                 <option value="product_id">Product ID</option>
                 <option value="buying_price_per_unit">Buying Price</option>
               </select>
+              {/* Search input */}
               <input
                 type="text"
                 className="form-control search-bar"
@@ -659,6 +701,7 @@ function Inventory() {
                 placeholder={`Search by ${searchColumn || "..."}`}
               />
               <div className={styles.BtnContainer} >
+                {/* Add New Product button */}
                 <button
                   className="btn btn-primary"
                   style={{ width: '180px', marginLeft: "10px"  }}
@@ -666,6 +709,7 @@ function Inventory() {
                 >
                   Add New Product
                 </button>
+                {/* Add Existing Product button */}
                 <button
                   className="btn btn-success"
                   style={{ width: '180px', marginLeft: "10px" }}
@@ -673,6 +717,7 @@ function Inventory() {
                 >
                   Add Existing Product
                 </button>
+                {/* Print button */}
                 <button
                   className="btn btn-secondary"
                   onClick={handleDownloadPDF}
@@ -683,7 +728,7 @@ function Inventory() {
               </div>
             </div>
             
-            {/* Add expiry date sort controls */}
+            {/* Expiry date sort controls */}
             <div style={{ marginTop: "10px", display: "flex", alignItems: "center" }}>
               <span style={{ marginRight: "10px", fontWeight: "bold" }}>Sort by Expiry Date:</span>
               <div className="btn-group">
@@ -711,6 +756,7 @@ function Inventory() {
             </div>
           </div>
 
+          {/* Inventory table */}
           <div className={styles.TableContainer}>
             <table className="table table-striped" id="inventoryTable">
               <thead>
@@ -743,14 +789,17 @@ function Inventory() {
                       <td>{inv.added_on ? new Date(inv.added_on).toLocaleString() : ""}</td>
                       <td>{inv.expiry_date ? new Date(inv.expiry_date).toLocaleDateString() : ""}</td>
                       <td>
+                        {/* View inventory button */}
                         <FaEye
                           style={{ marginRight: "10px", cursor: "pointer", color: "#2770b4" }}
                           onClick={() => handleViewInventory(inv)}
                         />
+                        {/* Edit inventory button */}
                         <FaEdit
                           style={{ marginRight: "10px", cursor: "pointer", color: "#f0ad4e" }}
                           onClick={() => handleEditInventory(inv)}
                         />
+                        {/* Delete inventory button */}
                         <FaTrash
                           style={{ cursor: "pointer", color: "#d9534f" }}
                           onClick={() => handleDeleteInventory(inv.inventory_id)}
@@ -768,6 +817,7 @@ function Inventory() {
           </div>
         </div>
 
+        {/* Add Entity Modal for new/existing product */}
         <AddEntityModal
             showModal={showModal}
             handleClose={handleCloseModal}
@@ -780,6 +830,7 @@ function Inventory() {
             handleImageFileChange={handleImageFileChange}
           />
 
+        {/* View Modal for inventory details */}
         <ViewModal
           showViewModal={showViewModal}
           selectedEntity={selectedInventory}
@@ -797,6 +848,7 @@ function Inventory() {
           ]}
         />
 
+        {/* Edit Modal for inventory */}
         <EditModal
           showEditModal={showEditModal}
           entityData={editedInventory}
@@ -807,6 +859,7 @@ function Inventory() {
           handleEditInputChange={handleEditInputChange}
         />
 
+        {/* Print Modal for inventory */}
         <PrintModal
           show={showPrintModal}
           handleClose={() => setShowPrintModal(false)}

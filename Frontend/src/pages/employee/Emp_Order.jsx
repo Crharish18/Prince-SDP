@@ -15,23 +15,27 @@ import logodash from "../../assets/PicturesAdmin/logoWhite.png";
 
 // Custom EditOrderModal component for order status updates
 const EditOrderModal = ({ showModal, order, handleClose, handleSave }) => {
+  // State for selected status in modal
   const [status, setStatus] = useState(order?.status || "Pending");
   
+  // Update status when order changes
   useEffect(() => {
     if (order) {
       setStatus(order.status);
     }
   }, [order]);
   
+  // Handle status dropdown change
   const handleStatusChange = (e) => {
     setStatus(e.target.value);
   };
   
+  // Handle save button click
   const handleSubmit = () => {
     handleSave({ ...order, status });
   };
   
-  // Get status color
+  // Get color for status text
   const getStatusColor = (status) => {
     switch (status) {
       case "Delivered":
@@ -127,13 +131,19 @@ const EditOrderModal = ({ showModal, order, handleClose, handleSave }) => {
   );
 };
 
+// Employee Order management component
 function ManageOrder() {
-  // State declarations
+  // State for all orders
   const [orders, setOrders] = useState([]);
+  // State for order items (for OrderItemsModal)
   const [orderItems, setOrderItems] = useState([]);
+  // State for showing OrderItemsModal
   const [showOrderItemsModal, setShowOrderItemsModal] = useState(false);
+  // State for showing PrintModal
   const [showPrintModal, setShowPrintModal] = useState(false);
+  // State for showing Add Order modal (not used in UI)
   const [showModal, setShowModal] = useState(false);
+  // State for new order form (not used in UI)
   const [newOrder, setNewOrder] = useState({
     customer_id: '',
     total_price: '',
@@ -141,6 +151,7 @@ function ManageOrder() {
     price: '',
     total_discount: ''
   });
+  // State for validation errors in add form (not used in UI)
   const [validationErrors, setValidationErrors] = useState({
     customer_id: '',
     total_price: '',
@@ -148,16 +159,19 @@ function ManageOrder() {
     price: '',
     total_discount: ''
   });
+  // State for search input and column
   const [searchText, setSearchText] = useState("");
   const [searchColumn, setSearchColumn] = useState("");
+  // State for view modal and selected order
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null); 
+  // State for edit modal
   const [showEditModal, setShowEditModal] = useState(false);
-  // Add new state for status filter and date sorting
+  // State for status filter and date sorting
   const [statusFilter, setStatusFilter] = useState("All");
   const [dateSort, setDateSort] = useState(null); // null, 'asc', or 'desc'
 
-  // Data fetching
+  // Fetch all orders from backend on mount
   useEffect(() => {
     axios
       .get('http://localhost:5000/api/orders')
@@ -169,7 +183,7 @@ function ManageOrder() {
       });
   }, []);
 
-  // Helper functions
+  // Format date as readable string
   const formatDate = (timestamp) => {
     if (!timestamp) return "N/A";
     
@@ -192,6 +206,7 @@ function ManageOrder() {
     }
   };
 
+  // Get color for status text
   const getStatusColor = (status) => {
     switch (status) {
       case "Delivered":
@@ -207,31 +222,37 @@ function ManageOrder() {
     }
   };
 
-  // Event handlers
+  // Handle change in search column dropdown
   const handleSearchColumnChange = (e) => {
     setSearchColumn(e.target.value);  
   };
   
+  // Handle search input change
   const handleSearchChange = (e) => {
     setSearchText(e.target.value);  
   };
 
+  // Handle status filter dropdown change
   const handleStatusFilterChange = (e) => {
     setStatusFilter(e.target.value);
   };
 
+  // Handle change in date sort direction
   const handleDateSortChange = (sortDirection) => {
     setDateSort(sortDirection);
   };
 
+  // Show Add Order modal (not used in UI)
   const handleAddOrderClick = () => {
     setShowModal(true);
   };
 
+  // Close Add Order modal (not used in UI)
   const handleCloseModal = () => {
     setShowModal(false);
   };
 
+  // Handle input change in Add Order form (not used in UI)
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewOrder({
@@ -240,6 +261,7 @@ function ManageOrder() {
     });
   };
 
+  // Validate and save new order to backend (not used in UI)
   const handleSaveNewOrder = () => {
     let errors = {};
     if (!newOrder.customer_id) {
@@ -273,6 +295,7 @@ function ManageOrder() {
     }
   };
 
+  // Show order items modal for selected order
   const handleViewOrderItems = (order) => {
     setSelectedOrder(order);
     // Fetch order items from backend
@@ -288,10 +311,12 @@ function ManageOrder() {
         });
   };
 
+  // Close view modal
   const handleCloseViewModal = () => {
     setShowViewModal(false); 
   };
 
+  // Delete order by ID
   const handleDeleteOrder = (orderId) => {
     axios
       .delete(`http://localhost:5000/api/orders/${orderId}`)
@@ -305,11 +330,13 @@ function ManageOrder() {
       });
   };
 
+  // Show edit modal for selected order
   const handleEditOrder = (order) => {
     setSelectedOrder(order);
     setShowEditModal(true);
   };
 
+  // Validate and save edited order to backend
   const handleSaveEditOrder = (updatedOrder) => {
     axios
       .put(`http://localhost:5000/api/orders/${updatedOrder.order_id}`, updatedOrder)
@@ -324,16 +351,18 @@ function ManageOrder() {
       });
   };
 
+  // Close edit modal and reset selected order
   const handleCloseEditModal = () => {
     setShowEditModal(false);
     setSelectedOrder(null);
   };
 
+  // Show print modal for downloading PDF
   const handleDownloadPDF = () => {
     setShowPrintModal(true);
   };
 
-  // Data processing with added filters
+  // Filter and sort orders based on search, status, and date
   const filteredOrders = React.useMemo(() => {
     // First apply text search filter
     let filtered = orders.filter((order) => {
@@ -370,6 +399,7 @@ function ManageOrder() {
     return filtered;
   }, [orders, searchText, searchColumn, statusFilter, dateSort]);
 
+  // Field definitions for Add/Edit modals (not used in UI)
   const orderFields = [
     { label: "Customer ID", name: "customer_id", type: "text" },
     { label: "Total Price", name: "total_price", type: "number" },
@@ -378,6 +408,7 @@ function ManageOrder() {
     { label: "Status", name: "status", type: "select", options: ["Pending", "Shipped", "Delivered", "Cancelled"] }
   ];
 
+  // Main render
   return (
     <div className={styles.ManageEmployeeContainer}>
       <Emp_Sidebar />
@@ -389,6 +420,7 @@ function ManageOrder() {
             <h1 className="section-title" style={{ fontSize: '28px', fontWeight: 'bold' }}>Manage Orders</h1>
 
             <div className={styles.SearchWrapper}>
+              {/* Search column dropdown */}
               <select
                 className="form-control"
                 value={searchColumn}
@@ -402,6 +434,7 @@ function ManageOrder() {
                 <option value="total_discount">Total Discount</option>
                 <option value="status">Status</option>
               </select>
+              {/* Search input */}
               <input
                 type="text"
                 className="form-control search-bar"
@@ -409,16 +442,19 @@ function ManageOrder() {
                 onChange={handleSearchChange}
                 placeholder={`Search by ${searchColumn}...`}
               />
+              {/* Link to Order Address page */}
               <Link to="/employee/Order_Address" className="btn btn-primary" style={{ width: '150px', marginLeft:"10px" }}>
                   Order-Address
                 </Link>
               <div className={styles.BtnContainer}>
+                {/* Print button */}
                 <button className="btn btn-secondary" style={{ width: '150px', marginLeft:"10px" }} onClick={handleDownloadPDF}>Print</button>
               </div>
             </div>
             
-            {/* Add filter controls for status and date sorting */}
+            {/* Filter controls for status and date sorting */}
             <div style={{ display: "flex", marginTop: "15px", gap: "20px" }}>
+              {/* Status filter dropdown */}
               <div style={{ display: "flex", alignItems: "center" }}>
                 <span style={{ marginRight: "10px", fontWeight: "bold" }}>Filter by Status:</span>
                 <select
@@ -435,6 +471,7 @@ function ManageOrder() {
                 </select>
               </div>
               
+              {/* Date sort controls */}
               <div style={{ display: "flex", alignItems: "center" }}>
                 <span style={{ marginRight: "10px", fontWeight: "bold" }}>Sort by Date:</span>
                 <div className="btn-group">
@@ -503,17 +540,18 @@ function ManageOrder() {
                       <td>{formatDate(order.created_at)}</td>
                       <td>{formatDate(order.updated_at)}</td>
                       <td>
+                        {/* View order items button */}
                         <FaBoxOpen 
                           style={{ marginRight: "10px", cursor: "pointer", color: "#2770b4" }}
                           onClick={() => handleViewOrderItems(order)} 
                           title="View Order Items"
                         />
+                        {/* Edit order status button */}
                         <FaEdit
                           style={{ marginRight: "10px", cursor: "pointer", color: "#f0ad4e" }}
                           onClick={() => handleEditOrder(order)} 
                           title="Edit Order Status"
                         />
-                        
                       </td>
                     </tr>
                   ))

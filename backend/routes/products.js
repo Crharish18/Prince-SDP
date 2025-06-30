@@ -54,7 +54,7 @@ router.get('/:product_id', (req, res) => {
 });
 
 
-// In your products.js route file
+
 
 // GET: Fetch all products by category
 router.get('/category/:category_id', (req, res) => {

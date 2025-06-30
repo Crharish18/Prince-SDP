@@ -3,9 +3,7 @@ import axios from "axios";
 import { FaEye, FaEdit, FaTrash } from "react-icons/fa"; 
 import Emp_Sidebar from "../../components/Employee/Emp_Sidebar"
 import Header from "../../components/Header";
-
 import styles from './Emp_Expired_Inventories.module.css';
-
 import 'bootstrap/dist/css/bootstrap.min.css';
 import ViewModal from "../../components/Viewmodal"; 
 import EditModal from "../../components/EditModal"; 
@@ -15,9 +13,13 @@ import { jsPDF } from "jspdf";
 import 'jspdf-autotable';
 import logodash from "../../assets/PicturesAdmin/logoWhite.png";
 
+// Employee Expired Inventories management component
 function ExpiredInventories() {
+  // State for all expired inventory logs
   const [expiredInventories, setExpiredInventories] = useState([]);
+  // State for showing/hiding Add Expired Inventory modal
   const [showModal, setShowModal] = useState(false);
+  // State for new expired inventory form data
   const [newExpiredInventory, setNewExpiredInventory] = useState({
     inventory_id: '',
     product_id: '',
@@ -25,6 +27,7 @@ function ExpiredInventories() {
     expiry_date: ''
   });
 
+  // State for validation errors in add form
   const [validationErrors, setValidationErrors] = useState({
     inventory_id: '',
     product_id: '',
@@ -32,14 +35,19 @@ function ExpiredInventories() {
     expiry_date: ''
   });
   
+  // State for search input and column
   const [searchText, setSearchText] = useState("");
   const [searchColumn, setSearchColumn] = useState("");
+  // State for showing view modal and selected expired inventory
   const [showViewModal, setShowViewModal] = useState(false); 
   const [selectedExpiredInventory, setSelectedExpiredInventory] = useState(null); 
+  // State for showing edit modal and edited expired inventory
   const [showEditModal, setShowEditModal] = useState(false); 
   const [editedExpiredInventory, setEditedExpiredInventory] = useState({}); 
+  // State for showing print modal
   const [showPrintModal, setShowPrintModal] = useState(false);
 
+  // Fetch all expired inventories from backend on mount
   useEffect(() => {
     axios
       .get('http://localhost:5000/api/Expired_Inventories')
@@ -51,6 +59,7 @@ function ExpiredInventories() {
       });
   }, []);
 
+  // Format date as YYYY-MM-DD for display
   const formatDate = (date) => {
     const formattedDate = new Date(date);
     const year = formattedDate.getFullYear();
@@ -59,20 +68,24 @@ function ExpiredInventories() {
     return `${year}-${month}-${day}`;
   };
   
+  // Handle change of search column dropdown
   const handleSearchColumnChange = (e) => {
     setSearchColumn(e.target.value);  
   };
   
+  // Handle search input change
   const handleSearchChange = (e) => {
     setSearchText(e.target.value);  
   };
   
+  // Filter expired inventories based on search input and column
   const filteredExpiredInventories = expiredInventories.filter((inventory) => {
     if (!searchText || !searchColumn) return true; 
     const value = inventory[searchColumn]?.toString().toLowerCase(); 
     return value && value.includes(searchText.toLowerCase());
   });
 
+  // Field definitions for modals
   const expiredInventoryFields = [
     { label: "Log ID", name: "log_id", type: "text" },
     { label: "Inventory ID", name: "inventory_id", type: "text" },
@@ -82,10 +95,12 @@ function ExpiredInventories() {
     { label: "Processed Date", name: "processed_date", type: "text" }
   ];
 
+  // Close Add Expired Inventory modal
   const handleCloseModal = () => {
     setShowModal(false);
   };
 
+  // Handle input change in Add Expired Inventory form
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewExpiredInventory({
@@ -94,6 +109,7 @@ function ExpiredInventories() {
     });
   };
 
+  // Validate and save new expired inventory to backend
   const handleSaveNewExpiredInventory = () => {
     let errors = {};
     if (!newExpiredInventory.inventory_id) {
@@ -124,15 +140,18 @@ function ExpiredInventories() {
     }
   };
 
+  // Show view modal for a selected expired inventory
   const handleViewExpiredInventory = (expiredInventory) => {
     setSelectedExpiredInventory(expiredInventory);
     setShowViewModal(true);
   };
 
+  // Close view modal
   const handleCloseViewModal = () => {
     setShowViewModal(false); 
   };
 
+  // Delete an expired inventory log by log_id
   const handleDeleteExpiredInventory = (logId) => {
     axios
       .delete(`http://localhost:5000/api/Expired_Inventories/${logId}`)
@@ -146,12 +165,14 @@ function ExpiredInventories() {
       });
   };
 
+  // Show edit modal for a selected expired inventory
   const handleEditExpiredInventory = (expiredInventory) => {
     setSelectedExpiredInventory(expiredInventory);
     setEditedExpiredInventory({ ...expiredInventory });
     setShowEditModal(true);
   };
   
+  // Validate and save edited expired inventory to backend
   const handleSaveEditExpiredInventory = () => {
     const { processed_date, ...expiredInventoryData } = editedExpiredInventory;
     axios
@@ -167,6 +188,7 @@ function ExpiredInventories() {
       });
   };
 
+  // Handle input change in Edit Expired Inventory modal
   const handleEditInputChange = (e) => {
     const { name, value } = e.target;
     setEditedExpiredInventory((prev) => ({
@@ -175,15 +197,18 @@ function ExpiredInventories() {
     }));
   };
 
+  // Close edit modal and reset selected expired inventory
   const handleCloseEditModal = () => {
     setShowEditModal(false);
     setSelectedExpiredInventory(null);
   };
 
+  // Show print modal for downloading PDF
   const handleDownloadPDF = () => {
     setShowPrintModal(true);
   };
 
+  // Main render
   return (
     <div className={styles.ManageEmployeeContainer}>
       <Emp_Sidebar />
@@ -193,7 +218,9 @@ function ExpiredInventories() {
           <div className={styles.TopSection}>
             <h1 className="section-title" style={{ fontSize: '28px', fontWeight: 'bold' }}>Manage Expired Inventories</h1>
 
+            {/* Search and print controls */}
             <div className={styles.SearchWrapper}>
+              {/* Search column dropdown */}
               <select
                 className="form-control"
                 value={searchColumn}
@@ -206,6 +233,7 @@ function ExpiredInventories() {
                 <option value="qty_expired">Quantity Expired</option>
                 <option value="expiry_date">Expiry Date</option>
               </select>
+              {/* Search input */}
               <input
                 type="text"
                 className="form-control search-bar"
@@ -214,11 +242,13 @@ function ExpiredInventories() {
                 placeholder={`Search by ${searchColumn}...`}
               />
               <div className={styles.BtnContainer}>
+                {/* Print button */}
                 <button className="btn btn-secondary" onClick={handleDownloadPDF} style={{ width: '150px', marginLeft:"10px" }}>Print</button>
               </div>
             </div>
           </div>
 
+          {/* Expired inventories table */}
           <div className={styles.TableContainer}>
             <table className="table table-striped">
               <thead>
@@ -243,14 +273,17 @@ function ExpiredInventories() {
                       <td>{formatDate(inventory.expiry_date)}</td>
                       <td>{formatDate(inventory.processed_date)}</td>
                       <td>
+                        {/* View expired inventory button */}
                         <FaEye
                           style={{ marginRight: "10px", cursor: "pointer", color: "#2770b4" }}
                           onClick={() => handleViewExpiredInventory(inventory)} 
                         />
+                        {/* Edit expired inventory button */}
                         <FaEdit
                           style={{ marginRight: "10px", cursor: "pointer", color: "#f0ad4e" }}
                           onClick={() => handleEditExpiredInventory(inventory)} 
                         />
+                        {/* Delete expired inventory button */}
                         <FaTrash
                           style={{ cursor: "pointer", color: "#d9534f" }}
                           onClick={() => handleDeleteExpiredInventory(inventory.log_id)} 
@@ -268,6 +301,7 @@ function ExpiredInventories() {
           </div>
         </div>
 
+        {/* Add Expired Inventory Modal */}
         <AddEntityModal
           showModal={showModal}
           handleClose={handleCloseModal}
@@ -284,6 +318,7 @@ function ExpiredInventories() {
           validationErrors={validationErrors}
         />
 
+        {/* View Modal for expired inventory details */}
         <ViewModal
           showViewModal={showViewModal}
           selectedEntity={selectedExpiredInventory}
@@ -299,6 +334,7 @@ function ExpiredInventories() {
           ]}
         />
 
+        {/* Edit Modal for expired inventory */}
         <EditModal
           showEditModal={showEditModal}
           entityData={editedExpiredInventory}
@@ -315,6 +351,7 @@ function ExpiredInventories() {
           handleEditInputChange={handleEditInputChange}
         />
 
+        {/* Print Modal for expired inventories */}
         <PrintModal
           show={showPrintModal}
           handleClose={() => setShowPrintModal(false)}

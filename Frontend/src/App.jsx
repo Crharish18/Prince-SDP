@@ -3,7 +3,7 @@ import AdminLogin from "./pages/admin/AdminLogin";
 import Dashboard from "./pages/admin/Dashboard";
 import Categories from "./pages/admin/Categories";
 import ManageEmployee from "./pages/admin/ManageEmployee";
-import Admin from "./pages/admin/admin";
+import Admin from "./pages/admin/Admin";
 import Customer from "./pages/admin/Customer";
 import Products from "./pages/admin/products";
 import Supplier from "./pages/admin/Supplier";
@@ -34,18 +34,19 @@ import Emp_Transactions from "./pages/employee/Emp_Transaction";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
 
+// Main App component that handles routing for the entire application
 function App() {
-  // Get the token and role from localStorage
+  // Get the token and role from localStorage for authentication
   const token = localStorage.getItem('token');
   const role = localStorage.getItem('role');
 
   return (
     <Router>
       <Routes>
-        {/* ✅ Login Route: Allows access to the login page after sign out */}
+        {/* Login Route: Allows access to the login page after sign out */}
         <Route path="/admin" element={<AdminLogin />} />
 
-        {/* ✅ Protected Admin Routes */}
+        {/* Protected Admin Routes - Only accessible if user is authenticated as admin */}
         <Route 
           path="/admin/dashboard" 
           element={token && role === 'admin' ? <Dashboard /> : <Navigate to="/admin" />} 
@@ -137,13 +138,14 @@ function App() {
           element={token && role === 'admin' ? <OrderAddress /> : <Navigate to="/admin" />} 
         />
 
+        {/* Reset Password Route - Accessible without authentication */}
         <Route 
                     path="/admin/Reset_Password" 
                     element={<ResetPass />} 
                   />
 
 
-        {/* ✅ Protected Employee Routes */}
+        {/* Protected Employee Routes - Only accessible if user is authenticated as employee */}
         <Route 
           path="/employee/dashboard" 
           element={token && role === 'employee' ? <EDashboard /> : <Navigate to="/admin" />} 
@@ -209,7 +211,7 @@ function App() {
         />
         
 
-        {/* ✅ Default Route: Redirects based on authentication */}
+        {/* Default Route: Redirects based on authentication - if authenticated, go to role-specific dashboard, otherwise go to login */}
         <Route path="*" element={<Navigate to={token ? `/${role}/dashboard` : "/admin"} />} />
       </Routes>
     </Router>

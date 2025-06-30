@@ -14,9 +14,13 @@ import { jsPDF } from "jspdf";
 import 'jspdf-autotable';  // This is an additional library to handle tables in PDFs
 import logodash from "../../assets/PicturesAdmin/logoWhite.png";
 
+// Employee Order Address management component
 function OrderAddress() {
+  // State for all order addresses
   const [orderAddresses, setOrderAddresses] = useState([]);
+  // State for Add Order Address modal visibility
   const [showModal, setShowModal] = useState(false);
+  // State for new order address form data
   const [newOrderAddress, setNewOrderAddress] = useState({
     order_id: '',
     fullname: '',
@@ -29,6 +33,7 @@ function OrderAddress() {
     shipment_method: 'standard shipping',
     type: 'shipping'
   });
+  // State for validation errors in add form
   const [validationErrors, setValidationErrors] = useState({
     order_id: '',
     fullname: '',
@@ -41,14 +46,19 @@ function OrderAddress() {
     type: ''
   });
 
+  // State for search input and column
   const [searchText, setSearchText] = useState("");
   const [searchColumn, setSearchColumn] = useState("");
+  // State for view modal and selected order address
   const [showViewModal, setShowViewModal] = useState(false); 
   const [selectedOrderAddress, setSelectedOrderAddress] = useState(null); 
+  // State for edit modal and edited order address
   const [showEditModal, setShowEditModal] = useState(false); 
   const [editedOrderAddress, setEditedOrderAddress] = useState({}); 
+  // State for print modal
   const [showPrintModal, setShowPrintModal] = useState(false);
 
+  // Fetch all order addresses from backend on mount
   useEffect(() => {
     axios
       .get('http://localhost:5000/api/order_address')
@@ -60,6 +70,7 @@ function OrderAddress() {
       });
   }, []);
 
+  // Format date as YYYY-MM-DD
   const formatDate = (date) => {
     const formattedDate = new Date(date);
     const year = formattedDate.getFullYear();
@@ -68,20 +79,24 @@ function OrderAddress() {
     return `${year}-${month}-${day}`;
   };
   
+  // Handle search column dropdown change
   const handleSearchColumnChange = (e) => {
     setSearchColumn(e.target.value);  
   };
   
+  // Handle search input change
   const handleSearchChange = (e) => {
     setSearchText(e.target.value);  
   };
   
+  // Filter order addresses based on search input and column
   const filteredOrderAddresses = orderAddresses.filter((address) => {
     if (!searchText || !searchColumn) return true; 
     const value = address[searchColumn]?.toString().toLowerCase(); 
     return value && value.includes(searchText.toLowerCase());
   });
 
+  // Field definitions for modals
   const orderAddressFields = [
     { label: "Address ID", name: "order_address_id", type: "text" },
     { label: "Order ID", name: "order_id", type: "text" },
@@ -96,14 +111,17 @@ function OrderAddress() {
     { label: "Type", name: "type", type: "select", options: ["shipping", "billing"] }
   ];
 
+  // Show Add Order Address modal
   const handleAddOrderAddressClick = () => {
     setShowModal(true);
   };
 
+  // Close Add Order Address modal
   const handleCloseModal = () => {
     setShowModal(false);
   };
 
+  // Handle input change in Add Order Address form
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewOrderAddress({
@@ -112,6 +130,7 @@ function OrderAddress() {
     });
   };
 
+  // Validate and save new order address to backend
   const handleSaveNewOrderAddress = () => {
     let errors = {};
     if (!newOrderAddress.order_id) {
@@ -157,15 +176,18 @@ function OrderAddress() {
     }
   };
 
+  // Show view modal for selected order address
   const handleViewOrderAddress = (orderAddress) => {
     setSelectedOrderAddress(orderAddress);
     setShowViewModal(true);
   };
 
+  // Close view modal
   const handleCloseViewModal = () => {
     setShowViewModal(false); 
   };
 
+  // Delete order address by ID
   const handleDeleteOrderAddress = (addressId) => {
     axios
       .delete(`http://localhost:5000/api/order_address/${addressId}`)
@@ -179,12 +201,14 @@ function OrderAddress() {
       });
   };
 
+  // Show edit modal for selected order address
   const handleEditOrderAddress = (orderAddress) => {
     setSelectedOrderAddress(orderAddress);
     setEditedOrderAddress({ ...orderAddress });
     setShowEditModal(true);
   };
   
+  // Validate and save edited order address to backend
   const handleSaveEditOrderAddress = () => {
     axios
       .put(`http://localhost:5000/api/order_address/${editedOrderAddress.order_address_id}`, editedOrderAddress)
@@ -199,6 +223,7 @@ function OrderAddress() {
       });
   };
 
+  // Handle input change in Edit Order Address modal
   const handleEditInputChange = (e) => {
     const { name, value } = e.target;
     setEditedOrderAddress((prev) => ({
@@ -207,15 +232,18 @@ function OrderAddress() {
     }));
   };
 
+  // Close edit modal and reset selected order address
   const handleCloseEditModal = () => {
     setShowEditModal(false);
     setSelectedOrderAddress(null);
   };
 
+  // Show print modal for downloading PDF
   const handleDownloadPDF = () => {
     setShowPrintModal(true);
   };
 
+  // Main render
   return (
     <div className={styles.ManageEmployeeContainer}>
       <Emp_Sidebar />
@@ -224,8 +252,9 @@ function OrderAddress() {
         <div className={styles.InnerContainer} style={{ marginLeft: "10px", width: "100%" }}>
           <div className={styles.TopSection}>
             <h1 className="section-title" style={{ fontSize: '28px', fontWeight: 'bold' }}>Manage Order Addresses</h1>
-
+            {/* Search and action controls */}
             <div className={styles.SearchWrapper}>
+              {/* Search column dropdown */}
               <select
                 className="form-control"
                 value={searchColumn}
@@ -238,6 +267,7 @@ function OrderAddress() {
                 <option value="city">City</option>
                 <option value="type">Type</option>
               </select>
+              {/* Search input */}
               <input
                 type="text"
                 className="form-control search-bar"
@@ -246,14 +276,17 @@ function OrderAddress() {
                 placeholder={`Search by ${searchColumn}...`}
               />
               <div className={styles.BtnContainer}>
+                {/* Link to Orders page */}
                 <Link to="/employee/Orders" className="btn btn-primary" style={{ width: '150px', marginLeft:"10px" }}>
                   Orders
                 </Link>
+                {/* Print button */}
                 <button className="btn btn-secondary" onClick={handleDownloadPDF} style={{ width: '150px', marginLeft:"10px" }}>Print</button>
               </div>
             </div>
           </div>
 
+          {/* Order addresses table */}
           <div className={styles.TableContainer}>
             <table className="table table-striped">
               <thead>
@@ -280,14 +313,17 @@ function OrderAddress() {
                       <td>{address.type}</td>
                       <td>{address.shipment_method}</td>
                       <td>
+                        {/* View order address button */}
                         <FaEye
                           style={{ marginRight: "10px", cursor: "pointer", color: "#2770b4" }}
                           onClick={() => handleViewOrderAddress(address)} 
                         />
+                        {/* Edit order address button */}
                         <FaEdit
                           style={{ marginRight: "10px", cursor: "pointer", color: "#f0ad4e" }}
                           onClick={() => handleEditOrderAddress(address)} 
                         />
+                        {/* Delete order address button */}
                         <FaTrash
                           style={{ cursor: "pointer", color: "#d9534f" }}
                           onClick={() => handleDeleteOrderAddress(address.order_address_id)} 
@@ -305,6 +341,7 @@ function OrderAddress() {
           </div>
         </div>
 
+        {/* Add Order Address Modal */}
         <AddEntityModal
           showModal={showModal}
           handleClose={handleCloseModal}
@@ -327,6 +364,7 @@ function OrderAddress() {
           validationErrors={validationErrors}
         />
 
+        {/* View Modal for order address details */}
         <ViewModal
           showViewModal={showViewModal}
           selectedEntity={selectedOrderAddress}
@@ -347,6 +385,7 @@ function OrderAddress() {
           ]}
         />
 
+        {/* Edit Modal for order address */}
         <EditModal
           showEditModal={showEditModal}
           entityData={editedOrderAddress}
@@ -369,6 +408,7 @@ function OrderAddress() {
           handleEditInputChange={handleEditInputChange}
         />
 
+        {/* Print Modal for order addresses */}
         <PrintModal
           show={showPrintModal}
           handleClose={() => setShowPrintModal(false)}

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import Sidebar from "../../components/Sidebar";
+import Sidebar from "../../components/sidebar";
 import Header from "../../components/Header";
 import './dashboard.css';
 import { Bar } from 'react-chartjs-2'; // Import Bar chart
@@ -11,14 +11,15 @@ import { X } from "lucide-react";
 ChartJS.register(
   CategoryScale,  // For x-axis
   LinearScale,    // For y-axis
-  BarElement,     // Bar chart element
+  BarElement,     
   ArcElement,     // Pie chart element
-  Title,          // For chart title
+  Title,          
   Tooltip,        // Tooltips for interactivity
-  Legend          // For the chart legend
+  Legend          
 );
 
 function Dashboard() {
+  
   const [totalOrders, setTotalOrders] = useState(0);
   const [totalIncome, setTotalIncome] = useState(0);
   const [totalExpense, setTotalExpense] = useState(0);  // State for total expense
@@ -26,9 +27,11 @@ function Dashboard() {
   const [soldThisMonthData, setSoldThisMonthData] = useState(null); // State for products sold this month data
   const [pendingOrders, setPendingOrders] = useState(0);  // State for total pending orders
 
+  // Fetch dashboard data on component mount
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
+        // Fetch today's total orders
         const response = await fetch('http://localhost:5000/api/orders/today');
         const data = await response.json();
         setTotalOrders(data.total_orders);  // Sets the total orders for today
@@ -86,11 +89,13 @@ function Dashboard() {
     fetchDashboardData();
   }, []);
 
+  // Main render for dashboard
   return (
     <div className="dashboard-container" style={{ overflow: "hidden" }}>
       <Sidebar />
       <div className="dashboard-content">
         <Header />
+        {/* Metrics cards for today's orders, income, expense, and pending orders */}
         <div className="card-container" style={{ marginLeft: "0px", width: "100%", height: "18vh", marginTop: "80px" }}>
           <div className="card">
             <h2>Today Orders</h2>
@@ -108,12 +113,14 @@ function Dashboard() {
           </div>
 
           <div className="card">
-          <h2>Pending Orders</h2>
-          <div className="metric-value">{pendingOrders}</div>  {/* Display total pending orders */}
+            <h2>Pending Orders</h2>
+            <div className="metric-value">{pendingOrders}</div>  {/* Display total pending orders */}
           </div>
         </div>
 
+        {/* Charts for product stock and products sold this month */}
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '20px', gap: '5px' }}>
+          {/* Bar chart for product stock quantities */}
           <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '10px', boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)', width: '49%', height: '400px' }}>
             <h2 style={{ fontSize: '25px' }}>Product Stock Quantities (Lowest)</h2>
             <div style={{marginTop:'40px'}}>
@@ -151,6 +158,7 @@ function Dashboard() {
             </div>
           </div>
 
+          {/* Pie chart for products sold this month */}
           <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '10px', boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)', width: '49%', height: '400px' }}>
               <h2 style={{fontSize: '25px'}}>Products Sold This Month</h2>
               <div style={{ width: '500px', height: '500px', marginLeft:'70px', marginTop:'-80px' }}>

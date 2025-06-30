@@ -1,14 +1,18 @@
 import React from "react";
 import './Viewmodal.css';  // ✅ Using the same CSS file as ViewModal.jsx
 
+// OrderItemsModal: Modal to display the items of a specific order
 const OrderItemsModal = ({ showOrderItemsModal, orderItems, handleClose }) => {
-  if (!showOrderItemsModal) return null; // ✅ Don't render if modal is not open
+  // Don't render the modal if not open
+  if (!showOrderItemsModal) return null;
 
   return (
     <div className="modal-overlay1">
       <div className="modal-content1" style={{ width: "800px", maxWidth: "90%" }}>
+        {/* Modal title */}
         <h2 className="modal-title1">Order Items</h2>
         
+        {/* Table for displaying order items */}
         <div style={{ overflowX: "auto", width: "100%" }}>
           <table className="table table-striped" style={{ width: "100%" }}>
             <thead>
@@ -46,11 +50,12 @@ const OrderItemsModal = ({ showOrderItemsModal, orderItems, handleClose }) => {
           </table>
         </div>
 
+        {/* Modal close button */}
         <div className="btn-container" style={{ display: "flex", justifyContent: "center", marginTop: "20px" }}>
           <button
             type="button"
             className="btn btn-secondary"
-            onClick={handleClose} // ✅ Close the modal
+            onClick={handleClose}
             style={{ width: "150px" }}
           >
             Close

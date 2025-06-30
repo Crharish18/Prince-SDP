@@ -32,19 +32,19 @@ const Footer = () => {
             <h3 className="text-2xl font-bold mb-6 border-b border-green-400 pb-2 inline-block">Quick Links</h3>
             <ul className="space-y-3">
               <li>
-                <a href="#" className="text-green-100 hover:text-white hover:pl-2 transition-all duration-300 flex items-center">
+                <a href="/About" className="text-green-100 hover:text-white hover:pl-2 transition-all duration-300 flex items-center">
                   <span className="bg-green-400 w-1.5 h-1.5 rounded-full mr-2"></span>
                   About Us
                 </a>
               </li>
               <li>
-                <a href="#" className="text-green-100 hover:text-white hover:pl-2 transition-all duration-300 flex items-center">
+                <a href="/Products" className="text-green-100 hover:text-white hover:pl-2 transition-all duration-300 flex items-center">
                   <span className="bg-green-400 w-1.5 h-1.5 rounded-full mr-2"></span>
                   Products
                 </a>
               </li>
               <li>
-                <a href="#" className="text-green-100 hover:text-white hover:pl-2 transition-all duration-300 flex items-center">
+                <a href="/Services" className="text-green-100 hover:text-white hover:pl-2 transition-all duration-300 flex items-center">
                   <span className="bg-green-400 w-1.5 h-1.5 rounded-full mr-2"></span>
                   Services
                 </a>
@@ -52,7 +52,7 @@ const Footer = () => {
              
               
               <li>
-                <a href="#" className="text-green-100 hover:text-white hover:pl-2 transition-all duration-300 flex items-center">
+                <a href="/Contact" className="text-green-100 hover:text-white hover:pl-2 transition-all duration-300 flex items-center">
                   <span className="bg-green-400 w-1.5 h-1.5 rounded-full mr-2"></span>
                   Contact
                 </a>

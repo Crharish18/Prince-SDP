@@ -13,9 +13,13 @@ import { jsPDF } from "jspdf";
 import 'jspdf-autotable';
 import logodash from "../../assets/PicturesAdmin/logoWhite.png";
 
+// Employee Supplier management component
 function Supplier() {
+  // State for all suppliers
   const [suppliers, setSuppliers] = useState([]);
+  // State for Add Supplier modal visibility
   const [showModal, setShowModal] = useState(false);
+  // State for new supplier form data
   const [newSupplier, setNewSupplier] = useState({
     name: '',
     phone: '',
@@ -23,6 +27,7 @@ function Supplier() {
     address: ''
   });
 
+  // State for validation errors in add form
   const [validationErrors, setValidationErrors] = useState({
     name: '',
     phone: '',
@@ -30,20 +35,26 @@ function Supplier() {
     address: ''
   });
   
+  // State for search input and column
   const [searchText, setSearchText] = useState("");
   const [searchColumn, setSearchColumn] = useState("");
+  // State for view modal and selected supplier
   const [showViewModal, setShowViewModal] = useState(false); 
   const [selectedSupplier, setSelectedSupplier] = useState(null); 
+  // State for edit modal and edited supplier
   const [showEditModal, setShowEditModal] = useState(false); 
   const [editedSupplier, setEditedSupplier] = useState({}); 
+  // State for validation errors in edit form
   const [editValidationErrors, setEditValidationErrors] = useState({
     name: '',
     phone: '',
     email: '',
     address: ''
   });
+  // State for print modal
   const [showPrintModal, setShowPrintModal] = useState(false);
 
+  // Fetch suppliers from backend on mount
   useEffect(() => {
     axios
       .get('http://localhost:5000/api/suppliers')
@@ -55,6 +66,7 @@ function Supplier() {
       });
   }, []);
 
+  // Format date as YYYY-MM-DD
   const formatDate = (date) => {
     const formattedDate = new Date(date);
     const year = formattedDate.getFullYear();
@@ -63,20 +75,24 @@ function Supplier() {
     return `${year}-${month}-${day}`;
   };
   
+  // Handle search column dropdown change
   const handleSearchColumnChange = (e) => {
     setSearchColumn(e.target.value);  
   };
   
+  // Handle search input change
   const handleSearchChange = (e) => {
     setSearchText(e.target.value);  
   };
   
+  // Filter suppliers based on search input and column
   const filteredSuppliers = suppliers.filter((supplier) => {
     if (!searchText || !searchColumn) return true; 
     const value = supplier[searchColumn]?.toString().toLowerCase(); 
     return value && value.includes(searchText.toLowerCase());
   });
 
+  // Field definitions for EditModal
   const supplierFields = [
     { label: "Supplier ID", name: "supplier_id", type: "text" },
     { label: "Name", name: "name", type: "text" },
@@ -86,14 +102,17 @@ function Supplier() {
    
   ];
 
+  // Email validation function
   const validateEmail = (email) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email).toLowerCase());
   };
 
+  // Show Add Supplier modal
   const handleAddSupplierClick = () => {
     setShowModal(true);
   };
 
+  // Close Add Supplier modal and reset form
   const handleCloseModal = () => {
     setShowModal(false);
     // Reset form data
@@ -112,6 +131,7 @@ function Supplier() {
     });
   };
 
+  // Handle input change in Add Supplier form
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewSupplier({
@@ -120,6 +140,7 @@ function Supplier() {
     });
   };
 
+  // Validate and save new supplier to backend
   const handleSaveNewSupplier = () => {
     let errors = {};
     
@@ -175,15 +196,18 @@ function Supplier() {
     }
   };
 
+  // Show view modal for selected supplier
   const handleViewSupplier = (supplier) => {
     setSelectedSupplier(supplier);
     setShowViewModal(true);
   };
 
+  // Close view modal
   const handleCloseViewModal = () => {
     setShowViewModal(false); 
   };
 
+  // Delete supplier by ID
   const handleDeleteSupplier = (supplierId) => {
     axios
       .delete(`http://localhost:5000/api/suppliers/${supplierId}`)
@@ -197,6 +221,7 @@ function Supplier() {
       });
   };
 
+  // Show edit modal for selected supplier
   const handleEditSupplier = (supplier) => {
     setSelectedSupplier(supplier);
     setEditedSupplier({ ...supplier });
@@ -209,6 +234,7 @@ function Supplier() {
     });
   };
   
+  // Validate and save edited supplier to backend
   const handleSaveEditSupplier = () => {
     let errors = {};
     
@@ -260,6 +286,7 @@ function Supplier() {
     }
   };
 
+  // Handle input change in Edit Supplier modal
   const handleEditInputChange = (e) => {
     const { name, value } = e.target;
     setEditedSupplier((prev) => ({
@@ -268,6 +295,7 @@ function Supplier() {
     }));
   };
 
+  // Close edit modal and reset validation errors
   const handleCloseEditModal = () => {
     setShowEditModal(false);
     setSelectedSupplier(null);
@@ -279,10 +307,12 @@ function Supplier() {
     });
   };
 
+  // Show print modal for downloading PDF
   const handleDownloadPDF = () => {
     setShowPrintModal(true);
   };
 
+  // Main render
   return (
     <div className={styles.ManageSupplierContainer}>
       <Emp_Sidebar />
@@ -292,7 +322,9 @@ function Supplier() {
           <div className={styles.TopSection}>
             <h1 className="section-title" style={{ fontSize: '28px', fontWeight: 'bold' }}>Manage Suppliers</h1>
 
+            {/* Search and action controls */}
             <div className={styles.SearchWrapper}>
+              {/* Search column dropdown */}
               <select
                 className="form-control"
                 value={searchColumn}
@@ -305,6 +337,7 @@ function Supplier() {
                 <option value="email">Email</option>
                 <option value="address">Address</option>
               </select>
+              {/* Search input */}
               <input
                 type="text"
                 className="form-control search-bar"
@@ -313,14 +346,17 @@ function Supplier() {
                 placeholder={`Search by ${searchColumn}...`}
               />
               <div className={styles.BtnContainer}>
+                {/* Add Supplier button */}
                 <button className="btn btn-primary" style={{ width: '150px', marginLeft:"10px" }} onClick={handleAddSupplierClick}>
                   Add Supplier
                 </button>
+                {/* Print button */}
                 <button className="btn btn-secondary" onClick={handleDownloadPDF} style={{ width: '150px', marginLeft:"10px" }}>Print</button>
               </div>
             </div>
           </div>
 
+          {/* Suppliers table */}
           <div className={styles.TableContainer}>
             <table className="table table-striped">
               <thead>
@@ -343,14 +379,17 @@ function Supplier() {
                       <td>{supplier.email}</td>
                       <td>{supplier.address || 'N/A'}</td>
                       <td>
+                        {/* View supplier button */}
                         <FaEye
                           style={{ marginRight: "10px", cursor: "pointer", color: "#2770b4" }}
                           onClick={() => handleViewSupplier(supplier)} 
                         />
+                        {/* Edit supplier button */}
                         <FaEdit
                           style={{ marginRight: "10px", cursor: "pointer", color: "#f0ad4e" }}
                           onClick={() => handleEditSupplier(supplier)} 
                         />
+                        {/* Delete supplier button */}
                         <FaTrash
                           style={{ cursor: "pointer", color: "#d9534f" }}
                           onClick={() => handleDeleteSupplier(supplier.supplier_id)} 
@@ -368,7 +407,7 @@ function Supplier() {
           </div>
         </div>
 
-       
+        {/* Add Supplier Modal */}
         <AddEntityModal
           showModal={showModal}
           handleClose={handleCloseModal}
@@ -385,6 +424,7 @@ function Supplier() {
           validationErrors={validationErrors}
         />
 
+        {/* View Modal for supplier details */}
         <ViewModal
           showViewModal={showViewModal}
           selectedEntity={selectedSupplier}
@@ -400,6 +440,7 @@ function Supplier() {
           ]}
         />
 
+        {/* Edit Modal for supplier */}
         <EditModal
           showEditModal={showEditModal}
           entityData={editedSupplier}
@@ -411,6 +452,7 @@ function Supplier() {
           validationErrors={editValidationErrors}
         />
 
+        {/* Print Modal for suppliers */}
         <PrintModal
           show={showPrintModal}
           handleClose={() => setShowPrintModal(false)}

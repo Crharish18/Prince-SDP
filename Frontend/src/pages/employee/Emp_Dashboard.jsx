@@ -16,14 +16,22 @@ ChartJS.register(
   Legend          // For the chart legend
 );
 
+// Employee Dashboard component
 function Dashboard() {
+  // State for today's total orders
   const [totalOrders, setTotalOrders] = useState(0);
+  // State for products data (stock quantities)
   const [productsData, setProductsData] = useState(null); // State for products data
+  // State for total pending orders
   const [pendingOrders, setPendingOrders] = useState(0);  // State for total pending orders
+  // State for all orders (not just today's)
   const [allOrders, setAllOrders] = useState(0); // State for all orders (not just today's)
+  // State for progress percentage of pending orders
   const [progressPercentage, setProgressPercentage] = useState(0); // State for progress percentage
+  // State for count of low stock products
   const [lowStockCount, setLowStockCount] = useState(0); // New state for low stock products count
 
+  // Fetch dashboard data on component mount
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
@@ -75,11 +83,13 @@ function Dashboard() {
     fetchDashboardData();
   }, []);
 
+  // Main render for employee dashboard
   return (
     <div className="dashboard-container" style={{ overflow: "hidden" }}>
       <Emp_Sidebar />
       <div className="dashboard-content">
         <Header />
+        {/* Metrics cards for today's orders, low stock, and pending orders */}
         <div className="card-container" style={{ marginLeft: "0px", width: "134%", height: "18vh", marginTop: "80px" }}>
           <div className="card">
             <h2>Today Orders</h2>
@@ -97,7 +107,9 @@ function Dashboard() {
           </div>
         </div>
 
+        {/* Charts section for product stock and order progress */}
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '20px', gap: '5px' }}>
+          {/* Bar chart for product stock quantities */}
           <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '10px', boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)', width: '49%', height: '400px' }}>
             <h2 style={{ fontSize: '25px' }}>Product Stock Quantities (Lowest)</h2>
             <div style={{marginTop:'40px'}}>
@@ -135,6 +147,7 @@ function Dashboard() {
             </div>
           </div>
 
+          {/* Progress visualization for total orders vs pending orders */}
           <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '10px', boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)', width: '49%', height: '400px' }}>
             <h2 style={{fontSize: '25px'}}>Total Orders vs Pending Orders</h2>
             <div style={{ width: '100%', marginTop: '40px' }}>

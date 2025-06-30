@@ -8,19 +8,20 @@ import axios from "axios";
 function Login() {
   const [email, setEmail] = useState("");  
   const [password, setPassword] = useState("");
+  // State to store any error message from API
   const [error, setError] = useState(null);
   const [validationErrors, setValidationErrors] = useState({
     email: "",
     password: ""
   });
 
-  // Email validation function
+  // Email validation function 
   const validateEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   };
 
-  // Handle input changes with validation
+  // Handle changes in the email input field with validation
   const handleEmailChange = (e) => {
     const value = e.target.value;
     setEmail(value);
@@ -34,6 +35,7 @@ function Login() {
     }
   };
 
+  // Handle changes in the password input field with validation
   const handlePasswordChange = (e) => {
     const value = e.target.value;
     setPassword(value);
@@ -45,10 +47,11 @@ function Login() {
     }
   };
 
+  // Handle form submission for login
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Validate before submission
+    // Validate email and password before submission
     const emailError = !email ? "Email is required" : !validateEmail(email) ? "Please enter a valid email address" : "";
     const passwordError = !password ? "Password is required" : "";
     
@@ -62,22 +65,26 @@ function Login() {
       return;
     }
 
-    console.log("Attempting login with:", { email, password });  // Debugging
+    // Debug log for login attempt
+    console.log("Attempting login with:", { email, password });
 
     try {
+      // Send login request to backend API
       const response = await axios.post(
         'http://localhost:5000/api/auth/login',
         { email, password }, 
         { headers: { "Content-Type": "application/json" } } // Ensure correct format
       );
 
-      console.log("Response received:", response.data);  // Debugging
+      // Debug log for API response
+      console.log("Response received:", response.data);
 
-      // Store token and role
+      // Store authentication token and user info in localStorage
       localStorage.setItem('token', response.data.token);  
       localStorage.setItem('role', response.data.role);    
       localStorage.setItem('username', response.data.username);  // Store username
 
+      // Redirect user based on role
       if (response.data.role === 'admin') {
         window.location.href = '/admin-dashboard';  
       } else if (response.data.role === 'employee') {
@@ -85,20 +92,25 @@ function Login() {
       }
 
     } catch (error) {
-      console.error("Error response:", error.response?.data);  // Debugging
+      // Log and show error message from API if login fails
+      console.error("Error response:", error.response?.data);
       setError(error.response?.data?.message || 'An error occurred');
     }
   };
 
+  
   return (
     <div className="login-container">
+      {/* Logo section */}
       <div className="logo-container">
         <img src={logo} alt="Logo" className="logo" />
       </div>
 
+      {/* Login form box */}
       <div className="login-box">
         <h2>Login</h2>
         <form onSubmit={handleSubmit}>
+          {/* Email field */}
           <div className="mb-3">
             <label htmlFor="email" className="form-label">
               Email
@@ -117,11 +129,13 @@ function Login() {
                 required
               />
             </div>
+            {/* Email validation error message */}
             {validationErrors.email && (
               <div className="validation-error">{validationErrors.email}</div>
             )}
           </div>
 
+          {/* Password field */}
           <div className="mb-3">
             <label htmlFor="password" className="form-label">
               Password
@@ -140,19 +154,23 @@ function Login() {
                 required
               />
             </div>
+            {/* Password validation error message */}
             {validationErrors.password && (
               <div className="validation-error">{validationErrors.password}</div>
             )}
           </div>
+          {/* Login button */}
           <button type="submit" className="login-button">
             Login
           </button>
         </form>
-        {error && <p className="error-message">{error}</p>} {/* Display error message */}
+        {/* General error message (e.g., wrong credentials) */}
+        {error && <p className="error-message">{error}</p>}
+        {/* Link to reset password */}
         <p className="signup-text">
             Forgot your password?{" "}
             <Link to="/admin/Reset_Password">Reset Password</Link>
-          </p>
+        </p>
       </div>
     </div>
   );

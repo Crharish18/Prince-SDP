@@ -248,7 +248,7 @@ async function handleOrderStatusChange(orderId, oldStatus, newStatus) {
 }
 
 
-// ✅ Create a new order
+// Create a new order
 router.post('/', (req, res) => {
     const { customer_id, total_price, status, price, total_discount } = req.body;
 
@@ -278,7 +278,7 @@ router.post('/', (req, res) => {
 });
 
 
-// ✅ Update an order by ID
+// Update an order by ID
 router.put('/:order_id', (req, res) => {
     const { order_id } = req.params;
     const { customer_id, total_price, status, price, total_discount, quantity } = req.body;
@@ -323,7 +323,7 @@ router.put('/:order_id', (req, res) => {
     });
 });
 
-// ✅ Delete an order by ID
+// Delete an order by ID
 router.delete('/:order_id', (req, res) => {
     const { order_id } = req.params;
 

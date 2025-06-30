@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { Link } from 'react-router-dom';
 import { FaEye, FaEdit, FaTrash, FaSortUp, FaSortDown } from "react-icons/fa"; 
-import Sidebar from "../../components/Sidebar";
+import Sidebar from "../../components/sidebar";
 import Header from "../../components/Header";
 import styles from './products.module.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -13,23 +13,28 @@ import { jsPDF } from "jspdf";
 import 'jspdf-autotable';
 import logodash from "../../assets/PicturesAdmin/logoWhite.png";
 
+
 function ManageProducts() {
   const [products, setProducts] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [searchColumn, setSearchColumn] = useState("");
+  // State for view and edit modal and selected product
   const [showViewModal, setShowViewModal] = useState(false); 
   const [selectedProduct, setSelectedProduct] = useState(null); 
   const [showEditModal, setShowEditModal] = useState(false); 
   const [editedProduct, setEditedProduct] = useState({}); 
   const [editImageFile, setEditImageFile] = useState(null);
-  const [quantitySort, setQuantitySort] = useState(null); // null, 'asc', or 'desc'
+  // State for quantity sorting: null, 'asc', or 'desc'
+  const [quantitySort, setQuantitySort] = useState(null);
+  // State for print modal
   const [showPrintModal, setShowPrintModal] = useState(false);
 
-  // Debug check when component mounts
+ 
   useEffect(() => {
     console.log("Component mounted");
   }, []);
 
+ 
   useEffect(() => {
     axios
       .get('http://localhost:5000/api/products')
@@ -41,10 +46,13 @@ function ManageProducts() {
       });
   }, []);
 
+  // Handle search column dropdown change
   const handleSearchColumnChange = (e) => setSearchColumn(e.target.value);
+
+  // Handle search input change
   const handleSearchChange = (e) => setSearchText(e.target.value);
 
-  // Updated filteredProducts to include sorting by quantity
+  // Filter and sort products based on search and quantity sort
   const filteredProducts = React.useMemo(() => {
     // First filter the data
     let filtered = products.filter((prod) => {
@@ -52,14 +60,11 @@ function ManageProducts() {
       const value = prod[searchColumn]?.toString().toLowerCase(); 
       return value && value.includes(searchText.toLowerCase());
     });
-    
     // Then sort by quantity if sorting is active
     if (quantitySort) {
       filtered = [...filtered].sort((a, b) => {
         const qtyA = parseInt(a.stock_qty) || 0;
         const qtyB = parseInt(b.stock_qty) || 0;
-        
-        // Sort based on direction
         if (quantitySort === 'asc') {
           return qtyA - qtyB; // Lowest first
         } else {
@@ -67,62 +72,61 @@ function ManageProducts() {
         }
       });
     }
-    
     return filtered;
   }, [products, searchText, searchColumn, quantitySort]);
 
+  // Show view modal for selected product
   const handleViewProduct = (product) => {
     setSelectedProduct(product);
     setShowViewModal(true);
   };
 
+  // Close view modal
   const handleCloseViewModal = () => setShowViewModal(false);
 
- const handleDeleteProduct = (productId) => {
-  if (window.confirm("Are you sure you want to delete this product?")) {
-    axios
-      .delete(`http://localhost:5000/api/products/${productId}`)
-      .then(() => {
-        setProducts((prevProducts) =>
-          prevProducts.filter((product) => product.product_id !== productId)
-        );
-        alert("Product deleted successfully");
-      })
-      .catch((error) => {
-        console.error("Error deleting product:", error);
-        
-        // Display error message to the user
-        if (error.response && error.response.data && error.response.data.error) {
-          alert(error.response.data.error);
-        } else {
-          alert("Error deleting product");
-        }
-      });
-  }
-};
+  // Delete product by ID (with confirmation)
+  const handleDeleteProduct = (productId) => {
+    if (window.confirm("Are you sure you want to delete this product?")) {
+      axios
+        .delete(`http://localhost:5000/api/products/${productId}`)
+        .then(() => {
+          setProducts((prevProducts) =>
+            prevProducts.filter((product) => product.product_id !== productId)
+          );
+          alert("Product deleted successfully");
+        })
+        .catch((error) => {
+          console.error("Error deleting product:", error);
+          // Display error message to the user if available
+          if (error.response && error.response.data && error.response.data.error) {
+            alert(error.response.data.error);
+          } else {
+            alert("Error deleting product");
+          }
+        });
+    }
+  };
 
+  // Show edit modal for selected product
   const handleEditProduct = (product) => {
     setSelectedProduct(product);
     setEditedProduct({ ...product });
     setShowEditModal(true);
   };
 
-  // Update the handleSaveEditProduct function to handle file uploads
+  // Save edited product (handles file uploads)
   const handleSaveEditProduct = () => {
     // If there's a new image file, use FormData to upload it
     if (editImageFile) {
       const formData = new FormData();
-      
       // Add all product fields to FormData
       Object.keys(editedProduct).forEach(key => {
         if (key !== 'image_url') { // Skip the image_url field
           formData.append(key, editedProduct[key]);
         }
       });
-      
       // Add the new image file
       formData.append('image', editImageFile);
-      
       // Make the API request with FormData
       axios
         .put(`http://localhost:5000/api/products/${editedProduct.product_id}`, formData, {
@@ -156,10 +160,9 @@ function ManageProducts() {
     }
   };
 
-  // Update the handleEditInputChange function
+  // Handle input change in edit modal (including file input)
   const handleEditInputChange = (e) => {
     const { name, value, type } = e.target;
-    
     if (type === 'file') {
       // Handle file input
       setEditImageFile(value);
@@ -172,15 +175,13 @@ function ManageProducts() {
     }
   };
 
+  // Format timestamp for display
   const formatTimestamp = (timestamp) => {
     if (!timestamp) return "N/A";
-    
     try {
       const date = new Date(timestamp);
-      
       // Check if date is valid
       if (isNaN(date.getTime())) return "N/A";
-      
       return date.toLocaleString('en-US', {
         year: 'numeric',
         month: '2-digit',
@@ -194,11 +195,13 @@ function ManageProducts() {
       return "N/A";
     }
   };
-  
+
+  // Show print modal for downloading PDF
   const handleDownloadPDF = () => {
     setShowPrintModal(true);
   };
-  
+
+  // Main render
   return (
     <div className={styles.ManageProductsContainer}>
       <Sidebar />
@@ -207,7 +210,9 @@ function ManageProducts() {
         <div className={styles.InnerContainer} style={{ marginLeft: "10px", width: "100%" }}>
           <div className={styles.TopSection}>
             <h1 className="section-title" style={{ fontSize: '28px', fontWeight: 'bold' }}>Manage Products</h1>
+            {/* Search and print controls */}
             <div className={styles.SearchWrapper}>
+              {/* Search column dropdown */}
               <select 
                 className="form-control"  
                 value={searchColumn}
@@ -221,6 +226,7 @@ function ManageProducts() {
                 <option value="stock_qty">Stock Quantity</option>
                 <option value="status">Status</option>
               </select>
+              {/* Search input */}
               <input 
                 type="text" 
                 className="form-control search-bar"
@@ -230,11 +236,12 @@ function ManageProducts() {
                 disabled={!searchColumn}
               />
               <div className={styles.BtnContainer}>
+                {/* Print button */}
                 <button className="btn btn-secondary" onClick={handleDownloadPDF} style={{ width: '150px', marginLeft:"10px" }}>Print</button>
               </div>
             </div>
             
-            {/* Add quantity sort controls */}
+            {/* Quantity sort controls */}
             <div className={styles.QuantitySortContainer}>
               <span className={styles.SortLabel}>Sort by Quantity:</span>
               <div className={styles.SortButtonGroup}>
@@ -262,6 +269,7 @@ function ManageProducts() {
             </div>
           </div>
 
+          {/* Products table */}
           <div className={styles.TableContainer}>
             <table className="table table-striped">
               <thead>
@@ -297,12 +305,15 @@ function ManageProducts() {
                       </td>
                       <td>{formatTimestamp(prod.created_at)}</td>
                       <td>
+                        {/* View product button */}
                         <FaEye 
                           style={{ marginRight: "10px", cursor: "pointer", color: "#2770b4" }}
                           onClick={() => handleViewProduct(prod)} />
+                        {/* Edit product button */}
                         <FaEdit 
                           style={{ marginRight: "10px", cursor: "pointer", color: "#f0ad4e" }}
                           onClick={() => handleEditProduct(prod)} />
+                        {/* Delete product button */}
                         <FaTrash 
                           style={{ cursor: "pointer", color: "#d9534f" }}
                           onClick={() => handleDeleteProduct(prod.product_id)} />
@@ -318,7 +329,7 @@ function ManageProducts() {
             </table>
           </div>
         </div>
-
+        {/* View Modal for product details */}
         <ViewModal 
           showViewModal={showViewModal} 
           selectedEntity={selectedProduct} 
@@ -338,6 +349,7 @@ function ManageProducts() {
           ]} 
         />
 
+        {/* Edit Modal for product */}
         <EditModal 
           showEditModal={showEditModal} 
           entityData={editedProduct}
@@ -358,6 +370,7 @@ function ManageProducts() {
           handleEditInputChange={handleEditInputChange}   
         />
 
+        {/* Print Modal for products */}
         <PrintModal
           show={showPrintModal}
           handleClose={() => setShowPrintModal(false)}

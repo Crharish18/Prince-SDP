@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { FaEye, FaEdit, FaTrash } from "react-icons/fa"; 
 import { Link } from 'react-router-dom';
-import Sidebar from "../../components/Sidebar";
+import Sidebar from "../../components/sidebar";
 import Header from "../../components/Header";
 import styles from './Messages.module.css'; // Import as CSS module
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -10,8 +10,10 @@ import ViewModal from "../../components/Viewmodal";
 import EditModal from "../../components/EditModal"; 
 import AddEntityModal from "../../components/AddEntityModal";
 
+// Messages management component
 function Messages() {
   const [messages, setMessages] = useState([]);
+  // State for Add Message modal visibility
   const [showModal, setShowModal] = useState(false);
   const [newMessage, setNewMessage] = useState({
     name: '',
@@ -21,6 +23,7 @@ function Messages() {
     message: ''
   });
 
+  // State for validation errors in add form
   const [validationErrors, setValidationErrors] = useState({
     name: '',
     email: '',
@@ -28,13 +31,16 @@ function Messages() {
     message: ''
   });
 
+  // State for search input and column
   const [searchText, setSearchText] = useState("");
   const [searchColumn, setSearchColumn] = useState("");
+  // State for view modal and selected message
   const [showViewModal, setShowViewModal] = useState(false); 
   const [selectedMessage, setSelectedMessage] = useState(null); 
   const [showEditModal, setShowEditModal] = useState(false); 
   const [editedMessage, setEditedMessage] = useState({}); 
 
+  // Fetch messages from backend on mount
   useEffect(() => {
     axios
       .get('http://localhost:5000/api/messages')
@@ -46,6 +52,7 @@ function Messages() {
       });
   }, []);
 
+  // Format date as YYYY-MM-DD
   const formatDate = (date) => {
     const formattedDate = new Date(date);
     const year = formattedDate.getFullYear();
@@ -54,20 +61,24 @@ function Messages() {
     return `${year}-${month}-${day}`;
   };
   
+  // Handle search column dropdown change
   const handleSearchColumnChange = (e) => {
     setSearchColumn(e.target.value);  
   };
   
+  // Handle search input change
   const handleSearchChange = (e) => {
     setSearchText(e.target.value);  
   };
   
+  // Filter messages based on search input and column
   const filteredMessages = messages.filter((message) => {
     if (!searchText || !searchColumn) return true; 
     const value = message[searchColumn]?.toString().toLowerCase(); 
     return value && value.includes(searchText.toLowerCase());
   });
 
+  // Field definitions for modals
   const messageFields = [
     { label: "Message ID", name: "msg_id", type: "text" },
     { label: "Name", name: "name", type: "text" },
@@ -78,12 +89,12 @@ function Messages() {
     { label: "Created At", name: "created_at", type: "text" }
   ];
 
-  
-
+  // Close Add Message modal
   const handleCloseModal = () => {
     setShowModal(false);
   };
 
+  // Handle input change in Add Message form
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewMessage({
@@ -92,6 +103,7 @@ function Messages() {
     });
   };
 
+  // Validate and save new message to backend
   const handleSaveNewMessage = () => {
     let errors = {};
     if (!newMessage.name) {
@@ -122,15 +134,18 @@ function Messages() {
     }
   };
 
+  // Show view modal for selected message
   const handleViewMessage = (message) => {
     setSelectedMessage(message);
     setShowViewModal(true);
   };
 
+  // Close view modal
   const handleCloseViewModal = () => {
     setShowViewModal(false); 
   };
 
+  // Delete a message by its ID
   const handleDeleteMessage = (messageId) => {
     axios
       .delete(`http://localhost:5000/api/messages/${messageId}`)
@@ -144,12 +159,14 @@ function Messages() {
       });
   };
 
+  // Show edit modal for selected message
   const handleEditMessage = (message) => {
     setSelectedMessage(message);
     setEditedMessage({ ...message });
     setShowEditModal(true);
   };
   
+  // Validate and save edited message to backend
   const handleSaveEditMessage = () => {
     axios
       .put(`http://localhost:5000/api/messages/${editedMessage.msg_id}`, editedMessage)
@@ -164,6 +181,7 @@ function Messages() {
       });
   };
 
+  // Handle input change in Edit Message modal
   const handleEditInputChange = (e) => {
     const { name, value } = e.target;
     setEditedMessage((prev) => ({
@@ -172,11 +190,13 @@ function Messages() {
     }));
   };
 
+  // Close edit modal and reset selected message
   const handleCloseEditModal = () => {
     setShowEditModal(false);
     setSelectedMessage(null);
   };
 
+  // Main render
   return (
     <div className={styles.ManageEmployeeContainer}>
       <Sidebar />
@@ -186,7 +206,9 @@ function Messages() {
           <div className={styles.TopSection}>
             <h1 className="section-title" style={{ fontSize: '28px', fontWeight: 'bold' }}>Manage Messages</h1>
 
+            {/* Search and action controls */}
             <div className={styles.SearchWrapper}>
+              {/* Search column dropdown */}
               <select
                 className="form-control"
                 value={searchColumn}
@@ -199,6 +221,7 @@ function Messages() {
                 <option value="subject">Subject</option>
                 <option value="created_at">Date</option>
               </select>
+              {/* Search input */}
               <input
                 type="text"
                 className="form-control search-bar"
@@ -207,15 +230,17 @@ function Messages() {
                 placeholder={`Search by ${searchColumn}...`}
               />
               <div className={styles.BtnContainer}>
-               <Link to="/admin/Reviews" className="btn btn-primary" style={{ width: '150px', marginLeft:"10px" }}>
+                {/* Link to Reviews page */}
+                <Link to="/admin/Reviews" className="btn btn-primary" style={{ width: '150px', marginLeft:"10px" }}>
                   Reviews
                 </Link>
-                
+                {/* Print button (not implemented in this code) */}
                 <button className="btn btn-secondary" style={{ width: '150px', marginLeft:"10px" }}>Print</button>
               </div>
             </div>
           </div>
 
+          {/* Messages table */}
           <div className={styles.TableContainer}>
             <table className="table table-striped">
               <thead>
@@ -240,14 +265,17 @@ function Messages() {
                       <td>{message.subject}</td>
                       <td>{message.created_at ? formatDate(message.created_at) : 'N/A'}</td>
                       <td>
+                        {/* View message button */}
                         <FaEye
                           style={{ marginRight: "10px", cursor: "pointer", color: "#2770b4" }}
                           onClick={() => handleViewMessage(message)} 
                         />
+                        {/* Edit message button */}
                         <FaEdit
                           style={{ marginRight: "10px", cursor: "pointer", color: "#f0ad4e" }}
                           onClick={() => handleEditMessage(message)} 
                         />
+                        {/* Delete message button */}
                         <FaTrash
                           style={{ cursor: "pointer", color: "#d9534f" }}
                           onClick={() => handleDeleteMessage(message.msg_id)} 
@@ -265,6 +293,7 @@ function Messages() {
           </div>
         </div>
 
+        {/* Add Message Modal */}
         <AddEntityModal
           showModal={showModal}
           handleClose={handleCloseModal}
@@ -282,6 +311,7 @@ function Messages() {
           validationErrors={validationErrors}
         />
 
+        {/* View Modal for message details */}
         <ViewModal
           showViewModal={showViewModal}
           selectedEntity={selectedMessage}
@@ -298,6 +328,7 @@ function Messages() {
           ]}
         />
 
+        {/* Edit Modal for message */}
         <EditModal
           showEditModal={showEditModal}
           entityData={editedMessage}

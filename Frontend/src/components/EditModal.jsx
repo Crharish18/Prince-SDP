@@ -1,30 +1,32 @@
 import React, { useState } from "react";
-import './EditModal.css';  // Add or update the corresponding CSS for styling
+import './EditModal.css';
 
 const EditModal = ({
   showEditModal,
-  entityData,  // Pass the specific data for the entity
-  entityFields, // Pass the fields for the entity
-  entityTitle,  // Title of the entity (e.g., Employee, Product, etc.)
+  entityData,
+  entityFields,
+  entityTitle,
   handleClose,
-  handleSaveEditEntity,  // Save the entity data
-  handleEditInputChange   // Handle the change of inputs
+  handleSaveEditEntity,
+  handleEditInputChange
 }) => {
+  // State for image preview URLs
   const [imagePreview, setImagePreview] = useState({});
   
-  if (!showEditModal || !entityData) return null; // Don't render if modal is not open or there's no data
+  // Don't render modal if not open or no data
+  if (!showEditModal || !entityData) return null;
 
+  // Handle file input change for image fields
   const handleFileChange = (e, fieldName) => {
     const file = e.target.files[0];
     if (file) {
-      // Create a temporary URL for the image preview
+      // Set preview URL for selected image
       const previewUrl = URL.createObjectURL(file);
       setImagePreview({
         ...imagePreview,
         [fieldName]: previewUrl
       });
-      
-      // Create a custom event to pass to handleEditInputChange
+      // Pass file to input change handler
       const customEvent = {
         target: {
           name: fieldName,
@@ -32,7 +34,6 @@ const EditModal = ({
           type: 'file'
         }
       };
-      
       handleEditInputChange(customEvent);
     }
   };
@@ -47,6 +48,7 @@ const EditModal = ({
               <div className="form-group" key={index}>
                 <label style={{ fontWeight: "bold" }}>{field.label}</label>
                 {field.type === "image" ? (
+                  // Image input with preview
                   <div className="image-edit-container">
                     <div className="current-image">
                       <img 
@@ -63,6 +65,7 @@ const EditModal = ({
                     />
                   </div>
                 ) : field.type === "select" ? (
+                  // Select dropdown
                   <select
                     className="form-control"
                     name={field.name}
@@ -76,8 +79,9 @@ const EditModal = ({
                     ))}
                   </select>
                 ) : (
+                  // Standard input field
                   <input
-                    type={field.type || "text"} // Allow dynamic input types (e.g., text, email, date, etc.)
+                    type={field.type || "text"}
                     className="form-control"
                     name={field.name}
                     value={entityData[field.name] || ""}
@@ -110,5 +114,7 @@ const EditModal = ({
     </div>
   );
 };
+
+
 
 export default EditModal;

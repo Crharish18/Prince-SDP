@@ -5,23 +5,35 @@ import Emp_Sidebar from '../../components/Employee/Emp_Sidebar';
 import { Mail, Phone, Building, MapPin, Lock, X, User, IdCard, Calendar, UserCircle, Upload } from 'lucide-react';
 import axios from 'axios';
 
+// Employee Profile component for user profile management
 const Profile = () => {
+  // State for user data fetched from backend
   const [userData, setUserData] = useState(null);
+  // State to toggle edit mode
   const [isEditing, setIsEditing] = useState(false);
+  // State to toggle change password modal
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  // State for password form fields
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   });
+  // State for password error/success messages
   const [passwordError, setPasswordError] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState('');
+  // State for profile photo URL
   const [profilePhoto, setProfilePhoto] = useState(null);
+  // State for upload spinner
   const [isUploading, setIsUploading] = useState(false);
+  // Ref for file input (profile photo)
   const fileInputRef = useRef(null);
 
+  // State for editable form data
   const [formData, setFormData] = useState({});
+  // State for original form data (for cancel)
   const [originalFormData, setOriginalFormData] = useState({});
+  // State for validation errors on fields
   const [validationErrors, setValidationErrors] = useState({});
 
   // Initialize form data when userData is loaded
@@ -47,6 +59,7 @@ const Profile = () => {
     }
   }, [userData]);
 
+  // Field validation for profile form
   const validateField = (name, value) => {
     let error = '';
     
@@ -112,6 +125,7 @@ const Profile = () => {
     return error;
   };
 
+  // Handle input change in profile edit form
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({
@@ -127,10 +141,9 @@ const Profile = () => {
     });
   };
 
-  // Fetch the user profile data
+  // Fetch the user profile data from backend
   useEffect(() => {
     const token = localStorage.getItem('token');
-
     if (!token) {
       console.log("No token found. Please log in again.");
       return;
@@ -147,12 +160,14 @@ const Profile = () => {
       });
   }, []);
 
+  // Handle edit button click
   const handleEditClick = () => {
     setIsEditing(true);
     // Clear validation errors when starting to edit
     setValidationErrors({});
   };
 
+  // Handle cancel edit (reset fields)
   const handleCancelEdit = () => {
     // Reset form data to original values
     setFormData(originalFormData);
@@ -165,16 +180,19 @@ const Profile = () => {
     setValidationErrors({});
   };
 
+  // Toggle change password modal
   const handleChangePasswordClick = () => {
     setIsChangingPassword(!isChangingPassword);
   };
 
+  // Handle profile picture click (open file dialog)
   const handleProfilePictureClick = () => {
     if (isEditing) {
       fileInputRef.current.click();
     }
   };
 
+  // Handle profile photo file change and upload
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -223,10 +241,12 @@ const Profile = () => {
     }
   };
 
+  // Show loading message if user data not loaded
   if (!userData) {
     return <div>Loading...</div>;
   }
 
+  // Format date for display as DD-MM-YYYY
   const formatDateForDisplay = (dateString) => {
     if (!dateString) return '';
     
@@ -235,6 +255,7 @@ const Profile = () => {
     return `${date.getDate().toString().padStart(2, '0')}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getFullYear()}`;
   };
   
+  // Validate all fields in the form
   const validateForm = () => {
     const errors = {};
     
@@ -250,6 +271,7 @@ const Profile = () => {
     return Object.keys(errors).length === 0;
   };
   
+  // Handle save profile button click (validate and update)
   const handleSaveProfile = () => {
     if (!isEditing) return;
     
@@ -277,11 +299,13 @@ const Profile = () => {
       });
   };
 
+  // Handle password input change in modal
   const handlePasswordInputChange = (e) => {
     const { name, value } = e.target;
     setPasswordForm({ ...passwordForm, [name]: value });
   };
 
+  // Handle update password form submit
   const handleUpdatePassword = (e) => {
     e.preventDefault();
     setPasswordError('');
@@ -301,6 +325,7 @@ const Profile = () => {
   
   return (
     <div>
+      {/* Header and Sidebar */}
       <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', zIndex: 100 }}>
         <Header />
       </div>
@@ -309,7 +334,7 @@ const Profile = () => {
       </div>
       
       <div className="profile-container" style={{ marginTop: '80px' }}>
-        {/* Profile Header */}
+        {/* Profile Header with edit/save/cancel buttons */}
         <div className="profile-header">
           <h2>Profile Settings</h2>
           <div style={{ display: 'flex', gap: '10px' }}>
@@ -344,6 +369,7 @@ const Profile = () => {
 
         {/* Profile Information Section */}
         <div className="profile-info">
+          {/* Profile photo and upload */}
           <div 
             className="profile-image" 
             style={{ 
@@ -432,11 +458,11 @@ const Profile = () => {
               onChange={handleFileChange}
             />
           </div>
-
           {/* Toggle between view mode and edit mode */}
           {isEditing ? (
             <div className="profile-edit" style={{ marginLeft: '20px', width: '100%' }}>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
+                {/* First Name */}
                 <div style={{ flex: '1 1 calc(50% - 10px)' }}>
                   <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold' }}>First Name</label>
                   <input
@@ -452,6 +478,7 @@ const Profile = () => {
                     </div>
                   )}
                 </div>
+                {/* Last Name */}
                 <div style={{ flex: '1 1 calc(50% - 10px)' }}>
                   <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold' }}>Last Name</label>
                   <input
@@ -467,6 +494,7 @@ const Profile = () => {
                     </div>
                   )}
                 </div>
+                {/* Email */}
                 <div style={{ flex: '1 1 calc(50% - 10px)' }}>
                   <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold' }}>Email</label>
                   <input
@@ -482,6 +510,7 @@ const Profile = () => {
                     </div>
                   )}
                 </div>
+                {/* Phone Number */}
                 <div style={{ flex: '1 1 calc(50% - 10px)' }}>
                   <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold' }}>Phone Number</label>
                   <input
@@ -497,7 +526,7 @@ const Profile = () => {
                     </div>
                   )}
                 </div>
-
+                {/* Address */}
                 <div style={{ flex: '1 1 calc(50% - 10px)' }}>
                   <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold' }}>Address</label>
                   <input
@@ -513,6 +542,7 @@ const Profile = () => {
                     </div>
                   )}
                 </div>
+                {/* National ID */}
                 <div style={{ flex: '1 1 calc(50% - 10px)' }}>
                   <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold' }}>National ID</label>
                   <input
@@ -528,6 +558,7 @@ const Profile = () => {
                     </div>
                   )}
                 </div>
+                {/* Date of Birth */}
                 <div style={{ flex: '1 1 calc(50% - 10px)' }}>
                   <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold' }}>Date of Birth</label>
                   <input
@@ -547,6 +578,7 @@ const Profile = () => {
               </div>
             </div>
           ) : (
+            // View mode: show user details
             <div className="profile-details" style={{ marginLeft: '40px' }}>
               <p className="user-username">
                 <User /> <strong>Username: </strong> {userData.username}
@@ -573,6 +605,7 @@ const Profile = () => {
           )}
         </div>
 
+        {/* Password settings section */}
         <div className="password-settings">
           <button
             className="change-password-button"
@@ -584,7 +617,7 @@ const Profile = () => {
         </div>
       </div>
 
-      {/* ===== Modal for Change Password ===== */}
+      {/* Modal for Change Password */}
       {isChangingPassword && (
         <div className="modal-overlay">
           <div className="modal-content">

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { FaEye, FaEdit, FaTrash } from "react-icons/fa"; 
-import Sidebar from "../../components/Sidebar";
+import Sidebar from "../../components/sidebar";
 import Header from "../../components/Header";
 import styles from './Admin.module.css'; // Updated for Admin
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -16,6 +16,7 @@ import logodash from "../../assets/PicturesAdmin/logoWhite.png";
 function Admin() {
   const [admins, setAdmins] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  // State for new admin form data
   const [newAdmin, setNewAdmin] = useState({
     username: '',
     firstName: '',
@@ -30,6 +31,7 @@ function Admin() {
     status: 'Active' // Default status
   });
 
+  // State for form validation errors
   const [validationErrors, setValidationErrors] = useState({
     username: '',
     firstName: '',
@@ -41,9 +43,10 @@ function Admin() {
     nationalId: '',
     address: '',
     password: ''
-    // Removed status from validation errors
+    
   });
   
+  // State for search input and selected column
   const [searchText, setSearchText] = useState("");
   const [searchColumn, setSearchColumn] = useState("");
   const [showViewModal, setShowViewModal] = useState(false); 
@@ -52,9 +55,10 @@ function Admin() {
   const [editedAdmin, setEditedAdmin] = useState({}); 
   const [showPrintModal, setShowPrintModal] = useState(false);
 
+  // Fetch admin data from API on component mount
   useEffect(() => {
     axios
-      .get('http://localhost:5000/api/admin')  // API endpoint for fetching admin data
+      .get('http://localhost:5000/api/admin') 
       .then((response) => {
         setAdmins(response.data);
       })
@@ -63,6 +67,7 @@ function Admin() {
       });
   }, []);
 
+  // format date as YYYY-MM-DD
   const formatDate = (dob) => {
     const date = new Date(dob);
     const year = date.getFullYear();
@@ -71,36 +76,42 @@ function Admin() {
     return `${year}-${month}-${day}`;
   };
 
+  // Handle change in search column dropdown
   const handleSearchColumnChange = (e) => {
     setSearchColumn(e.target.value);  
   };
   
+  // Handle change in search input
   const handleSearchChange = (e) => {
     setSearchText(e.target.value);  
   };
 
+  // Filter admins based on search input and column
   const filteredAdmins = admins.filter((admin) => {
     if (!searchText || !searchColumn) return true; 
     const value = admin[searchColumn]?.toString().toLowerCase(); 
     return value && value.includes(searchText.toLowerCase());
   });
 
- const adminFields = [
-  { label: "Username", name: "username", type: "text" },
-  { label: "First Name", name: "first_name", type: "text" },
-  { label: "Last Name", name: "last_name", type: "text" },
-  { label: "Email", name: "email", type: "email" },
-  { label: "Phone Number", name: "phonenum", type: "text" },
-  { label: "Date of Birth", name: "dob", type: "date" },
-  { label: "National ID", name: "natID", type: "text" },
-  { label: "Address", name: "address", type: "text" },
-  { label: "Status", name: "status", type: "select", options: ["Active", "Disable"] }
-];
+  // Field definitions for the EditModal
+  const adminFields = [
+    { label: "Username", name: "username", type: "text" },
+    { label: "First Name", name: "first_name", type: "text" },
+    { label: "Last Name", name: "last_name", type: "text" },
+    { label: "Email", name: "email", type: "email" },
+    { label: "Phone Number", name: "phonenum", type: "text" },
+    { label: "Date of Birth", name: "dob", type: "date" },
+    { label: "National ID", name: "natID", type: "text" },
+    { label: "Address", name: "address", type: "text" },
+    { label: "Status", name: "status", type: "select", options: ["Active", "Disable"] }
+  ];
 
+  // Show Add Admin modal
   const handleAddAdminClick = () => {
     setShowModal(true);
   };
 
+  // Close Add Admin modal and reset form
   const handleCloseModal = () => {
     // Reset the form data when modal is closed
     setNewAdmin({
@@ -109,12 +120,12 @@ function Admin() {
       lastName: '',
       email: '',
       phoneNum: '',
-      role: 'admin', // Keep the hardcoded role
+      role: 'admin', 
       dob: '',
       nationalId: '',
       address: '',
       password: '',
-      status: 'Active' // Keep the default status
+      status: 'Active' 
     });
     
     // Reset validation errors
@@ -135,6 +146,7 @@ function Admin() {
     setShowModal(false);
   };
 
+  // Handle input change for Add Admin form
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     // Skip updating role as it's hardcoded
@@ -146,6 +158,7 @@ function Admin() {
     }
   };
 
+  // Validate and save new admin
   const handleSaveNewAdmin = () => {
     let errors = {};
     
@@ -246,34 +259,38 @@ function Admin() {
     }
   };
 
+  // Show view modal for selected admin
   const handleViewAdmin = (admin) => {
     setSelectedAdmin(admin);
     setShowViewModal(true);
   };
 
+  // Close view modal
   const handleCloseViewModal = () => {
     setShowViewModal(false); 
   };
 
+  // Disable (soft-delete) admin by updating status to "Disable"
   const handleDeleteAdmin = (adminId) => {
-  axios
-    .delete(`http://localhost:5000/api/admin/${adminId}`)
-    .then((response) => {
-      // Instead of removing the admin from the list, update its status
-      setAdmins((prevAdmins) =>
-        prevAdmins.map((admin) => {
-          if (admin.userid === adminId) {
-            return { ...admin, status: "Disable" };
-          }
-          return admin;
-        })
-      );
-    })
-    .catch((error) => {
-      console.error("Error disabling admin:", error);
-    });
-};
+    axios
+      .delete(`http://localhost:5000/api/admin/${adminId}`)
+      .then((response) => {
+        
+        setAdmins((prevAdmins) =>
+          prevAdmins.map((admin) => {
+            if (admin.userid === adminId) {
+              return { ...admin, status: "Disable" };
+            }
+            return admin;
+          })
+        );
+      })
+      .catch((error) => {
+        console.error("Error disabling admin:", error);
+      });
+  };
 
+  // Show edit modal for selected admin (with formatted DOB)
   const handleEditAdmin = (admin) => {
     const formattedDob = admin.dob ? admin.dob.split('T')[0] : '';
     setSelectedAdmin(admin);
@@ -281,6 +298,7 @@ function Admin() {
     setShowEditModal(true);
   };
   
+  // Validate and save edited admin data
   const handleSaveEditAdmin = () => {
     // Validate the edited admin data
     let isValid = true;
@@ -355,6 +373,7 @@ function Admin() {
     }
     
     if (isValid) {
+      // Remove password and timestamps before sending update
       const { password, created_at, updated_at, ...adminData } = editedAdmin;
       axios
         .put(`http://localhost:5000/api/admin/${editedAdmin.userid}`, adminData)
@@ -370,6 +389,7 @@ function Admin() {
     }
   };
 
+  // Handle input change for Edit Admin modal
   const handleEditInputChange = (e) => {
     const { name, value } = e.target;
     if (name === "dob") {
@@ -385,15 +405,18 @@ function Admin() {
     }
   };
 
+  // Close Edit Admin modal
   const handleCloseEditModal = () => {
     setShowEditModal(false);
     setSelectedAdmin(null);
   };
 
+  // Show print modal for downloading PDF
   const handleDownloadPDF = () => {
     setShowPrintModal(true);
   };
 
+  // Main component render
   return (
     <div className={styles.AdminContainer} >
       <Sidebar />
@@ -403,7 +426,9 @@ function Admin() {
           <div className={styles.TopSection} >
             <h1 className="section-title" style={{ fontSize: '28px', fontWeight: 'bold' }}>Manage Admins</h1>
 
+            {/* Search and action buttons */}
             <div className={styles.SearchWrapper}>
+              {/* Search column dropdown */}
               <select
                 className="form-control"
                 value={searchColumn}
@@ -418,6 +443,7 @@ function Admin() {
                 <option value="natId">NationalID</option>
                 <option value="status">Status</option>
               </select>
+              {/* Search input */}
               <input
                 type="text"
                 className="form-control search-bar"
@@ -426,14 +452,17 @@ function Admin() {
                 placeholder={`Search by ${searchColumn}...`}
               />
               <div className={styles.BtnContainer}>
+                {/* Add Admin button */}
                 <button className="btn btn-primary" style={{ width: '150px', marginLeft:"10px" }} onClick={handleAddAdminClick}>
                   Add Admin
                 </button>
+                {/* Print button */}
                 <button className="btn btn-secondary" style={{ width: '150px', marginLeft:"10px" }} onClick={handleDownloadPDF}>Print</button>
               </div>
             </div>
           </div>
 
+          {/* Admins table */}
           <div className={styles.TableContainer}>
             <table className="table table-striped">
               <thead>
@@ -467,14 +496,17 @@ function Admin() {
                         </span>
                       </td>
                       <td>
+                        {/* View admin button */}
                         <FaEye
                           style={{ marginRight: "10px", cursor: "pointer", color: "#2770b4" }}
                           onClick={() => handleViewAdmin(admin)} 
                         />
+                        {/* Edit admin button */}
                         <FaEdit
                           style={{ marginRight: "10px", cursor: "pointer", color: "#f0ad4e" }}
                           onClick={() => handleEditAdmin(admin)} 
                         />
+                        {/* Delete admin button */}
                         <FaTrash
                           style={{ cursor: "pointer", color: "#d9534f" }}
                           onClick={() => handleDeleteAdmin(admin.userid)} 
@@ -492,6 +524,7 @@ function Admin() {
           </div>
         </div>
 
+        {/* Add Admin Modal */}
         <AddEntityModal
           showModal={showModal}
           handleClose={handleCloseModal}
@@ -508,13 +541,15 @@ function Admin() {
             { label: "Date of Birth", name: "dob", type: "date" },
             { label: "National ID", name: "nationalId", type: "text" },
             { label: "Address", name: "address", type: "text" },
-            { label: "Password", name: "password", type: "password" }
+            { label: "Password", name: "password", type: "password" },
+            
             // Status field removed from the form since it's hardcoded
           ]}
           handleInputChange={handleInputChange}
           validationErrors={validationErrors}
         />
 
+        {/* View Admin Modal */}
         <ViewModal
           showViewModal={showViewModal}
           selectedEntity={selectedAdmin}
@@ -535,6 +570,7 @@ function Admin() {
           ]}
         />
 
+        {/* Edit Admin Modal */}
         <EditModal
           showEditModal={showEditModal}
           entityData={editedAdmin}
@@ -545,6 +581,7 @@ function Admin() {
           handleEditInputChange={handleEditInputChange}
         />
 
+        {/* Print Modal */}
         <PrintModal
           show={showPrintModal}
           handleClose={() => setShowPrintModal(false)}

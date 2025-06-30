@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { FaCalendarAlt } from "react-icons/fa";
-import Sidebar from "../../components/Sidebar";
+import Sidebar from "../../components/sidebar";
 import Header from "../../components/Header";
 import styles from './Reports.module.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -10,20 +10,24 @@ import InventoryReport from "../../components/Reports/InventoryReport";
 
 function Reports() {
   const [reportType, setReportType] = useState("Sales Report");
+  // State for primary date range
   const [dateRange1, setDateRange1] = useState({
     startDate: "",
     endDate: ""
   });
+  // State for comparison date range
   const [dateRange2, setDateRange2] = useState({
     startDate: "",
     endDate: ""
   });
+  // State for comparison toggle
   const [isComparing, setIsComparing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  // State for current date (for inventory report)
   const [currentDate, setCurrentDate] = useState("");
   
-  // Report content filters for Sales Report
+  // State for Sales Report content filters
   const [salesReportFilters, setSalesReportFilters] = useState({
     includeSummary: true,
     includeProducts: true,
@@ -31,7 +35,7 @@ function Reports() {
     includeCharts: true
   });
   
-  // Report content filters for Customer Report
+  // State for Customer Report content filters
   const [customerReportFilters, setCustomerReportFilters] = useState({
     includeSummary: true,
     includeNewCustomers: true,
@@ -39,7 +43,7 @@ function Reports() {
     includeCharts: true
   });
   
-  // Report content filters for Inventory Report
+  // State for Inventory Report content filters
   const [inventoryReportFilters, setInventoryReportFilters] = useState({
     includeSummary: true,
     includeLowestStock: true,
@@ -55,10 +59,12 @@ function Reports() {
     setCurrentDate(formattedDate);
   }, []);
 
+  // Handle report type dropdown change
   const handleReportTypeChange = (e) => {
     setReportType(e.target.value);
   };
 
+  // Handle date change for primary or comparison date range
   const handleDateChange = (range, field, value) => {
     if (range === 1) {
       setDateRange1({
@@ -73,10 +79,12 @@ function Reports() {
     }
   };
 
+  // Toggle comparison checkbox
   const toggleComparison = () => {
     setIsComparing(!isComparing);
   };
 
+  // Toggle sales report content filter
   const handleSalesFilterChange = (filter) => {
     setSalesReportFilters(prev => ({
       ...prev,
@@ -84,6 +92,7 @@ function Reports() {
     }));
   };
   
+  // Toggle customer report content filter
   const handleCustomerFilterChange = (filter) => {
     setCustomerReportFilters(prev => ({
       ...prev,
@@ -91,6 +100,7 @@ function Reports() {
     }));
   };
   
+  // Toggle inventory report content filter
   const handleInventoryFilterChange = (filter) => {
     setInventoryReportFilters(prev => ({
       ...prev,
@@ -98,27 +108,24 @@ function Reports() {
     }));
   };
 
+  // Validate report input fields
   const validateInputs = () => {
     if (!reportType) {
       setError("Please select a report type");
       return false;
     }
-    
-    // For inventory report, we don't need to validate date ranges
+    // For inventory report, date range is not required
     if (reportType === "Inventory Report") {
       return true;
     }
-    
     if (!dateRange1.startDate || !dateRange1.endDate) {
       setError("Please select both start and end dates for the primary date range");
       return false;
     }
-    
     if (isComparing && (!dateRange2.startDate || !dateRange2.endDate)) {
       setError("Please select both start and end dates for the comparison date range");
       return false;
     }
-
     return true;
   };
 
@@ -170,14 +177,14 @@ function Reports() {
     }
   };
 
-  // Determine if date range selection should be shown
+  // Show date range selection for all except Inventory Report
   const showDateRangeSelection = reportType !== "Inventory Report";
-  
-  // Determine if content filters should be shown and which ones
+  // Show content filters depending on report type
   const showSalesContentFilters = reportType === "Sales Report";
   const showCustomerContentFilters = reportType === "Customer Report";
   const showInventoryContentFilters = reportType === "Inventory Report";
 
+  // Main render
   return (
     <div className={styles.ReportsContainer}>
       <Sidebar />
@@ -187,6 +194,7 @@ function Reports() {
           <div className={styles.TopSection}>
             <h1 className="section-title" style={{ fontSize: '28px', fontWeight: 'bold' }}>Generate Reports</h1>
             
+            {/* Report type and comparison toggle */}
             <div className={styles.ReportControls}>
               <div className={styles.ReportTypeSection}>
                 <label htmlFor="reportType">Report Type</label>
@@ -217,6 +225,7 @@ function Reports() {
             </div>
           </div>
 
+          {/* Date range selection */}
           {showDateRangeSelection ? (
             <div className={styles.DateRangeSection}>
               <div className={styles.DateRangeContainer}>
@@ -246,7 +255,7 @@ function Reports() {
                   </div>
                 </div>
               </div>
-
+              {/* Comparison date range selection */}
               {isComparing && (
                 <div className={styles.DateRangeContainer}>
                   <h3>Comparison Date Range</h3>
@@ -280,6 +289,7 @@ function Reports() {
               )}
             </div>
           ) : (
+            // Inventory Report: show current date only
             <div className={styles.DateRangeSection}>
               <div className={styles.DateRangeContainer}>
                 <h3>Current Date</h3>
@@ -479,12 +489,14 @@ function Reports() {
             </div>
           )}
 
+          {/* Error message display */}
           {error && (
             <div className={styles.ErrorMessage}>
               <p>{error}</p>
             </div>
           )}
 
+          {/* Render the selected report */}
           {renderReportComponent()}
         </div>
       </div>

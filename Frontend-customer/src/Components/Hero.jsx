@@ -69,7 +69,7 @@ const Hero = () => {
           <h1 className="text-[60px] font-bold mb-6 ">Welcome to Prince Lanka</h1>
           <p className="text-[23px] mb-8">Your Partner in Sustainable Agriculture</p>
 
-          {/* Simplified Search Bar */}
+          {/*Search Bar */}
           <div className="w-[1000px] max-w-2xl mx-auto mb-12 mt-[50px] align-middle">
             <form onSubmit={handleSearch}>
               <div 

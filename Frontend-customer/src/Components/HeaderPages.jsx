@@ -130,7 +130,7 @@ const HeaderPages = () => {
             <div className="flex items-center">
               <div className="flex items-center cursor-pointer" onClick={toggleCart}>
                 <ShoppingBag className="mr-[10px] h-6 w-6 text-gray-600" />
-                <span className="text-gray-600">Cart (0)</span>
+                <span className="text-gray-600">Cart</span>
               </div>
 
               <div className="ml-[20px]">

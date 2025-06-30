@@ -13,17 +13,17 @@ const PrintModal = ({
   filename = "report.pdf",
   reportTitle = "Report"
 }) => {
-  // State: which fields are selected for printing
+  //which fields are selected for printing
   const [selectedFields, setSelectedFields] = useState(fields.map(f => f.field));
-  // State: date range for filtering
+  //  date range for filtering
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  // State: filtered data
+  //filtered data to be printed
   const [filteredData, setFilteredData] = useState(data);
-  // State: logo image
+  //logo image for PDF header
   const [logoImage, setLogoImage] = useState(null);
 
-  // Load logo image
+  // Load logo image for PDF
   useEffect(() => {
     const img = new Image();
     img.src = logodash;
@@ -32,7 +32,7 @@ const PrintModal = ({
     };
   }, []);
 
-  // Reset selection and dates when modal opens or fields/data change
+  // Reset field selection and date range when modal opens or fields/data change
   useEffect(() => {
     if (show) {
       setSelectedFields(fields.map(f => f.field));
@@ -42,7 +42,7 @@ const PrintModal = ({
     }
   }, [show, fields, data]);
 
-  // Filter data when date range changes
+  // Filter data by date range when startDate or endDate changes
   useEffect(() => {
     if (!startDate && !endDate) {
       setFilteredData(data);
@@ -66,7 +66,7 @@ const PrintModal = ({
     setFilteredData(filtered);
   }, [startDate, endDate, data]);
 
-  // Toggle field selection
+  // Toggle field selection for printing
   const handleFieldChange = (field) => {
     setSelectedFields(prev =>
       prev.includes(field)
@@ -75,7 +75,7 @@ const PrintModal = ({
     );
   };
 
-  // Generate and download PDF
+  // Generate and download PDF report
   const handlePrint = () => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.width;
@@ -130,8 +130,8 @@ const PrintModal = ({
       headStyles: { fillColor: [39, 112, 180], textColor: 255, halign: 'center' },
       alternateRowStyles: { fillColor: [240, 240, 240] },
       didDrawPage: function(data) {
-        // Add footer on each page
-        // Page number on bottom left
+        // Add footer on each page and page number
+        
         doc.setFontSize(10);
         doc.setTextColor(100, 100, 100);
         doc.text(`Page ${doc.internal.getNumberOfPages()}`, 14, pageHeight - 10);

@@ -13,9 +13,13 @@ import { jsPDF } from "jspdf";
 import 'jspdf-autotable';  // This is an additional library to handle tables in PDFs
 import logodash from "../../assets/PicturesAdmin/logoWhite.png";
 
+// Transaction management component
 function Transaction() {
+  // State for all transactions
   const [transactions, setTransactions] = useState([]);
+  // State for Add Transaction modal visibility
   const [showModal, setShowModal] = useState(false);
+  // State for new transaction form data
   const [newTransaction, setNewTransaction] = useState({
     order_id: '',
     customer_id: '',
@@ -24,6 +28,7 @@ function Transaction() {
     status: ''
   });
 
+  // State for validation errors in add form
   const [validationErrors, setValidationErrors] = useState({
     order_id: '',
     customer_id: '',
@@ -32,15 +37,19 @@ function Transaction() {
     status: ''
   });
   
+  // State for search input and column
   const [searchText, setSearchText] = useState("");
   const [searchColumn, setSearchColumn] = useState("");
+  // State for view modal and selected transaction
   const [showViewModal, setShowViewModal] = useState(false); 
   const [selectedTransaction, setSelectedTransaction] = useState(null); 
+  // State for edit modal and edited transaction
   const [showEditModal, setShowEditModal] = useState(false); 
   const [editedTransaction, setEditedTransaction] = useState({}); 
-  
+  // State for print modal
   const [showPrintModal, setShowPrintModal] = useState(false);
 
+  // Fetch all transactions from backend on mount
   useEffect(() => {
     axios
       .get('http://localhost:5000/api/transactions')
@@ -52,6 +61,7 @@ function Transaction() {
       });
   }, []);
 
+  // Format date as YYYY-MM-DD for display
   const formatDate = (date) => {
     const formattedDate = new Date(date);
     const year = formattedDate.getFullYear();
@@ -60,20 +70,24 @@ function Transaction() {
     return `${year}-${month}-${day}`;
   };
   
+  // Handle search column dropdown change
   const handleSearchColumnChange = (e) => {
     setSearchColumn(e.target.value);  
   };
   
+  // Handle search input change
   const handleSearchChange = (e) => {
     setSearchText(e.target.value);  
   };
   
+  // Filter transactions based on search input and column
   const filteredTransactions = transactions.filter((trans) => {
     if (!searchText || !searchColumn) return true; 
     const value = trans[searchColumn]?.toString().toLowerCase(); 
     return value && value.includes(searchText.toLowerCase());
   });
 
+  // Field definitions for EditModal
   const transactionFields = [
     { label: "Transaction ID", name: "transaction_id", type: "text" },
     { label: "Order ID", name: "order_id", type: "text" },
@@ -84,14 +98,17 @@ function Transaction() {
     { label: "Created At", name: "created_at", type: "text" }
   ];
 
+  // Show Add Transaction modal
   const handleAddTransactionClick = () => {
     setShowModal(true);
   };
 
+  // Close Add Transaction modal
   const handleCloseModal = () => {
     setShowModal(false);
   };
 
+  // Handle input change in Add Transaction form
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewTransaction({
@@ -100,6 +117,7 @@ function Transaction() {
     });
   };
 
+  // Validate and save new transaction to backend
   const handleSaveNewTransaction = () => {
     let errors = {};
     if (!newTransaction.order_id) {
@@ -133,15 +151,18 @@ function Transaction() {
     }
   };
 
+  // Show view modal for selected transaction
   const handleViewTransaction = (transaction) => {
     setSelectedTransaction(transaction);
     setShowViewModal(true);
   };
 
+  // Close view modal
   const handleCloseViewModal = () => {
     setShowViewModal(false); 
   };
 
+  // Delete transaction by ID
   const handleDeleteTransaction = (transactionId) => {
     axios
       .delete(`http://localhost:5000/api/transactions/${transactionId}`)
@@ -155,12 +176,14 @@ function Transaction() {
       });
   };
 
+  // Show edit modal for selected transaction
   const handleEditTransaction = (transaction) => {
     setSelectedTransaction(transaction);
     setEditedTransaction({ ...transaction });
     setShowEditModal(true);
   };
   
+  // Validate and save edited transaction to backend
   const handleSaveEditTransaction = () => {
     const { created_at, ...transactionData } = editedTransaction;
     axios
@@ -176,6 +199,7 @@ function Transaction() {
       });
   };
 
+  // Handle input change in Edit Transaction modal
   const handleEditInputChange = (e) => {
     const { name, value } = e.target;
     setEditedTransaction((prev) => ({
@@ -184,15 +208,18 @@ function Transaction() {
     }));
   };
 
+  // Close edit modal and reset selected transaction
   const handleCloseEditModal = () => {
     setShowEditModal(false);
     setSelectedTransaction(null);
   };
 
+  // Show print modal for downloading PDF
   const handleDownloadPDF = () => {
     setShowPrintModal(true);
   };
 
+  // Main render
   return (
     <div className={styles.ManageEmployeeContainer}>
       <Sidebar />
@@ -200,9 +227,11 @@ function Transaction() {
         <Header />
         <div className={styles.InnerContainer} style={{ marginLeft: "10px", width: "100%" }}>
           <div className={styles.TopSection}>
-          <h1 className="section-title" style={{ fontSize: '28px', fontWeight: 'bold' }}>Manage Transactions</h1>
+            <h1 className="section-title" style={{ fontSize: '28px', fontWeight: 'bold' }}>Manage Transactions</h1>
 
+            {/* Search and action controls */}
             <div className={styles.SearchWrapper}>
+              {/* Search column dropdown */}
               <select
                 className="form-control"
                 value={searchColumn}
@@ -211,11 +240,10 @@ function Transaction() {
               >
                 <option value="transaction_id">Transaction ID</option>
                 <option value="order_id">Order ID</option>
-                
                 <option value="amount_paid">Amount</option>
-               
                 <option value="status">Status</option>
               </select>
+              {/* Search input */}
               <input
                 type="text"
                 className="form-control search-bar"
@@ -224,23 +252,24 @@ function Transaction() {
                 placeholder={`Search by ${searchColumn}...`}
               />
               <div className={styles.BtnContainer}>
+                {/* Add Transaction button */}
                 <button className="btn btn-primary" style={{ width: '150px', marginLeft:"10px" }} onClick={handleAddTransactionClick}>
                   Add Transaction
                 </button>
+                {/* Print button */}
                 <button className="btn btn-secondary" onClick={handleDownloadPDF} style={{ width: '150px', marginLeft:"10px" }}>Print</button>
               </div>
             </div>
           </div>
 
+          {/* Transactions table */}
           <div className={styles.TableContainer}>
             <table className="table table-striped">
               <thead>
                 <tr>
                   <th>TRANSACTION ID</th>
                   <th>ORDER ID</th>
-                 
                   <th>AMOUNT</th>
-                  
                   <th>STATUS</th>
                   <th>Actions</th>
                 </tr>
@@ -251,19 +280,20 @@ function Transaction() {
                     <tr key={trans.transaction_id}>
                       <td>{trans.transaction_id}</td>
                       <td>{trans.order_id}</td>
-                      
                       <td>{trans.amount_paid}</td>
-                      
                       <td>{trans.status}</td>
                       <td>
+                        {/* View transaction button */}
                         <FaEye
                           style={{ marginRight: "10px", cursor: "pointer", color: "#2770b4" }}
                           onClick={() => handleViewTransaction(trans)} 
                         />
+                        {/* Edit transaction button */}
                         <FaEdit
                           style={{ marginRight: "10px", cursor: "pointer", color: "#f0ad4e" }}
                           onClick={() => handleEditTransaction(trans)} 
                         />
+                        {/* Delete transaction button */}
                         <FaTrash
                           style={{ cursor: "pointer", color: "#d9534f" }}
                           onClick={() => handleDeleteTransaction(trans.transaction_id)} 
@@ -281,7 +311,7 @@ function Transaction() {
           </div>
         </div>
 
-       
+        {/* Add Transaction Modal */}
         <AddEntityModal
           showModal={showModal}
           handleClose={handleCloseModal}
@@ -299,6 +329,7 @@ function Transaction() {
           validationErrors={validationErrors}
         />
 
+        {/* View Modal for transaction details */}
         <ViewModal
           showViewModal={showViewModal}
           selectedEntity={selectedTransaction}
@@ -315,6 +346,7 @@ function Transaction() {
           ]}
         />
 
+        {/* Edit Modal for transaction */}
         <EditModal
           showEditModal={showEditModal}
           entityData={editedTransaction}
@@ -325,6 +357,7 @@ function Transaction() {
           handleEditInputChange={handleEditInputChange}
         />
 
+        {/* Print Modal for transactions */}
         <PrintModal
           show={showPrintModal}
           handleClose={() => setShowPrintModal(false)}
@@ -333,9 +366,7 @@ function Transaction() {
           fields={[
             { label: "Transaction ID", field: "transaction_id" },
             { label: "Order ID", field: "order_id" },
-            
             { label: "Amount Paid", field: "amount_paid" },
-           
             { label: "Status", field: "status" },
             { label: "Created At", field: "created_at", format: (date) => date ? new Date(date).toLocaleDateString() : "" }
           ]}

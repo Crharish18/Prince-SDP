@@ -7,11 +7,14 @@ import ShopImage3 from '../assets/ShopImage3.jpeg';
 import Mahes from '../assets/Mahes.jpeg';
 import Suren from '../assets/Suren.jpeg';
 
+// About page component for Prince Lanka
 const About = () => {
   return (
     <div className="pt-16">
+      {/* Header component */}
       <HeaderPages />
-      {/* Hero Section */}
+      
+      {/* Hero Section with background image and overlay */}
       <div className="relative h-[400px]">
         <img
           src="https://www.thecolombopost.org/wp-content/uploads/2021/08/fertilizer-@.jpg"
@@ -32,7 +35,7 @@ const About = () => {
           </p>
         </div>
 
-        {/* Team Section */}
+        {/* Team Section with owner profiles */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
           {[
             {
@@ -60,7 +63,7 @@ const About = () => {
           })}
         </div>
 
-        {/* Shop Photos */}
+        {/* Shop Photos Section */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <img
             src={ShopImage2}
@@ -79,6 +82,8 @@ const About = () => {
           />
         </div>
       </div>
+      
+      {/* Footer component */}
       <Footer />
     </div>
   );

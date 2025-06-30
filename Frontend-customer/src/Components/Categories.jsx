@@ -28,12 +28,6 @@ const ProductCategories = () => {
   // Function to choose icons based on category name
   const getIcon = (categoryName) => {
     switch (categoryName) {
-      case 'Seeds':
-        return <Scaling className="h-16 w-16 text-green-500" />;
-      case 'Machinery':
-        return <Tractor className="h-16 w-16 text-green-500" />;
-      case 'Supplies':
-        return <ShoppingBag className="h-16 w-16 text-green-500" />;
       default:
         return <ShoppingBag className="h-16 w-16 text-green-500" />;
     }
@@ -51,7 +45,7 @@ const ProductCategories = () => {
               </div>
               <h3 className="text-xl font-semibold mb-2">{category_name}</h3>
               
-              <button className="text-green-500 font-semibold hover:text-green-600">View More</button>
+              <div className="text-green-500 font-semibold hover:text-green-600">Category </div>
             </div>
           ))}
         </div>

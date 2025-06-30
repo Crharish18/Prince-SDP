@@ -1,27 +1,32 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './profile.css';
 import Header from '../../components/Header';
-import Sidebar from '../../components/Sidebar';
+import Sidebar from '../../components/sidebar';
 import { Mail, Phone, Building, MapPin, Lock, X, User, IdCard, Calendar, UserCircle, Upload } from 'lucide-react';
 import axios from 'axios';
 
+
 const Profile = () => {
   const [userData, setUserData] = useState(null);
+  // State to toggle edit mode
   const [isEditing, setIsEditing] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  // State for password form fields
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   });
+  // State for password error/success messages
   const [passwordError, setPasswordError] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState('');
   const [profilePhoto, setProfilePhoto] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
+  // Ref for file input (profile photo)
   const fileInputRef = useRef(null);
-
   const [formData, setFormData] = useState({});
   const [originalFormData, setOriginalFormData] = useState({});
+  // State for validation errors on fields
   const [validationErrors, setValidationErrors] = useState({});
 
   // Initialize form data when userData is loaded
@@ -36,10 +41,8 @@ const Profile = () => {
         natID: userData.natID || '',
         dob: userData.dob ? new Date(userData.dob).toISOString().split('T')[0] : ''
       };
-      
       setFormData(initialData);
       setOriginalFormData(initialData);
-      
       // Set profile photo from user data
       if (userData.profile_picture_path) {
         setProfilePhoto(userData.profile_picture_path);
@@ -47,9 +50,9 @@ const Profile = () => {
     }
   }, [userData]);
 
+  // Field validation for profile form
   const validateField = (name, value) => {
     let error = '';
-    
     switch (name) {
       case 'first_name':
       case 'last_name':
@@ -59,7 +62,6 @@ const Profile = () => {
           error = `${name === 'first_name' ? 'First' : 'Last'} name can only contain letters and spaces.`;
         }
         break;
-      
       case 'email':
         if (!value) {
           error = 'Email is required.';
@@ -67,7 +69,6 @@ const Profile = () => {
           error = 'Please enter a valid email address.';
         }
         break;
-      
       case 'phonenum':
         if (!value) {
           error = 'Phone number is required.';
@@ -75,13 +76,11 @@ const Profile = () => {
           error = 'Phone number must be exactly 10 digits.';
         }
         break;
-      
       case 'address':
         if (!value || value.trim().length < 5) {
           error = 'Address must be at least 5 characters long.';
         }
         break;
-      
       case 'natID':
         if (!value) {
           error = 'National ID is required.';
@@ -91,34 +90,30 @@ const Profile = () => {
           error = 'National ID should not contain symbols.';
         }
         break;
-      
       case 'dob':
         if (!value) {
           error = 'Date of Birth is required.';
         } else {
           const selectedDate = new Date(value);
           const today = new Date();
-          
           if (selectedDate >= today) {
             error = 'Date of Birth must be in the past.';
           }
         }
         break;
-      
       default:
         break;
     }
-    
     return error;
   };
 
+  // Handle input change in profile edit form
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({
       ...formData,
       [name]: value
     });
-    
     // Validate the field
     const error = validateField(name, value);
     setValidationErrors({
@@ -127,15 +122,13 @@ const Profile = () => {
     });
   };
 
-  // Fetch the user profile data
+  // Fetch the user profile data from backend
   useEffect(() => {
     const token = localStorage.getItem('token');
-
     if (!token) {
       console.log("No token found. Please log in again.");
       return;
     }
-
     axios.get('http://localhost:5000/api/auth/profile', {
       headers: { Authorization: `Bearer ${token}` },
     })
@@ -147,57 +140,53 @@ const Profile = () => {
       });
   }, []);
 
+  // Handle edit button click
   const handleEditClick = () => {
     setIsEditing(true);
-    // Clear validation errors when starting to edit
     setValidationErrors({});
   };
 
+  // Handle cancel edit (reset fields)
   const handleCancelEdit = () => {
-    // Reset form data to original values
     setFormData(originalFormData);
-    // If profile photo was changed but not saved, revert to original
     if (userData && userData.profile_picture_path) {
       setProfilePhoto(userData.profile_picture_path);
     }
     setIsEditing(false);
-    // Clear validation errors
     setValidationErrors({});
   };
 
+  // Toggle change password modal
   const handleChangePasswordClick = () => {
     setIsChangingPassword(!isChangingPassword);
   };
 
+  // Handle profile picture click (open file dialog)
   const handleProfilePictureClick = () => {
     if (isEditing) {
       fileInputRef.current.click();
     }
   };
 
+  // Handle profile photo file change and upload
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
     // Validate file type
     const validTypes = ["image/jpeg", "image/png", "image/gif"];
     if (!validTypes.includes(file.type)) {
       alert("Please upload a valid image (JPEG, PNG, GIF).");
       return;
     }
-
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       alert("Image size must be less than 5MB.");
       return;
     }
-
     setIsUploading(true);
-
     try {
       const formData = new FormData();
       formData.append('profileImage', file);
-
       const token = localStorage.getItem('token');
       const response = await axios.post(
         'http://localhost:5000/api/auth/upload-profile-picture',
@@ -223,51 +212,45 @@ const Profile = () => {
     }
   };
 
+  // Show loading message if user data not loaded
   if (!userData) {
     return <div>Loading...</div>;
   }
 
+  // Format date for display as DD-MM-YYYY
   const formatDateForDisplay = (dateString) => {
     if (!dateString) return '';
-    
     const date = new Date(dateString);
-    // Format as DD-MM-YYYY
     return `${date.getDate().toString().padStart(2, '0')}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getFullYear()}`;
   };
   
+  // Validate all fields in the form
   const validateForm = () => {
     const errors = {};
-    
-    // Validate all fields
     Object.keys(formData).forEach(field => {
       const error = validateField(field, formData[field]);
       if (error) {
         errors[field] = error;
       }
     });
-    
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
   
+  // Handle save profile button click (validate and update)
   const handleSaveProfile = () => {
     if (!isEditing) return;
-    
-    // Validate all fields before saving
     if (!validateForm()) {
       alert('Please fix the validation errors before saving.');
       return;
     }
-    
     const token = localStorage.getItem('token');
-    
     axios.put('http://localhost:5000/api/auth/profile', formData, {
       headers: { Authorization: `Bearer ${token}` }
     })
       .then(response => {
         setUserData(response.data);
         setIsEditing(false);
-        // Update original form data after successful save
         setOriginalFormData(formData);
         alert('Profile updated successfully!');
       })
@@ -277,11 +260,13 @@ const Profile = () => {
       });
   };
 
+  // Handle password input change in modal
   const handlePasswordInputChange = (e) => {
     const { name, value } = e.target;
     setPasswordForm({ ...passwordForm, [name]: value });
   };
 
+  // Handle update password form submit
   const handleUpdatePassword = (e) => {
     e.preventDefault();
     setPasswordError('');
@@ -301,6 +286,7 @@ const Profile = () => {
   
   return (
     <div>
+      {/* Header and Sidebar */}
       <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', zIndex: 100 }}>
         <Header />
       </div>
@@ -309,7 +295,7 @@ const Profile = () => {
       </div>
       
       <div className="profile-container" style={{ marginTop: '80px' }}>
-        {/* Profile Header */}
+        {/* Profile Header with edit/save/cancel buttons */}
         <div className="profile-header">
           <h2>Profile Settings</h2>
           <div style={{ display: 'flex', gap: '10px' }}>
@@ -344,6 +330,7 @@ const Profile = () => {
 
         {/* Profile Information Section */}
         <div className="profile-info">
+          {/* Profile photo and upload */}
           <div 
             className="profile-image" 
             style={{ 
@@ -432,11 +419,11 @@ const Profile = () => {
               onChange={handleFileChange}
             />
           </div>
-
           {/* Toggle between view mode and edit mode */}
           {isEditing ? (
             <div className="profile-edit" style={{ marginLeft: '20px', width: '100%' }}>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
+                {/* First Name */}
                 <div style={{ flex: '1 1 calc(50% - 10px)' }}>
                   <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold' }}>First Name</label>
                   <input
@@ -452,6 +439,7 @@ const Profile = () => {
                     </div>
                   )}
                 </div>
+                {/* Last Name */}
                 <div style={{ flex: '1 1 calc(50% - 10px)' }}>
                   <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold' }}>Last Name</label>
                   <input
@@ -467,6 +455,7 @@ const Profile = () => {
                     </div>
                   )}
                 </div>
+                {/* Email */}
                 <div style={{ flex: '1 1 calc(50% - 10px)' }}>
                   <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold' }}>Email</label>
                   <input
@@ -482,6 +471,7 @@ const Profile = () => {
                     </div>
                   )}
                 </div>
+                {/* Phone Number */}
                 <div style={{ flex: '1 1 calc(50% - 10px)' }}>
                   <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold' }}>Phone Number</label>
                   <input
@@ -497,7 +487,7 @@ const Profile = () => {
                     </div>
                   )}
                 </div>
-
+                {/* Address */}
                 <div style={{ flex: '1 1 calc(50% - 10px)' }}>
                   <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold' }}>Address</label>
                   <input
@@ -513,6 +503,7 @@ const Profile = () => {
                     </div>
                   )}
                 </div>
+                {/* National ID */}
                 <div style={{ flex: '1 1 calc(50% - 10px)' }}>
                   <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold' }}>National ID</label>
                   <input
@@ -528,6 +519,7 @@ const Profile = () => {
                     </div>
                   )}
                 </div>
+                {/* Date of Birth */}
                 <div style={{ flex: '1 1 calc(50% - 10px)' }}>
                   <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold' }}>Date of Birth</label>
                   <input
@@ -547,6 +539,7 @@ const Profile = () => {
               </div>
             </div>
           ) : (
+            // View mode: show user details
             <div className="profile-details" style={{ marginLeft: '40px' }}>
               <p className="user-username">
                 <User /> <strong>Username: </strong> {userData.username}
@@ -573,6 +566,7 @@ const Profile = () => {
           )}
         </div>
 
+        {/* Password settings section */}
         <div className="password-settings">
           <button
             className="change-password-button"
@@ -584,7 +578,7 @@ const Profile = () => {
         </div>
       </div>
 
-      {/* ===== Modal for Change Password ===== */}
+      {/* Modal for Change Password */}
       {isChangingPassword && (
         <div className="modal-overlay">
           <div className="modal-content">

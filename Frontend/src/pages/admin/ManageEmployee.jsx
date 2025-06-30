@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { FaEye, FaEdit, FaTrash } from "react-icons/fa"; 
-import Sidebar from "../../components/Sidebar";
+import Sidebar from "../../components/sidebar";
 import Header from "../../components/Header";
 import styles from './ManageEmployee.module.css'; // Import as CSS module
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -17,6 +17,7 @@ import logodash from "../../assets/PicturesAdmin/logoWhite.png";
 function ManageEmployee() {
   const [employees, setEmployees] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  // State for new employee form data
   const [newEmployee, setNewEmployee] = useState({
     username: '',
     firstName: '',
@@ -30,6 +31,7 @@ function ManageEmployee() {
     password: '' 
   });
 
+  // State for validation errors in add form
   const [validationErrors, setValidationErrors] = useState({
     username: '',
     firstName: '',
@@ -43,15 +45,16 @@ function ManageEmployee() {
     password: ''
   });
   
+  // State for search input and column
   const [searchText, setSearchText] = useState("");
   const [searchColumn, setSearchColumn] = useState("");
   const [showViewModal, setShowViewModal] = useState(false); 
   const [selectedEmployee, setSelectedEmployee] = useState(null); 
+  // State for showing edit modal and edited employee
   const [showEditModal, setShowEditModal] = useState(false); 
   const [editedEmployee, setEditedEmployee] = useState({}); 
-  
+  // State for showing print modal
   const [showPrintModal, setShowPrintModal] = useState(false);
-
 
   useEffect(() => {
     axios
@@ -64,6 +67,7 @@ function ManageEmployee() {
       });
   }, []);
 
+  // Format date as YYYY-MM-DD
   const formatDate = (dob) => {
     const date = new Date(dob);
     const year = date.getFullYear();
@@ -72,20 +76,24 @@ function ManageEmployee() {
     return `${year}-${month}-${day}`;
   };
   
+  // Handle search column dropdown change
   const handleSearchColumnChange = (e) => {
     setSearchColumn(e.target.value);  
   };
   
+  // Handle search input change
   const handleSearchChange = (e) => {
     setSearchText(e.target.value);  
   };
   
+  // Filter employees based on search input and column
   const filteredEmployees = employees.filter((emp) => {
     if (!searchText || !searchColumn) return true; 
     const value = emp[searchColumn]?.toString().toLowerCase(); 
     return value && value.includes(searchText.toLowerCase());
   });
 
+  // Field definitions for EditModal
   const employeeFields = [
     { label: "Username", name: "username", type: "text" },
     { label: "First Name", name: "first_name", type: "text" },
@@ -98,12 +106,13 @@ function ManageEmployee() {
     { label: "Status", name: "status", type: "select", options: ["Active", "Disable"] }
   ];
 
+  // Show Add Employee modal
   const handleAddEmployeeClick = () => {
     setShowModal(true);
   };
 
+  // Close Add Employee modal and reset form
   const handleCloseModal = () => {
-    // Reset the form data when modal is closed
     setNewEmployee({
       username: '',
       firstName: '',
@@ -116,8 +125,6 @@ function ManageEmployee() {
       address: '',
       password: ''
     });
-    
-    // Reset validation errors
     setValidationErrors({
       username: '',
       firstName: '',
@@ -130,11 +137,10 @@ function ManageEmployee() {
       address: '',
       password: ''
     });
-    
-    // Close the modal
     setShowModal(false);
   };
 
+  // Handle input change in Add Employee form
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     // Skip updating role as it's hardcoded
@@ -146,69 +152,59 @@ function ManageEmployee() {
     }
   };
 
+  // Validate and save new employee to backend
   const handleSaveNewEmployee = () => {
     let errors = {};
-    
-    // Username validation: more than 4 characters and no symbols
+    // Username validation
     if (!newEmployee.username || newEmployee.username.length < 4) {
       errors.username = "Username must be at least 4 characters long.";
     } else if (!/^[a-zA-Z0-9]+$/.test(newEmployee.username)) {
       errors.username = "Username can only contain letters and numbers, no symbols.";
     }
-    
-    // First name validation: only letters and more than 4 letters
+    // First name validation
     if (!newEmployee.firstName || newEmployee.firstName.length < 4) {
       errors.firstName = "First name must be at least 4 characters long.";
     } else if (!/^[A-Za-z]+$/.test(newEmployee.firstName)) {
       errors.firstName = "First name should contain only letters.";
     }
-    
-    // Last name validation: only letters and more than 4 letters
+    // Last name validation
     if (!newEmployee.lastName || newEmployee.lastName.length < 4) {
       errors.lastName = "Last name must be at least 4 characters long.";
     } else if (!/^[A-Za-z]+$/.test(newEmployee.lastName)) {
       errors.lastName = "Last name should contain only letters.";
     }
-    
-    // Email validation: valid email format
+    // Email validation
     if (!newEmployee.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmployee.email)) {
       errors.email = "Invalid email address.";
     }
-    
-    // Phone number validation: exactly 10 digits
+    // Phone number validation
     if (!newEmployee.phoneNum || !/^\d{10}$/.test(newEmployee.phoneNum)) {
       errors.phoneNum = "Phone number must be exactly 10 digits.";
     }
-    
-    // Date of Birth validation - must be in the past
+    // Date of Birth validation
     if (!newEmployee.dob) {
       errors.dob = "Date of Birth is required.";
     } else {
       const dobDate = new Date(newEmployee.dob);
       const currentDate = new Date();
-      
       if (isNaN(dobDate)) {
         errors.dob = "Invalid date format.";
       } else if (dobDate >= currentDate) {
         errors.dob = "Date of Birth must be in the past.";
       }
     }
-    
-    // National ID validation: between 10 to 12 digits
+    // National ID validation
     if (!newEmployee.nationalId || !/^\d{10,12}$/.test(newEmployee.nationalId)) {
       errors.nationalId = "National ID must be between 10 to 12 digits.";
     }
-    
-    // Address validation: more than 5 characters
+    // Address validation
     if (!newEmployee.address || newEmployee.address.length < 5) {
       errors.address = "Address must be at least 5 characters long.";
     }
-    
-    // Password validation: more than 8 characters
+    // Password validation
     if (!newEmployee.password || newEmployee.password.length < 8) {
       errors.password = "Password must be at least 8 characters long.";
     }
-  
     setValidationErrors(errors);
 
     if (Object.keys(errors).length === 0) {
@@ -218,14 +214,11 @@ function ManageEmployee() {
         role: 'employee',
         status: 'Active' // Set default status to Active
       };
-      
       axios
         .post("http://localhost:5000/api/employees", employeeData)
         .then((response) => {
           setEmployees([...employees, response.data]);
           setShowModal(false);
-          
-          // Reset form after successful save
           setNewEmployee({
             username: '',
             firstName: '',
@@ -245,15 +238,18 @@ function ManageEmployee() {
     }
   };
 
+  // Show view modal for selected employee
   const handleViewEmployee = (employee) => {
     setSelectedEmployee(employee);
     setShowViewModal(true);
   };
 
+  // Close view modal
   const handleCloseViewModal = () => {
     setShowViewModal(false); 
   };
 
+  // Delete employee by ID
   const handleDeleteEmployee = (employeeId) => {
     axios
       .delete(`http://localhost:5000/api/employees/${employeeId}`)
@@ -267,6 +263,7 @@ function ManageEmployee() {
       });
   };
 
+  // Show edit modal for selected employee (with formatted DOB)
   const handleEditEmployee = (employee) => {
     const formattedDob = employee.dob ? employee.dob.split('T')[0] : '';
     setSelectedEmployee(employee);
@@ -274,46 +271,40 @@ function ManageEmployee() {
     setShowEditModal(true);
   };
   
+  // Validate and save edited employee to backend
   const handleSaveEditEmployee = () => {
-    // Validate the edited employee data
     let isValid = true;
-    
-    // Username validation: more than 4 characters and no symbols
+    // Username validation
     if (!editedEmployee.username || editedEmployee.username.length < 4 || !/^[a-zA-Z0-9]+$/.test(editedEmployee.username)) {
       isValid = false;
       alert("Username must be at least 4 characters long and contain only letters and numbers.");
       return;
     }
-    
-    // First name validation: only letters and more than 4 letters
+    // First name validation
     if (!editedEmployee.first_name || editedEmployee.first_name.length < 4 || !/^[A-Za-z]+$/.test(editedEmployee.first_name)) {
       isValid = false;
       alert("First name must be at least 4 characters long and contain only letters.");
       return;
     }
-    
-    // Last name validation: only letters and more than 4 letters
+    // Last name validation
     if (!editedEmployee.last_name || editedEmployee.last_name.length < 4 || !/^[A-Za-z]+$/.test(editedEmployee.last_name)) {
       isValid = false;
       alert("Last name must be at least 4 characters long and contain only letters.");
       return;
     }
-    
-    // Email validation: valid email format
+    // Email validation
     if (!editedEmployee.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editedEmployee.email)) {
       isValid = false;
       alert("Invalid email address.");
       return;
     }
-    
-    // Phone number validation: exactly 10 digits
+    // Phone number validation
     if (!editedEmployee.phonenum || !/^\d{10}$/.test(editedEmployee.phonenum)) {
       isValid = false;
       alert("Phone number must be exactly 10 digits.");
       return;
     }
-    
-    // Date of Birth validation - must be in the past
+    // Date of Birth validation
     if (!editedEmployee.dob) {
       isValid = false;
       alert("Date of Birth is required.");
@@ -321,7 +312,6 @@ function ManageEmployee() {
     } else {
       const dobDate = new Date(editedEmployee.dob);
       const currentDate = new Date();
-      
       if (isNaN(dobDate)) {
         isValid = false;
         alert("Invalid date format.");
@@ -332,22 +322,20 @@ function ManageEmployee() {
         return;
       }
     }
-    
-    // National ID validation: between 10 to 12 digits
+    // National ID validation
     if (!editedEmployee.natID || !/^\d{10,12}$/.test(editedEmployee.natID)) {
       isValid = false;
       alert("National ID must be between 10 to 12 digits.");
       return;
     }
-    
-    // Address validation: more than 5 characters
+    // Address validation
     if (!editedEmployee.address || editedEmployee.address.length < 5) {
       isValid = false;
       alert("Address must be at least 5 characters long.");
       return;
     }
-    
     if (isValid) {
+      // Remove password and timestamps before sending update
       const { password, created_at, updated_at, ...employeeData } = editedEmployee;
       axios
         .put(`http://localhost:5000/api/employees/${editedEmployee.userid}`, employeeData)
@@ -363,6 +351,7 @@ function ManageEmployee() {
     }
   };
 
+  // Handle input change in Edit Employee modal
   const handleEditInputChange = (e) => {
     const { name, value } = e.target;
     if (name === "dob") {
@@ -378,15 +367,18 @@ function ManageEmployee() {
     }
   };
 
+  // Close edit modal and reset selected employee
   const handleCloseEditModal = () => {
     setShowEditModal(false);
     setSelectedEmployee(null);
   };
 
+  // Show print modal for downloading PDF
   const handleDownloadPDF = () => {
     setShowPrintModal(true);
   };
 
+  // Main render
   return (
     <div className={styles.ManageEmployeeContainer}>
       <Sidebar />
@@ -394,9 +386,10 @@ function ManageEmployee() {
         <Header />
         <div className={styles.InnerContainer} style={{ marginLeft: "10px", width: "100%" }}>
           <div className={styles.TopSection}>
-          <h1 className="section-title" style={{ fontSize: '28px', fontWeight: 'bold' }}>Manage Employees</h1>
-
+            <h1 className="section-title" style={{ fontSize: '28px', fontWeight: 'bold' }}>Manage Employees</h1>
+            {/* Search and action controls */}
             <div className={styles.SearchWrapper}>
+              {/* Search column dropdown */}
               <select
                 className="form-control"
                 value={searchColumn}
@@ -411,6 +404,7 @@ function ManageEmployee() {
                 <option value="natId">NationalID</option>
                 <option value="status">Status</option>
               </select>
+              {/* Search input */}
               <input
                 type="text"
                 className="form-control search-bar"
@@ -419,14 +413,17 @@ function ManageEmployee() {
                 placeholder={`Search by ${searchColumn}...`}
               />
               <div className={styles.BtnContainer}>
+                {/* Add Employee button */}
                 <button className="btn btn-primary" style={{ width: '150px', marginLeft:"10px" }} onClick={handleAddEmployeeClick}>
                   Add Employee
                 </button>
+                {/* Print button */}
                 <button className="btn btn-secondary"  onClick={handleDownloadPDF} style={{ width: '150px', marginLeft:"10px" }}>Print</button>
               </div>
             </div>
           </div>
 
+          {/* Employees table */}
           <div className={styles.TableContainer}>
             <table className="table table-striped">
               <thead>
@@ -460,14 +457,17 @@ function ManageEmployee() {
                         </span>
                       </td>
                       <td>
+                        {/* View employee button */}
                         <FaEye
                           style={{ marginRight: "10px", cursor: "pointer", color: "#2770b4" }}
                           onClick={() => handleViewEmployee(emp)} 
                         />
+                        {/* Edit employee button */}
                         <FaEdit
                           style={{ marginRight: "10px", cursor: "pointer", color: "#f0ad4e" }}
                           onClick={() => handleEditEmployee(emp)} 
                         />
+                        {/* Delete employee button */}
                         <FaTrash
                           style={{ cursor: "pointer", color: "#d9534f" }}
                           onClick={() => handleDeleteEmployee(emp.userid)} 
@@ -485,7 +485,7 @@ function ManageEmployee() {
           </div>
         </div>
 
-       
+        {/* Add Employee Modal */}
         <AddEntityModal
           showModal={showModal}
           handleClose={handleCloseModal}
@@ -508,6 +508,7 @@ function ManageEmployee() {
           validationErrors={validationErrors}
         />
 
+        {/* View Modal for employee details */}
         <ViewModal
           showViewModal={showViewModal}
           selectedEntity={selectedEmployee}
@@ -528,6 +529,7 @@ function ManageEmployee() {
           ]}
         />
 
+        {/* Edit Modal for employee */}
         <EditModal
           showEditModal={showEditModal}
           entityData={editedEmployee}
@@ -538,6 +540,7 @@ function ManageEmployee() {
           handleEditInputChange={handleEditInputChange}
         />
 
+        {/* Print Modal for employees */}
         <PrintModal
           show={showPrintModal}
           handleClose={() => setShowPrintModal(false)}

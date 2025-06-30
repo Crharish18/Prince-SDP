@@ -162,7 +162,7 @@ const Header = () => {
                 <ShoppingBag
                   className={`mr-[10px] h-6 w-6 ${isScrolled ? 'text-gray-600' : 'text-white'}`}
                 />
-                <span className={isScrolled ? 'text-gray-600' : 'text-white'}>Cart (0)</span>
+                <span className={isScrolled ? 'text-gray-600' : 'text-white'}>Cart</span>
               </div>
               <div className="ml-[20px] ">
                 {/* Profile/Login Icon with link */}

@@ -17,13 +17,9 @@ const Home = () => {
       <Hero />
       <Categories />
       <Features />
-      {/* Add more components or sections as needed */}
-      {/* For example, you can add a section for featured products or services */}
-      
+    
       {/* Render the Footer component */}
       <Footer />
-      
-      {/* You can add more content below */}
     </div>
   );
 };
