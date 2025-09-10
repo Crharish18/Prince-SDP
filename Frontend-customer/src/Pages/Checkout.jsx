@@ -1,0 +1,1153 @@
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import HeaderPages from '../Components/HeaderPages';
+import { CreditCard, Truck, ArrowLeft, MapPin, Plus } from 'lucide-react';
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import logo from '../assets/logoBlack.png';
+import Footer from '../Components/Footer';
+
+// Create a separate component for the address form to maintain its own state
+const AddressFormComponent = ({ type, initialData, onSave, onCancel }) => {
+  const [localFormData, setLocalFormData] = useState(initialData);
+  const [errors, setErrors] = useState({});
+
+  // Update local form when initialData changes
+  useEffect(() => {
+    setLocalFormData(initialData);
+  }, [initialData]);
+
+  const handleLocalChange = (field, value) => {
+    setLocalFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+
+    // Clear error when user types
+    if (errors[field]) {
+      setErrors(prev => ({
+        ...prev,
+        [field]: ''
+      }));
+    }
+  };
+
+  const validateAddressForm = () => {
+    const newErrors = {};
+    
+    // Fullname validation - only letters and more than 3 characters
+    if (!/^[A-Za-z\s]{3,}$/.test(localFormData.fullname || '')) {
+      newErrors.fullname = 'Full name must contain only letters and be at least 3 characters long';
+    }
+    
+    // Street address validation - letters, numbers, and / symbols with more than 3 characters
+    if (!/^[A-Za-z0-9\s\/]{3,}$/.test(localFormData.street || '')) {
+      newErrors.street = 'Street address must be at least 3 characters and can only contain letters, numbers, and / symbols';
+    }
+    
+    // Apartment validation (optional) - if provided, should be more than 3 characters
+    if (localFormData.apartment && localFormData.apartment.length < 3) {
+      newErrors.apartment = 'Apartment/Unit must be at least 3 characters long';
+    }
+    
+    // City validation - only letters and more than 3 characters
+    if (!/^[A-Za-z\s]{3,}$/.test(localFormData.city || '')) {
+      newErrors.city = 'City must contain only letters and be at least 3 characters long';
+    }
+    
+    // Province validation - only letters and more than 3 characters
+    if (!/^[A-Za-z\s]{3,}$/.test(localFormData.province || '')) {
+      newErrors.province = 'Province must contain only letters and be at least 3 characters long';
+    }
+    
+    // Postal code validation - exactly 5 digits
+    if (!/^\d{5}$/.test(localFormData.postal_code || '')) {
+      newErrors.postal_code = 'Postal code must be exactly 5 digits';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = () => {
+    if (validateAddressForm()) {
+      onSave(localFormData);
+    }
+  };
+
+  return (
+    <div className="space-y-4 text-left">
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1 text-left">Full Name</label>
+        <input
+          type="text"
+          value={localFormData.fullname || ''}
+          onChange={(e) => handleLocalChange('fullname', e.target.value)}
+          className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent text-left ${errors.fullname ? 'border-red-500' : ''}`}
+        />
+        {errors.fullname && <p className="mt-1 text-xs text-red-500 text-left">{errors.fullname}</p>}
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1 text-left">Street Address</label>
+        <input
+          type="text"
+          value={localFormData.street || ''}
+          onChange={(e) => handleLocalChange('street', e.target.value)}
+          className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent text-left ${errors.street ? 'border-red-500' : ''}`}
+        />
+        {errors.street && <p className="mt-1 text-xs text-red-500 text-left">{errors.street}</p>}
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1 text-left">Apartment/Unit (Optional)</label>
+        <input
+          type="text"
+          value={localFormData.apartment || ''}
+          onChange={(e) => handleLocalChange('apartment', e.target.value)}
+          className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent text-left ${errors.apartment ? 'border-red-500' : ''}`}
+        />
+        {errors.apartment && <p className="mt-1 text-xs text-red-500 text-left">{errors.apartment}</p>}
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1 text-left">City</label>
+          <input
+            type="text"
+            value={localFormData.city || ''}
+            onChange={(e) => handleLocalChange('city', e.target.value)}
+            className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent text-left ${errors.city ? 'border-red-500' : ''}`}
+          />
+          {errors.city && <p className="mt-1 text-xs text-red-500 text-left">{errors.city}</p>}
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1 text-left">Province</label>
+          <input
+            type="text"
+            value={localFormData.province || ''}
+            onChange={(e) => handleLocalChange('province', e.target.value)}
+            className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent text-left ${errors.province ? 'border-red-500' : ''}`}
+          />
+          {errors.province && <p className="mt-1 text-xs text-red-500 text-left">{errors.province}</p>}
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1 text-left">Postal Code</label>
+          <input
+            type="text"
+            value={localFormData.postal_code || ''}
+            onChange={(e) => handleLocalChange('postal_code', e.target.value)}
+            className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent text-left ${errors.postal_code ? 'border-red-500' : ''}`}
+          />
+          {errors.postal_code && <p className="mt-1 text-xs text-red-500 text-left">{errors.postal_code}</p>}
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1 text-left">Country</label>
+          <input
+            type="text"
+            value={type === 'Shipping' ? 'Sri Lanka' : (localFormData.country || '')}
+            onChange={(e) => handleLocalChange('country', e.target.value)}
+            disabled={type === 'Shipping'}
+            className={`w-full px-3 py-2 border rounded-md text-left ${type === 'Shipping' ? 'bg-gray-100 cursor-not-allowed' : 'focus:ring-2 focus:ring-green-500 focus:border-transparent'}`}
+          />
+        </div>
+      </div>
+      <div className="flex justify-end gap-3 mt-4">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="px-4 py-2 border rounded-lg hover:bg-gray-50 transition"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={handleSubmit}
+          className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition"
+        >
+          Use This Address
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const Checkout = ({ onBack }) => {
+  const [cartItems, setCartItems] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [shippingCost, setShippingCost] = useState(500);  // Default to 500 for Standard Shipping
+  const [selectedShipping, setSelectedShipping] = useState('standard shipping');  // Default to 'standard shipping'
+  
+  // Address states
+  const [addresses, setAddresses] = useState({
+    shipping: [],
+    billing: []
+  });
+  const [addressesLoading, setAddressesLoading] = useState(true);
+  const [selectedShippingAddress, setSelectedShippingAddress] = useState(null);
+  const [selectedBillingAddress, setSelectedBillingAddress] = useState(null);
+  
+  // Temporary address states
+  const [tempShippingAddress, setTempShippingAddress] = useState(null);
+  const [tempBillingAddress, setTempBillingAddress] = useState(null);
+  
+  const [showNewShippingForm, setShowNewShippingForm] = useState(false);
+  const [showNewBillingForm, setShowNewBillingForm] = useState(false);
+  
+  // PDF preview states
+  const [pdfUrl, setPdfUrl] = useState('');
+  const [orderId, setOrderId] = useState(null);
+  const [formData, setFormData] = useState({
+    newShippingAddress: {
+      fullname: '',
+      street: '',
+      apartment: '',
+      city: '',
+      province: '',
+      postal_code: '',
+      country: 'Sri Lanka',
+      type: 'shipping',
+      isTemporary: true
+    },
+    newBillingAddress: {
+      fullname: '',
+      street: '',
+      apartment: '',
+      city: '',
+      province: '',
+      postal_code: '',
+      country: '',
+      type: 'billing',
+      isTemporary: true
+    }
+  });
+
+  // Fetch cart items when component mounts
+  useEffect(() => {
+    const fetchCartItems = async () => {
+      try {
+        const token = localStorage.getItem('customerToken');
+        if (!token) {
+          alert("Please log in to see your cart.");
+          return;
+        }
+        const decodedToken = JSON.parse(atob(token.split('.')[1])); // Decode JWT token to get user info
+        const customerId = decodedToken.id;
+        const response = await axios.get(`http://localhost:5000/api/cart/${customerId}`);
+        setCartItems(response.data);  // Update cart items
+        // Calculate total based on the total_price field from cart table
+        const calculatedTotal = response.data.reduce(
+          (sum, item) => sum + Number(item.total_price), 
+          0
+        );
+        setTotal(calculatedTotal);  // Set the total
+      } catch (error) {
+        console.error('Error fetching cart items:', error);
+      }
+    };
+
+    fetchCartItems(); // Fetch the user's cart when the component mounts
+  }, []);
+
+  // Fetch customer addresses
+  useEffect(() => {
+    const fetchAddresses = async () => {
+      try {
+        setAddressesLoading(true);
+        const token = localStorage.getItem('customerToken');
+        
+        if (!token) {
+          setAddressesLoading(false);
+          return;
+        }
+        
+        const response = await axios.get('http://localhost:5000/api/auth/customer-addresses', {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        
+        // Organize addresses by type
+        const addressData = {
+          shipping: [],
+          billing: []
+        };
+        
+        if (response.data && response.data.length > 0) {
+          response.data.forEach(address => {
+            if (address.type === 'shipping') {
+              addressData.shipping.push(address);
+            } else if (address.type === 'billing') {
+              addressData.billing.push(address);
+            }
+          });
+        }
+        
+        setAddresses(addressData);
+        
+        // Set default selected addresses if available
+        if (addressData.shipping.length > 0) {
+          setSelectedShippingAddress(addressData.shipping[0].address_id);
+        }
+        
+        if (addressData.billing.length > 0) {
+          setSelectedBillingAddress(addressData.billing[0].address_id);
+        }
+        
+        setAddressesLoading(false);
+      } catch (error) {
+        console.error('Error fetching addresses:', error);
+        setAddressesLoading(false);
+      }
+    };
+    
+    fetchAddresses();
+  }, []);
+
+  // Clean up PDF URL when component unmounts
+  useEffect(() => {
+    return () => {
+      if (pdfUrl) {
+        URL.revokeObjectURL(pdfUrl);
+      }
+    };
+  }, [pdfUrl]);
+
+  const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  try {
+    const token = localStorage.getItem('customerToken');
+    if (!token) {
+      alert("Please log in.");
+      return;
+    }
+
+    const decodedToken = JSON.parse(atob(token.split('.')[1]));
+    const customerId = decodedToken.id;
+    
+    // Get the billing address
+    let billingAddress;
+    
+    if (tempBillingAddress) {
+      billingAddress = tempBillingAddress;
+    } else {
+      billingAddress = addresses.billing.find(addr => addr.address_id === selectedBillingAddress);
+    }
+    
+    if (!billingAddress) {
+      alert("Please select or add a billing address.");
+      return;
+    }
+
+    // Only validate shipping address if not using pickup
+    if (selectedShipping === 'standard shipping') {
+      let shippingAddress;
+      
+      if (tempShippingAddress) {
+        shippingAddress = tempShippingAddress;
+      } else {
+        shippingAddress = addresses.shipping.find(addr => addr.address_id === selectedShippingAddress);
+      }
+      
+      if (!shippingAddress) {
+        alert("Please select or add a shipping address.");
+        return;
+      }
+    }
+
+    // Set the shipping method - match the enum values exactly
+    const shipMethod = selectedShipping === 'standard shipping' ? 'standard shipping' : 'pickup';
+
+    // Calculate all required values
+    const subtotal = cartItems.reduce((sum, item) => sum + (Number(item.price) * item.quantity), 0);
+    const totalDiscount = cartItems.reduce((sum, item) => sum + Number(item.discount || 0), 0);
+    const totalPrice = Number(total) + Number(shippingCost);
+    
+    // Create the order with only the required fields that match the server expectations
+    const orderData = {
+      customer_id: customerId,
+      price: subtotal,
+      total_discount: totalDiscount,
+      total_price: totalPrice,
+      status: 'Pending'
+    };
+    
+    console.log("Sending order data:", orderData);
+    
+    const orderResponse = await axios.post('http://localhost:5000/api/orders', orderData);
+
+    if (orderResponse.status === 201) {
+      const newOrderId = orderResponse.data.order_id;
+      setOrderId(newOrderId);
+      
+      // Create a transaction record for this order
+      const transactionData = {
+        order_id: newOrderId,
+        amount_paid: totalPrice,
+        status: 'Success'
+      };
+      
+      // Save the transaction
+      await axios.post('http://localhost:5000/api/transactions', transactionData);
+      
+      // Only save shipping address if not using pickup
+      if (selectedShipping === 'standard shipping') {
+        // Get the shipping address
+        let shippingAddress;
+        
+        if (tempShippingAddress) {
+          shippingAddress = tempShippingAddress;
+        } else {
+          shippingAddress = addresses.shipping.find(addr => addr.address_id === selectedShippingAddress);
+        }
+        
+        // Save shipping address to order_address table
+        const shippingAddressData = {
+          order_id: newOrderId,
+          fullname: shippingAddress.fullname,
+          street: shippingAddress.street,
+          apartment: shippingAddress.apartment || '',
+          city: shippingAddress.city,
+          province: shippingAddress.province,
+          postal_code: shippingAddress.postal_code,
+          country: shippingAddress.country,
+          shipment_method: shipMethod,
+          type: 'shipping'
+        };
+        
+        await axios.post('http://localhost:5000/api/order_address', shippingAddressData);
+      }
+      
+      // Save billing address to order_address table
+      const billingAddressData = {
+        order_id: newOrderId,
+        fullname: billingAddress.fullname,
+        street: billingAddress.street,
+        apartment: billingAddress.apartment || '',
+        city: billingAddress.city,
+        province: billingAddress.province,
+        postal_code: billingAddress.postal_code,
+        country: billingAddress.country,
+        shipment_method: shipMethod,
+        type: 'billing'
+      };
+      
+      await axios.post('http://localhost:5000/api/order_address', billingAddressData);
+
+      // Insert order items into the order_item table
+      // The inventory reduction will be handled by the order_items endpoint
+      const orderItems = cartItems.map(item => ({
+        order_id: newOrderId,
+        product_id: item.product_id,
+        qty: item.quantity,
+        price: Number(item.price) * item.quantity, // Unit price × quantity (before discount)
+        discount: Number(item.discount || 0), // Total discount for this product (not multiplied)
+        final_price: Number(item.total_price) // Final price after discount
+      }));
+
+      // POST the order items
+      const orderItemsResponse = await axios.post('http://localhost:5000/api/order_items', orderItems);
+
+      if (orderItemsResponse.status === 201) {
+        // Generate PDF invoice with preview in new window
+        generateInvoicePDFWithPreview({
+          orderId: newOrderId,
+          cartItems,
+          total,
+          shippingCost,
+          grandTotal: totalPrice,
+          shipMethod,
+          billingAddress,
+          shippingAddress: selectedShipping === 'standard shipping' 
+            ? (tempShippingAddress || addresses.shipping.find(addr => addr.address_id === selectedShippingAddress))
+            : null
+        });
+        
+        // Clear cart after successful order
+        await axios.delete(`http://localhost:5000/api/cart/customer/${customerId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        // Redirect happens after user views PDF in new window
+      } else {
+        alert('Failed to save order items.');
+      }
+    } else {
+      alert('Failed to place the order.');
+    }
+  } catch (error) {
+    console.error('Error placing order:', error);
+    if (error.response) {
+      console.error('Response data:', error.response.data);
+      console.error('Response status:', error.response.status);
+    }
+    alert('Failed to place order: ' + (error.response?.data?.error || error.message));
+  }
+};
+
+
+  // Update shipping cost based on selected shipping method
+  const handleShippingChange = (event) => {
+    const selectedMethod = event.target.value;
+    setSelectedShipping(selectedMethod);
+    if (selectedMethod === "standard shipping") {
+      setShippingCost(500); // Standard shipping costs Rs. 500
+    } else {
+      setShippingCost(0); // Pickup is free
+    }
+  };
+
+  // Address form handling
+  const handleAddressChange = (type, field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [`new${type}Address`]: {
+        ...prev[`new${type}Address`],
+        [field]: value
+      }
+    }));
+  };
+
+  // Save temporary address (not to database)
+  const handleSaveTempAddress = (formData, type) => {
+    // Create a temporary address with a unique ID
+    const tempAddress = {
+      ...formData,
+      temp_id: `temp-${Date.now()}`, // Create a unique ID for the temporary address
+      isTemporary: true,
+      type: type.toLowerCase()
+    };
+    
+    if (type === 'Shipping') {
+      setTempShippingAddress(tempAddress);
+      setSelectedShippingAddress(null); // Deselect any saved address
+      setShowNewShippingForm(false);
+    } else {
+      setTempBillingAddress(tempAddress);
+      setSelectedBillingAddress(null); // Deselect any saved address
+      setShowNewBillingForm(false);
+    }
+  };
+
+  const SavedAddressCard = ({ address, selected, onSelect }) => (
+    <div
+      className={`border rounded-lg p-4 cursor-pointer transition text-left ${
+        selected ? 'border-green-500 bg-green-50' : 'hover:border-gray-400'
+      }`}
+      onClick={onSelect}
+    >
+      <div className="flex items-start">
+        <div className={`w-4 h-4 mt-1 rounded-full border-2 mr-3 ${
+          selected ? 'border-green-500 bg-green-500' : 'border-gray-300'
+        }`} />
+        <div>
+          <p className="font-medium">{address.fullname}</p>
+          <p className="text-gray-600">{address.street}</p>
+          {address.apartment && <p className="text-gray-600">{address.apartment}</p>}
+          <p className="text-gray-600">{address.city}, {address.province} {address.postal_code}</p>
+          <p className="text-gray-600">{address.country}</p>
+          {address.isTemporary && <p className="text-xs text-blue-500 mt-1">Temporary Address</p>}
+        </div>
+      </div>
+    </div>
+  );
+
+function generateInvoicePDFWithPreview({
+  orderId,
+  cartItems,
+  total,
+  shippingCost,
+  grandTotal,
+  shipMethod,
+  billingAddress,
+  shippingAddress
+}) {
+  const doc = new jsPDF();
+  
+  // Add company logo at the top
+  const imgWidth = 60;
+  const imgHeight = 50;
+  // Add logo if available, otherwise use text
+  try {
+    const logoData = logo;
+    doc.addImage(logoData, 'PNG', 10, -9, imgWidth, imgHeight);
+  } catch (error) {
+    console.error('Error adding logo:', error);
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Prince Lanka', 15, 25);
+  }
+
+  // Company details with improved styling
+  doc.setFontSize(10);
+  doc.setTextColor(80, 80, 80); // Darker gray for better readability
+  doc.setFont('helvetica', 'normal');
+  doc.text('No 21,', 14, 26);
+  doc.text('Courtlodge, Kandapola', 14, 31);
+  doc.text('Nuwaraeliya, Sri Lanka', 14, 36);
+  doc.text('Tel: +94 77 567 0258', 14, 41);
+  doc.text('Email: princelankaagenciespvtltd@gmail.com', 14, 46);
+  
+  // Add invoice title and order number with improved styling
+  doc.setFontSize(22); // Larger font size for invoice title
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(46, 125, 50); // Green color to match table header
+  doc.text('INVOICE', 170, 13);
+  
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(80, 80, 80);
+  doc.text(`Order #: ${orderId}`, 170, 18);
+  doc.text(`Date: ${new Date().toLocaleDateString()}`, 170, 23);
+  
+  // Add horizontal line
+  doc.setDrawColor(46, 125, 50); // Green line to match branding
+  doc.setLineWidth(0.7); // Slightly thicker line
+  doc.line(15, 50, 195, 50);
+  
+  // Customer details section with improved styling
+  doc.setFontSize(13);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(46, 125, 50); // Green headers
+  doc.text('Billing Details:', 15, 60);
+  
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(60, 60, 60); // Dark gray for text
+  if (billingAddress) {
+    doc.setFont('helvetica', 'bold');
+    doc.text(billingAddress.fullname, 15, 70);
+    doc.setFont('helvetica', 'normal');
+    doc.text(billingAddress.street, 15, 75);
+    if (billingAddress.apartment) {
+      doc.text(billingAddress.apartment, 15, 80);
+      doc.text(`${billingAddress.city}, ${billingAddress.province} - ${billingAddress.postal_code}`, 15, 85);
+      doc.text(billingAddress.country, 15, 90);
+    } else {
+      doc.text(`${billingAddress.city}, ${billingAddress.province} - ${billingAddress.postal_code}`, 15, 80);
+      doc.text(billingAddress.country, 15, 85);
+    }
+  }
+  
+  // Shipping details section with improved styling
+  doc.setFontSize(13);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(46, 125, 50); // Green headers
+  doc.text('Shipping Details:', 110, 60);
+  
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(60, 60, 60); // Dark gray for text
+  if (shipMethod === 'standard shipping' && shippingAddress) {
+    doc.setFont('helvetica', 'bold');
+    doc.text(shippingAddress.fullname, 110, 70);
+    doc.setFont('helvetica', 'normal');
+    doc.text(shippingAddress.street, 110, 75);
+    if (shippingAddress.apartment) {
+      doc.text(shippingAddress.apartment, 110, 80);
+      doc.text(`${shippingAddress.city}, ${shippingAddress.province} - ${shippingAddress.postal_code}`, 110, 85);
+      doc.text(shippingAddress.country, 110, 90);
+    } else {
+      doc.text(`${shippingAddress.city}, ${shippingAddress.province} - ${shippingAddress.postal_code}`, 110, 80);
+      doc.text(shippingAddress.country, 110, 85);
+    }
+    doc.setFont('helvetica', 'italic');
+    doc.text(`Shipping Method: Standard Shipping`, 110, 95);
+  } else {
+    doc.setFont('helvetica', 'bold');
+    doc.text('Pickup from store', 110, 70);
+    doc.setFont('helvetica', 'italic');
+    doc.text('Shipping Method: Pickup', 110, 75);
+  }
+  
+  // Add horizontal line before table
+  doc.setDrawColor(220, 220, 220);
+  doc.setLineWidth(0.5);
+  doc.line(15, 100, 195, 100);
+
+  // Order items table
+  const tableColumn = ['#', 'Product', 'Qty', 'Price', 'Discount', 'Final Price'];
+  const tableRows = [];
+
+  // Add items to table
+  cartItems.forEach((item, index) => {
+    const itemData = [
+      (index + 1).toString(),
+      item.name,
+      item.quantity.toString(),
+      `Rs.${Number(item.price).toFixed(2)}`,
+      `Rs.${Number(item.discount || 0).toFixed(2)}`,
+      `Rs.${Number(item.total_price).toFixed(2)}`
+    ];
+    tableRows.push(itemData);
+  });
+
+  // Generate the table with improved styling - removed the problematic didDrawPage callback
+  autoTable(doc, {
+    startY: 110,
+    head: [tableColumn],
+    body: tableRows,
+    headStyles: {
+      fillColor: [46, 125, 50],
+      textColor: 255,
+      fontSize: 11,
+      fontStyle: 'bold',
+      halign: 'center',
+      cellPadding: 3
+    },
+    bodyStyles: {
+      fontSize: 10,
+      halign: 'center',
+      cellPadding: 3
+    },
+    columnStyles: {
+      0: { cellWidth: 10 },
+      1: { cellWidth: 70, halign: 'left' },
+      2: { cellWidth: 15 },
+      3: { cellWidth: 30 },
+      4: { cellWidth: 30 },
+      5: { cellWidth: 30 }
+    },
+    alternateRowStyles: {
+      fillColor: [240, 248, 240]
+    },
+    margin: { left: 15, right: 15 }
+    // Removed the didDrawPage callback that was causing errors
+  });
+  
+  // Calculate the Y position for the summary section
+  const finalY = doc.lastAutoTable.finalY + 15;
+  
+  // Summary section with improved styling
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(80, 80, 80);
+  
+  // Add a subtle background for the summary section - using a simpler approach
+  doc.setFillColor(248, 248, 248);
+  doc.rect(130, finalY - 5, 65, 35, 'F');
+  
+  // Subtotal
+  doc.text('Subtotal:', 140, finalY);
+  doc.text(`Rs. ${cartItems.reduce((sum, item) => sum + (Number(item.price) * item.quantity), 0).toFixed(2)}`, 195, finalY, { align: 'right' });
+  
+  // Discount
+  doc.setTextColor(220, 53, 69); // Red color for discount
+  doc.text('Discount:', 140, finalY + 7);
+  doc.text(`Rs. ${cartItems.reduce((sum, item) => sum + Number(item.discount || 0), 0).toFixed(2)}`, 195, finalY + 7, { align: 'right' });
+  
+  // Shipping
+  doc.setTextColor(80, 80, 80);
+  doc.text('Shipping:', 140, finalY + 14);
+  doc.text(`Rs. ${Number(shippingCost).toFixed(2)}`, 195, finalY + 14, { align: 'right' });
+  
+  // Total with improved styling
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(46, 125, 50); // Green for total
+  doc.setFontSize(12);
+  doc.text('Total:', 140, finalY + 24);
+  doc.text(`Rs. ${Number(grandTotal).toFixed(2)}`, 195, finalY + 24, { align: 'right' });
+  
+  // Add a thank you note with improved styling
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(11);
+  doc.setTextColor(46, 125, 50);
+  doc.text('Thank you for your business!', 105, finalY + 40, { align: 'center' });
+  
+  // Add decorative element
+  doc.setDrawColor(46, 125, 50);
+  doc.setLineWidth(0.5);
+  doc.line(65, finalY + 43, 145, finalY + 43);
+  
+  // Add shipping note if standard shipping is selected
+  if (shipMethod === 'standard shipping') {
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(9);
+    doc.setTextColor(220, 53, 69); // Red color for the note
+    doc.text('Note: Shipping charges may increase based on the total weight of the products ordered and will be payable upon delivery.', 
+      105, finalY + 55, { align: 'center', maxWidth: 170 });
+  }
+  
+  // Add footer with improved styling
+  const pageHeight = doc.internal.pageSize.getHeight();
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(100, 100, 100);
+  doc.text('Prince Lanka Agencies- Premium Agricultural Products', 105, pageHeight - 15, { align: 'center' });
+  doc.text('© 2025 Prince Lanka Agencies Pvt(Ltd)', 105, pageHeight - 10, { align: 'center' });
+  
+  // Create a blob and open it in a new window
+  const pdfBlob = doc.output('blob');
+  const url = URL.createObjectURL(pdfBlob);
+  
+  // Store the URL for cleanup later
+  setPdfUrl(url);
+  
+  // Open PDF in a new window
+  const newWindow = window.open(url, '_blank');
+  
+  // If the window was blocked, alert the user
+  if (!newWindow) {
+    alert("The invoice was generated but the popup was blocked. Please allow popups to view your invoice.");
+  }
+}
+
+
+
+  return (
+    <div>
+      <div className="min-h-screen bg-gray-50 pt-16">
+        <HeaderPages />
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <button
+            onClick={onBack}
+            className="flex items-center text-gray-600 hover:text-gray-900 mb-8"
+          >
+            <ArrowLeft className="h-5 w-5 mr-2" />
+            Back to Cart
+          </button>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Left Column - Forms */}
+            <div className="space-y-8">
+              {/* Shipping Address - Only show if standard shipping is selected */}
+              {selectedShipping === 'standard shipping' && (
+                <div className="bg-white p-6 rounded-lg shadow-sm">
+                  <div className="flex items-center mb-6">
+                    <MapPin className="h-6 w-6 text-green-500 mr-2" />
+                    <h2 className="text-xl font-semibold text-left">Shipping Address</h2>
+                  </div>
+                  
+                  {addressesLoading ? (
+                    <div className="text-center py-4">
+                      <p>Loading addresses...</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {/* Saved addresses */}
+                      {addresses.shipping.length > 0 && (
+                        <div>
+                          <h3 className="text-sm font-medium text-gray-700 mb-2 text-left">Saved Addresses</h3>
+                          <div className="space-y-3">
+                            {addresses.shipping.map(address => (
+                              <SavedAddressCard
+                                key={address.address_id}
+                                address={address}
+                                selected={selectedShippingAddress === address.address_id && !tempShippingAddress}
+                                onSelect={() => {
+                                  setSelectedShippingAddress(address.address_id);
+                                  setTempShippingAddress(null);
+                                  setShowNewShippingForm(false);
+                                }}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Temporary address if exists */}
+                      {tempShippingAddress && (
+                        <div>
+                          <h3 className="text-sm font-medium text-gray-700 mb-2 text-left">Temporary Address</h3>
+                          <SavedAddressCard
+                            address={tempShippingAddress}
+                            selected={true}
+                            onSelect={() => {}} // Already selected
+                          />
+                        </div>
+                      )}
+                      
+                      {/* Add new address option - only show if no temporary address exists */}
+                      {!tempShippingAddress && (
+                        <div
+                          className={`border rounded-lg p-4 cursor-pointer transition ${
+                            showNewShippingForm ? 'border-green-500 bg-green-50' : 'hover:border-gray-400'
+                          }`}
+                          onClick={() => {
+                            setShowNewShippingForm(!showNewShippingForm);
+                          }}
+                        >
+                          <div className="flex items-center">
+                            <Plus className="h-5 w-5 text-green-500 mr-2" />
+                            <span className="font-medium text-left">Use a Different Address</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* New address form */}
+                      {showNewShippingForm && (
+                        <div className="mt-4">
+                          <AddressFormComponent
+                            type="Shipping"
+                            initialData={formData.newShippingAddress}
+                            onSave={(data) => handleSaveTempAddress(data, 'Shipping')}
+                            onCancel={() => setShowNewShippingForm(false)}
+                          />
+                        </div>
+                      )}
+                      
+                      {/* No addresses message */}
+                      {addresses.shipping.length === 0 && !tempShippingAddress && !showNewShippingForm && (
+                        <div className="text-center py-4">
+                          <p className="text-gray-500 italic">No shipping addresses available.</p>
+                          <button
+                            onClick={() => setShowNewShippingForm(true)}
+                            className="mt-2 text-green-500 hover:text-green-600"
+                          >
+                            Add a shipping address
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Billing Address */}
+              <div className="bg-white p-6 rounded-lg shadow-sm">
+                <div className="flex items-center mb-6">
+                  <CreditCard className="h-6 w-6 text-green-500 mr-2" />
+                  <h2 className="text-xl font-semibold text-left">Billing Address</h2>
+                </div>
+                
+                {addressesLoading ? (
+                  <div className="text-center py-4">
+                    <p>Loading addresses...</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {/* Saved addresses */}
+                    {addresses.billing.length > 0 && (
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-700 mb-2 text-left">Saved Addresses</h3>
+                        <div className="space-y-3">
+                          {addresses.billing.map(address => (
+                            <SavedAddressCard
+                              key={address.address_id}
+                              address={address}
+                              selected={selectedBillingAddress === address.address_id && !tempBillingAddress}
+                              onSelect={() => {
+                                setSelectedBillingAddress(address.address_id);
+                                setTempBillingAddress(null);
+                                setShowNewBillingForm(false);
+                              }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Temporary address if exists */}
+                    {tempBillingAddress && (
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-700 mb-2 text-left">Temporary Address</h3>
+                        <SavedAddressCard
+                          address={tempBillingAddress}
+                          selected={true}
+                          onSelect={() => {}} // Already selected
+                        />
+                      </div>
+                    )}
+                    
+                    {/* Add new address option - only show if no temporary address exists */}
+                    {!tempBillingAddress && (
+                      <div
+                        className={`border rounded-lg p-4 cursor-pointer transition ${
+                          showNewBillingForm ? 'border-green-500 bg-green-50' : 'hover:border-gray-400'
+                        }`}
+                        onClick={() => {
+                          setShowNewBillingForm(!showNewBillingForm);
+                        }}
+                      >
+                        <div className="flex items-center">
+                          <Plus className="h-5 w-5 text-green-500 mr-2" />
+                          <span className="font-medium text-left">Use a Different Address</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* New address form */}
+                    {showNewBillingForm && (
+                      <div className="mt-4">
+                        <AddressFormComponent
+                          type="Billing"
+                          initialData={formData.newBillingAddress}
+                          onSave={(data) => handleSaveTempAddress(data, 'Billing')}
+                          onCancel={() => setShowNewBillingForm(false)}
+                        />
+                      </div>
+                    )}
+                    
+                    {/* No addresses message */}
+                    {addresses.billing.length === 0 && !tempBillingAddress && !showNewBillingForm && (
+                      <div className="text-center py-4">
+                        <p className="text-gray-500 italic">No billing addresses available.</p>
+                        <button
+                          onClick={() => setShowNewBillingForm(true)}
+                          className="mt-2 text-green-500 hover:text-green-600"
+                        >
+                          Add a billing address
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Payment Information */}
+              <div className="bg-white p-6 rounded-lg shadow-sm">
+                <div className="flex items-center mb-6">
+                  <CreditCard className="h-6 w-6 text-green-500 mr-2" />
+                  <h2 className="text-xl font-semibold text-left">Payment Information</h2>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1 text-left">Card Number</label>
+                    <input
+                      type="text"
+                      name="cardNumber"
+                      placeholder="1234 5678 9012 3456"
+                      className="w-full px-3 py-2 border rounded-md focus:ring-green-500 focus:border-green-500 text-left"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1 text-left">Expiry Date</label>
+                      <input
+                        type="text"
+                        name="expiryDate"
+                        placeholder="MM/YY"
+                        className="w-full px-3 py-2 border rounded-md focus:ring-green-500 focus:border-green-500 text-left"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1 text-left">CVV</label>
+                      <input
+                        type="text"
+                        name="cvv"
+                        placeholder="123"
+                        className="w-full px-3 py-2 border rounded-md focus:ring-green-500 focus:border-green-500 text-left"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column - Order Summary and Shipping Method */}
+            <div className="space-y-8">
+              {/* Order Summary */}
+              <div className="bg-white p-6 rounded-lg shadow-sm">
+                <h2 className="text-xl font-semibold mb-6 text-left">Order Summary</h2>
+                <div className="space-y-4">
+                    {cartItems.length > 0 ? (
+                      cartItems.map((item) => (
+                        <div key={item.cart_id} className="flex items-center gap-4 text-left" >
+                          <img
+                            src={item.image_url}
+                            alt={item.name}
+                            className="w-16 h-16 object-cover rounded-md"
+                          />
+                          <div className="flex-1">
+                            <h3 className="font-medium">{item.name}</h3>
+                            <p className="text-sm text-gray-500">Quantity: {item.quantity}</p>
+                            <p className="text-sm text-red-500">Discount: Rs.{Number(item.discount || 0).toFixed(2)}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-medium">Rs.{(Number(item.price) * item.quantity).toFixed(2)}</p>
+                            <p className="text-sm text-red-500">-Rs.{Number(item.discount || 0).toFixed(2)}</p>
+                            <p className="font-semibold">Rs.{Number(item.total_price).toFixed(2)}</p>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p>No items in the cart</p>
+                    )}
+                  </div>
+
+                  <div className="border-t mt-6 pt-6 space-y-2">
+                    <div className="flex justify-between text-gray-600">
+                      <span>Subtotal</span>
+                      <span>Rs.{cartItems.reduce((sum, item) => sum + (Number(item.price) * item.quantity), 0).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-red-500">
+                      <span>Discount</span>
+                      <span>-Rs.{cartItems.reduce((sum, item) => sum + Number(item.discount || 0), 0).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-gray-600">
+                      <span>After Discount</span>
+                      <span>Rs.{Number(total).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-gray-600">
+                      <span>Shipping</span>
+                      <span>Rs.{Number(shippingCost).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-lg font-bold">
+                      <span>Total</span>
+                      <span>Rs.{(Number(total) + Number(shippingCost)).toFixed(2)}</span>
+                    </div>
+                  </div>
+              </div>
+
+              {/* Shipping Method - Moved under Order Summary */}
+                  <div className="bg-white p-6 rounded-lg shadow-sm">
+                    <div className="flex items-center mb-4">
+                      <Truck className="h-6 w-6 text-green-500 mr-2" />
+                      <h2 className="text-xl font-semibold text-left">Shipping Method</h2>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
+                        <input 
+                          type="radio" 
+                          name="shipping" 
+                          className="mr-3" 
+                          value="standard shipping"
+                          onChange={handleShippingChange}
+                          defaultChecked 
+                        />
+                        <div className="text-left">
+                          <p className="font-medium">Standard Shipping</p>
+                          <p className="text-sm text-gray-500">Rs.500 • 3-5 business days</p>
+                        </div>
+                      </label>
+                      <label className="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
+                        <input 
+                          type="radio" 
+                          name="shipping" 
+                          className="mr-3" 
+                          value="pickup" 
+                          onChange={handleShippingChange} 
+                        />
+                        <div className="text-left">
+                          <p className="font-medium">Pickup</p>
+                          <p className="text-sm text-gray-500">Free • Monday - Saturday 8.00am to 6.00pm</p>
+                        </div>
+                      </label>
+                      
+                      {/* Shipping note - only shown when standard shipping is selected */}
+                      {selectedShipping === 'standard shipping' && (
+                        <div className="mt-3 p-3 bg-red-50 border border-red-100 rounded-lg">
+                          <p className="text-sm text-red-600 italic">
+                            Note: Shipping charges may increase based on the total weight of the products ordered and will be payable upon delivery.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+              <button
+                onClick={handleSubmit}
+                className="w-full bg-green-500 text-white py-4 rounded-md hover:bg-green-600 transition font-medium"
+              >
+                Place Order
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <Footer />
+    </div>
+  );
+};
+
+export default Checkout;

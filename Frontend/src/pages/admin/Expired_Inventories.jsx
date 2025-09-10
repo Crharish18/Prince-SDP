@@ -1,0 +1,374 @@
+import React, { useState, useEffect, useRef } from "react";
+import axios from "axios";
+import { FaEye, FaEdit, FaTrash } from "react-icons/fa"; 
+import Sidebar from "../../components/sidebar";
+import Header from "../../components/Header";
+import styles from './Expired_Inventories.module.css'; // Import as CSS module
+import 'bootstrap/dist/css/bootstrap.min.css';
+import ViewModal from "../../components/Viewmodal"; 
+import EditModal from "../../components/EditModal"; 
+import AddEntityModal from "../../components/AddEntityModal";
+import PrintModal from "../../components/PrintModal";
+import { jsPDF } from "jspdf";
+import 'jspdf-autotable';
+import logodash from "../../assets/PicturesAdmin/logoWhite.png";
+
+
+function ExpiredInventories() {
+  // State for all expired inventory logs
+  const [expiredInventories, setExpiredInventories] = useState([]);
+  // State for showing/hiding Add Expired Inventory modal
+  const [showModal, setShowModal] = useState(false);
+  const [newExpiredInventory, setNewExpiredInventory] = useState({
+    inventory_id: '',
+    product_id: '',
+    qty_expired: '',
+    expiry_date: ''
+  });
+
+  // State for validation errors in add form
+  const [validationErrors, setValidationErrors] = useState({
+    inventory_id: '',
+    product_id: '',
+    qty_expired: '',
+    expiry_date: ''
+  });
+
+  // State for search input and column
+  const [searchText, setSearchText] = useState("");
+  const [searchColumn, setSearchColumn] = useState("");
+  const [showViewModal, setShowViewModal] = useState(false); 
+  const [selectedExpiredInventory, setSelectedExpiredInventory] = useState(null); 
+  // State for showing edit modal and edited expired inventory
+  const [showEditModal, setShowEditModal] = useState(false); 
+  const [editedExpiredInventory, setEditedExpiredInventory] = useState({}); 
+  // State for showing print modal
+  const [showPrintModal, setShowPrintModal] = useState(false);
+
+  // Fetch all expired inventories from backend on mount
+  useEffect(() => {
+    axios
+      .get('http://localhost:5000/api/Expired_Inventories')
+      .then((response) => {
+        setExpiredInventories(response.data);
+      })
+      .catch((error) => {
+        console.error('Error fetching expired inventories:', error);
+      });
+  }, []);
+
+  // Format date as YYYY-MM-DD 
+  const formatDate = (date) => {
+    const formattedDate = new Date(date);
+    const year = formattedDate.getFullYear();
+    const month = (formattedDate.getMonth() + 1).toString().padStart(2, '0'); 
+    const day = formattedDate.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+  
+  // Handle change of search column dropdown
+  const handleSearchColumnChange = (e) => {
+    setSearchColumn(e.target.value);  
+  };
+  
+  // Handle search input change
+  const handleSearchChange = (e) => {
+    setSearchText(e.target.value);  
+  };
+  
+  // Filter expired inventories based on search input and column
+  const filteredExpiredInventories = expiredInventories.filter((inventory) => {
+    if (!searchText || !searchColumn) return true; 
+    const value = inventory[searchColumn]?.toString().toLowerCase(); 
+    return value && value.includes(searchText.toLowerCase());
+  });
+
+  // Field definitions for modals
+  const expiredInventoryFields = [
+    { label: "Log ID", name: "log_id", type: "text" },
+    { label: "Inventory ID", name: "inventory_id", type: "text" },
+    { label: "Product ID", name: "product_id", type: "text" },
+    { label: "Quantity Expired", name: "qty_expired", type: "number" },
+    { label: "Expiry Date", name: "expiry_date", type: "date" },
+    { label: "Processed Date", name: "processed_date", type: "text" }
+  ];
+
+  // Close Add Expired Inventory modal
+  const handleCloseModal = () => {
+    setShowModal(false);
+  };
+
+  // Handle input change in Add Expired Inventory form
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewExpiredInventory({
+      ...newExpiredInventory,
+      [name]: value
+    });
+  };
+
+  // Validate and save new expired inventory to backend
+  const handleSaveNewExpiredInventory = () => {
+    let errors = {};
+    if (!newExpiredInventory.inventory_id) {
+      errors.inventory_id = "Inventory ID is required.";
+    }
+    if (!newExpiredInventory.product_id) {
+      errors.product_id = "Product ID is required.";
+    }
+    if (!newExpiredInventory.qty_expired || isNaN(newExpiredInventory.qty_expired) || parseInt(newExpiredInventory.qty_expired) <= 0) {
+      errors.qty_expired = "Quantity expired must be a positive number.";
+    }
+    if (!newExpiredInventory.expiry_date) {
+      errors.expiry_date = "Expiry date is required.";
+    }
+  
+    setValidationErrors(errors);
+
+    if (Object.keys(errors).length === 0) {
+      axios
+        .post("http://localhost:5000/api/Expired_Inventories", newExpiredInventory)
+        .then((response) => {
+          setExpiredInventories([...expiredInventories, response.data]);
+          setShowModal(false);
+        })
+        .catch((error) => {
+          console.error("Error adding expired inventory:", error);
+        });
+    }
+  };
+
+  // Show view modal for a selected expired inventory
+  const handleViewExpiredInventory = (expiredInventory) => {
+    setSelectedExpiredInventory(expiredInventory);
+    setShowViewModal(true);
+  };
+
+  // Close view modal
+  const handleCloseViewModal = () => {
+    setShowViewModal(false); 
+  };
+
+  // Delete an expired inventory log by log_id
+  const handleDeleteExpiredInventory = (logId) => {
+    axios
+      .delete(`http://localhost:5000/api/Expired_Inventories/${logId}`)
+      .then((response) => {
+        setExpiredInventories((prevExpiredInventories) =>
+          prevExpiredInventories.filter((expiredInventory) => expiredInventory.log_id !== logId)
+        );
+      })
+      .catch((error) => {
+        console.error("Error deleting expired inventory:", error);
+      });
+  };
+
+  // Show edit modal for a selected expired inventory
+  const handleEditExpiredInventory = (expiredInventory) => {
+    setSelectedExpiredInventory(expiredInventory);
+    setEditedExpiredInventory({ ...expiredInventory });
+    setShowEditModal(true);
+  };
+  
+  // Validate and save edited expired inventory to backend
+  const handleSaveEditExpiredInventory = () => {
+    const { processed_date, ...expiredInventoryData } = editedExpiredInventory;
+    axios
+      .put(`http://localhost:5000/api/Expired_Inventories/${editedExpiredInventory.log_id}`, expiredInventoryData)
+      .then((response) => {
+        setExpiredInventories((prevExpiredInventories) =>
+          prevExpiredInventories.map((inv) => (inv.log_id === editedExpiredInventory.log_id ? editedExpiredInventory : inv))
+        );
+        setShowEditModal(false);
+      })
+      .catch((error) => {
+        console.error("Error updating expired inventory:", error.response ? error.response.data : error);
+      });
+  };
+
+  // Handle input change in Edit Expired Inventory modal
+  const handleEditInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditedExpiredInventory((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  // Close edit modal and reset selected expired inventory
+  const handleCloseEditModal = () => {
+    setShowEditModal(false);
+    setSelectedExpiredInventory(null);
+  };
+
+  // Show print modal for downloading PDF
+  const handleDownloadPDF = () => {
+    setShowPrintModal(true);
+  };
+
+  // Main render
+  return (
+    <div className={styles.ManageEmployeeContainer}>
+      <Sidebar />
+      <div className={styles.ManageEmployeeContent}>
+        <Header />
+        <div className={styles.InnerContainer} style={{ marginLeft: "10px", width: "100%" }}>
+          <div className={styles.TopSection}>
+            <h1 className="section-title" style={{ fontSize: '28px', fontWeight: 'bold' }}>Manage Expired Inventories</h1>
+
+            {/* Search and print controls */}
+            <div className={styles.SearchWrapper}>
+              {/* Search column dropdown */}
+              <select
+                className="form-control"
+                value={searchColumn}
+                onChange={handleSearchColumnChange}
+                style={{ marginRight: "10px", width: "200px" }}
+              >
+                <option value="log_id">Log ID</option>
+                <option value="inventory_id">Inventory ID</option>
+                <option value="product_id">Product ID</option>
+                <option value="qty_expired">Quantity Expired</option>
+                <option value="expiry_date">Expiry Date</option>
+              </select>
+              {/* Search input */}
+              <input
+                type="text"
+                className="form-control search-bar"
+                value={searchText}
+                onChange={handleSearchChange}
+                placeholder={`Search by ${searchColumn}...`}
+              />
+              <div className={styles.BtnContainer}>
+                {/* Print button */}
+                <button className="btn btn-secondary" onClick={handleDownloadPDF} style={{ width: '150px', marginLeft:"10px" }}>Print</button>
+              </div>
+            </div>
+          </div>
+
+          {/* Expired inventories table */}
+          <div className={styles.TableContainer}>
+            <table className="table table-striped">
+              <thead>
+                <tr>
+                  <th>LOG ID</th>
+                  <th>INVENTORY ID</th>
+                  <th>PRODUCT ID</th>
+                  <th>QUANTITY EXPIRED</th>
+                  <th>EXPIRY DATE</th>
+                  <th>PROCESSED DATE</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredExpiredInventories.length > 0 ? (
+                  filteredExpiredInventories.map((inventory) => (
+                    <tr key={inventory.log_id}>
+                      <td>{inventory.log_id}</td>
+                      <td>{inventory.inventory_id}</td>
+                      <td>{inventory.product_id}</td>
+                      <td>{inventory.qty_expired}</td>
+                      <td>{formatDate(inventory.expiry_date)}</td>
+                      <td>{formatDate(inventory.processed_date)}</td>
+                      <td>
+                        {/* View expired inventory button */}
+                        <FaEye
+                          style={{ marginRight: "10px", cursor: "pointer", color: "#2770b4" }}
+                          onClick={() => handleViewExpiredInventory(inventory)} 
+                        />
+                        {/* Edit expired inventory button */}
+                        <FaEdit
+                          style={{ marginRight: "10px", cursor: "pointer", color: "#f0ad4e" }}
+                          onClick={() => handleEditExpiredInventory(inventory)} 
+                        />
+                        {/* Delete expired inventory button */}
+                        <FaTrash
+                          style={{ cursor: "pointer", color: "#d9534f" }}
+                          onClick={() => handleDeleteExpiredInventory(inventory.log_id)} 
+                        />
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="7">No expired inventories found</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Add Expired Inventory Modal */}
+        <AddEntityModal
+          showModal={showModal}
+          handleClose={handleCloseModal}
+          handleSave={handleSaveNewExpiredInventory}
+          entityTitle="Expired Inventory"
+          entityData={newExpiredInventory}
+          entityFields={[
+            { label: "Inventory ID", name: "inventory_id", type: "text" },
+            { label: "Product ID", name: "product_id", type: "text" },
+            { label: "Quantity Expired", name: "qty_expired", type: "number" },
+            { label: "Expiry Date", name: "expiry_date", type: "date" }
+          ]}
+          handleInputChange={handleInputChange}
+          validationErrors={validationErrors}
+        />
+
+        {/* View Modal for expired inventory details */}
+        <ViewModal
+          showViewModal={showViewModal}
+          selectedEntity={selectedExpiredInventory}
+          handleClose={handleCloseViewModal}
+          entityTitle="Expired Inventory"
+          entityFields={[
+            { label: "Log ID", name: "log_id" },
+            { label: "Inventory ID", name: "inventory_id" },
+            { label: "Product ID", name: "product_id" },
+            { label: "Quantity Expired", name: "qty_expired" },
+            { label: "Expiry Date", name: "expiry_date", format: formatDate },
+            { label: "Processed Date", name: "processed_date", format: formatDate }
+          ]}
+        />
+
+        {/* Edit Modal for expired inventory */}
+        <EditModal
+          showEditModal={showEditModal}
+          entityData={editedExpiredInventory}
+          entityTitle="Expired Inventory"
+          entityFields={[
+            { label: "Log ID", name: "log_id", type: "text", disabled: true },
+            { label: "Inventory ID", name: "inventory_id", type: "text" },
+            { label: "Product ID", name: "product_id", type: "text" },
+            { label: "Quantity Expired", name: "qty_expired", type: "number" },
+            { label: "Expiry Date", name: "expiry_date", type: "date" }
+          ]}
+          handleClose={() => setShowEditModal(false)}
+          handleSaveEditEntity={handleSaveEditExpiredInventory}
+          handleEditInputChange={handleEditInputChange}
+        />
+
+        {/* Print Modal for expired inventories */}
+        <PrintModal
+          show={showPrintModal}
+          handleClose={() => setShowPrintModal(false)}
+          title="Print Expired Inventory Report"
+          data={filteredExpiredInventories}
+          fields={[
+            { label: "Log ID", field: "log_id" },
+            { label: "Inventory ID", field: "inventory_id" },
+            { label: "Product ID", field: "product_id" },
+            { label: "Quantity Expired", field: "qty_expired" },
+            { label: "Expiry Date", field: "expiry_date", format: (date) => date ? new Date(date).toLocaleDateString() : "" },
+            { label: "Processed Date", field: "processed_date", format: (date) => date ? new Date(date).toLocaleDateString() : "" }
+          ]}
+          filename="expired_inventory_report.pdf"
+          reportTitle="Expired Inventory Details Report"
+        />
+      </div>
+    </div>
+  );
+}
+
+export default ExpiredInventories;
